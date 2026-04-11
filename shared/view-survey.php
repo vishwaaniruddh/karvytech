@@ -8,6 +8,9 @@ if (!Auth::isLoggedIn()) {
     exit;
 }
 
+// Check if user has permission to view surveys
+Auth::requirePermission('surveys', 'view');
+
 $surveyId = $_GET['id'] ?? null;
 if (!$surveyId) {
     // Redirect based on user role
@@ -92,7 +95,10 @@ ob_start();
         <div class="flex-1">
             <h1 class="text-3xl font-bold text-gray-900">Survey Details</h1>
             <p class="mt-2 text-lg text-gray-600">Site: <span class="font-semibold text-blue-600"><?php echo htmlspecialchars($survey['site_code'] ?? $survey['site_id'] ?? 'Unknown'); ?></span></p>
-            <p class="text-sm text-gray-500 mt-1">Detailed view of site feasibility assessment</p>
+            <p class="text-sm text-gray-500 mt-1">Submitted by 
+                <span class="font-medium text-gray-900"><?php echo htmlspecialchars($survey['created_by_name'] ?? 'Unknown'); ?></span>
+                on <?php echo date('M d, Y h:i A', strtotime($survey['submitted_date'])); ?>
+            </p>
         </div>
         <div class="mt-6 lg:mt-0 lg:ml-6">
             <div class="flex space-x-3">

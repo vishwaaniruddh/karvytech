@@ -667,6 +667,194 @@ if (!function_exists('url')) {
                 }
             }
         });
+        // Premium Toast Notification System
+        function showToast(message, type = 'success', duration = 4000) {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.style.cssText = `
+                    position: fixed;
+                    top: 24px;
+                    right: 24px;
+                    z-index: 9999;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    pointer-events: none;
+                `;
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type} transform translate-x-full opacity-0 transition-all duration-300 ease-out`;
+            
+            const icons = {
+                success: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                error: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                warning: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>',
+                info: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+            };
+
+            const colors = {
+                success: 'bg-emerald-500 shadow-emerald-200',
+                error: 'bg-rose-500 shadow-rose-200',
+                warning: 'bg-amber-500 shadow-amber-200',
+                info: 'bg-sky-500 shadow-sky-200'
+            };
+
+            toast.style.pointerEvents = 'auto';
+            toast.innerHTML = `
+                <div class="flex items-center p-4 min-w-[320px] max-w-md ${colors[type]} text-white rounded-2xl shadow-xl space-x-4 border border-white/20 backdrop-blur-sm">
+                    <div class="flex-shrink-0 text-white/90">
+                        ${icons[type] || icons.info}
+                    </div>
+                    <div class="flex-1 font-medium text-sm">
+                        ${message}
+                    </div>
+                    <button onclick="this.closest('.toast').remove()" class="flex-shrink-0 text-white/60 hover:text-white transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            });
+
+            // Auto-remove
+            if (duration !== 0) {
+                setTimeout(() => {
+                    toast.classList.add('translate-x-full', 'opacity-0');
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            }
+        }
+
+        // Global Alert Bridge
+        function showAlert(message, type = 'info') {
+            showToast(message, type);
+        }
+
+        // Override standard browser alert
+        window.alert = function(message) {
+            showAlert(message, 'info');
+        };
+
+        // Global Confirmation Modal
+        function showConfirm(title, message, options = {}) {
+            const {
+                confirmText = 'Yes, Proceed',
+                cancelText = 'Cancel',
+                confirmType = 'primary' // primary, danger, success
+            } = options;
+
+            // Create modal if not exists
+            let modal = document.getElementById('global-confirm-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'global-confirm-modal';
+                modal.className = 'fixed inset-0 z-[10000] hidden flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md transition-all duration-300 opacity-0';
+                modal.innerHTML = `
+                    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 transform transition-all scale-95 duration-300">
+                        <div id="confirm-icon-container" class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"></div>
+                        <h3 id="confirm-title" class="text-2xl font-bold text-gray-900 text-center mb-3"></h3>
+                        <p id="confirm-message" class="text-gray-500 text-center mb-8 leading-relaxed"></p>
+                        <div class="flex space-x-3">
+                            <button id="confirm-cancel" class="flex-1 px-5 py-3 border border-gray-200 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 transition-all active:scale-95">
+                                ${cancelText}
+                            </button>
+                            <button id="confirm-ok" class="flex-1 px-5 py-3 text-white font-semibold rounded-2xl shadow-lg transition-all active:scale-95">
+                                ${confirmText}
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            const iconContainer = modal.querySelector('#confirm-icon-container');
+            const okBtn = modal.querySelector('#confirm-ok');
+            const cancelBtn = modal.querySelector('#confirm-cancel');
+            
+            modal.querySelector('#confirm-title').textContent = title;
+            modal.querySelector('#confirm-message').textContent = message;
+            okBtn.textContent = confirmText;
+            cancelBtn.textContent = cancelText;
+
+            // Configure style based on type
+            const typeConfig = {
+                danger: {
+                    icon: '<svg class="w-10 h-10 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>',
+                    bg: 'bg-rose-100',
+                    btn: 'bg-rose-600 hover:bg-rose-700 shadow-rose-200'
+                },
+                success: {
+                    icon: '<svg class="w-10 h-10 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                    bg: 'bg-emerald-100',
+                    btn: 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'
+                },
+                primary: {
+                    icon: '<svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                    bg: 'bg-blue-100',
+                    btn: 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                }
+            };
+
+            const config = typeConfig[confirmType] || typeConfig.primary;
+            iconContainer.innerHTML = config.icon;
+            iconContainer.className = `w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${config.bg}`;
+            okBtn.className = `flex-1 px-5 py-3 text-white font-semibold rounded-2xl shadow-lg transition-all active:scale-95 ${config.btn}`;
+
+            // Show modal
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modal.classList.add('opacity-100');
+                modal.querySelector('div').classList.remove('scale-95');
+                modal.querySelector('div').classList.add('scale-100');
+            });
+
+            return new Promise((resolve) => {
+                const cleanup = () => {
+                    modal.classList.remove('opacity-100');
+                    modal.querySelector('div').classList.remove('scale-100');
+                    modal.querySelector('div').classList.add('scale-95');
+                    setTimeout(() => {
+                        modal.classList.add('hidden');
+                    }, 300);
+                };
+
+                okBtn.onclick = () => {
+                    cleanup();
+                    resolve(true);
+                };
+                cancelBtn.onclick = () => {
+                    cleanup();
+                    resolve(false);
+                };
+            });
+        }
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modals = document.querySelectorAll('.modal, #global-confirm-modal');
+                modals.forEach(modal => {
+                    if (!modal.classList.contains('hidden')) {
+                        if (modal.id === 'global-confirm-modal') {
+                            modal.querySelector('#confirm-cancel').click();
+                        } else if (typeof closeModal === 'function') {
+                            closeModal(modal.id);
+                        } else {
+                            modal.classList.add('hidden');
+                        }
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

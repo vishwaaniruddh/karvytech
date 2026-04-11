@@ -91,8 +91,8 @@ class Auth {
                 exit();
             }
             
-            header('HTTP/1.0 403 Forbidden');
-            exit('Access denied - Required role: ' . $role . ' (Your role: ' . ($_SESSION['role'] ?? 'none') . ')');
+            header('Location: ' . url('/shared/403.php?role=' . $role));
+            exit();
         }
     }
     
@@ -153,8 +153,8 @@ class Auth {
                 exit();
             }
             
-            header('HTTP/1.0 403 Forbidden');
-            exit('Access denied - Vendor access required');
+            header('Location: ' . url('/shared/403.php?role=' . VENDOR_ROLE));
+            exit();
         }
     }
     
@@ -167,8 +167,8 @@ class Auth {
         }
         
         if (!self::isAdmin() && !self::isVendor()) {
-            header('HTTP/1.0 403 Forbidden');
-            exit('Access denied');
+            header('Location: ' . url('/shared/403.php'));
+            exit();
         }
     }
     
@@ -192,8 +192,8 @@ class Auth {
                 exit();
             }
             
-            header('HTTP/1.0 403 Forbidden');
-            exit('Access denied - Permission required: ' . $permission);
+            header('Location: ' . url('/shared/403.php?permission=' . $permission));
+            exit();
         }
     }
     
@@ -257,11 +257,6 @@ class Auth {
             return false;
         }
         
-        // Superadmin has all permissions
-        if (self::isSuperAdmin()) {
-            return true;
-        }
-        
         // Check cached permissions
         if (isset($_SESSION['permissions'])) {
             foreach ($_SESSION['permissions'] as $perm) {
@@ -287,11 +282,6 @@ class Auth {
     public static function hasModuleAccess($moduleName) {
         if (!self::isLoggedIn()) {
             return false;
-        }
-        
-        // Superadmin has access to all modules
-        if (self::isSuperAdmin()) {
-            return true;
         }
         
         // Check cached permissions
@@ -356,8 +346,8 @@ class Auth {
                 exit();
             }
             
-            header('HTTP/1.0 403 Forbidden');
-            exit('Access denied - Permission required: ' . $moduleName . '.' . $permissionName);
+            header('Location: ' . url('/shared/403.php?permission=' . $moduleName . '.' . $permissionName));
+            exit();
         }
     }
     
@@ -376,8 +366,8 @@ class Auth {
                 exit();
             }
             
-            header('HTTP/1.0 403 Forbidden');
-            exit('Access denied - Module access required: ' . $moduleName);
+            header('Location: ' . url('/shared/403.php?module=' . $moduleName));
+            exit();
         }
     }
 }

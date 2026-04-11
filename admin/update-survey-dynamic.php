@@ -121,7 +121,27 @@ try {
         }
     }
     
-    // Update survey response
+    // 4. Capture Revision
+    // Get current revision count for this response
+    $stmt = $db->prepare("SELECT MAX(revision_number) FROM dynamic_survey_revisions WHERE response_id = ?");
+    $stmt->execute([$responseId]);
+    $lastRevision = $stmt->fetchColumn() ?: 0;
+    $nextRevision = $lastRevision + 1;
+
+    // Insert new version into revisions table
+    $stmt = $db->prepare("INSERT INTO dynamic_survey_revisions 
+                          (response_id, revision_number, form_data, site_master_data, updated_by, change_summary) 
+                          VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->execute([
+        $responseId,
+        $nextRevision,
+        json_encode($formData),
+        $existingResponse['site_master_data'] ?? null,
+        Auth::getCurrentUser()['id'] ?? null,
+        $_POST['change_summary'] ?? 'Updated via Edit Page'
+    ]);
+
+    // 5. Update main survey response
     $stmt = $db->prepare("UPDATE dynamic_survey_responses 
                           SET form_data = ?, 
                               survey_status = 'submitted',
@@ -137,7 +157,8 @@ try {
     
     echo json_encode([
         'success' => true,
-        'message' => 'Survey updated successfully'
+        'message' => 'Survey updated successfully',
+        'revision' => $nextRevision
     ]);
     
 } catch (Exception $e) {

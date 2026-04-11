@@ -681,7 +681,7 @@ function closeSiteModal() {
 
 
 function conductSurvey(delegationId) {
-    window.location.href = `${BASE_URL}/contractor/site-survey.php?delegation_id=${delegationId}`;
+    window.location.href = `${BASE_URL}/contractor/site-survey2.php?delegation_id=${delegationId}`;
 }
 
 function generateMaterialRequest(siteId) {

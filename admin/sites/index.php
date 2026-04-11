@@ -14,8 +14,9 @@ ob_start();
 ?>
 
 <style>
-    th,td{
-        white-space:nowrap;
+    th,
+    td {
+        white-space: nowrap;
     }
 </style>
 
@@ -26,10 +27,14 @@ ob_start();
         <div class="flex items-center gap-2 mb-2">
             <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd"
+                        d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
+                        clip-rule="evenodd"></path>
                 </svg>
             </div>
-            <div class="text-2xl font-bold text-gray-900"><?php echo number_format($data['stats']['total_sites'] ?? 0); ?></div>
+            <div class="text-2xl font-bold text-gray-900">
+                <?php echo number_format($data['stats']['total_sites'] ?? 0); ?>
+            </div>
         </div>
         <div class="text-[10px] text-gray-500 uppercase font-semibold tracking-wide">Total Sites</div>
     </div>
@@ -39,10 +44,14 @@ ob_start();
         <div class="flex items-center gap-2 mb-2">
             <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                    <path
+                        d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z">
+                    </path>
                 </svg>
             </div>
-            <div class="text-2xl font-bold text-gray-900"><?php echo number_format($data['stats']['delegation_active'] ?? 0); ?></div>
+            <div class="text-2xl font-bold text-gray-900">
+                <?php echo number_format($data['stats']['delegation_active'] ?? 0); ?>
+            </div>
         </div>
         <div class="text-[10px] text-gray-500 uppercase font-semibold tracking-wide">Delegated</div>
     </div>
@@ -52,10 +61,14 @@ ob_start();
         <div class="flex items-center gap-2 mb-2">
             <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                        clip-rule="evenodd"></path>
                 </svg>
             </div>
-            <div class="text-2xl font-bold text-gray-900"><?php echo number_format($data['stats']['delegation_pending'] ?? 0); ?></div>
+            <div class="text-2xl font-bold text-gray-900">
+                <?php echo number_format($data['stats']['delegation_pending'] ?? 0); ?>
+            </div>
         </div>
         <div class="text-[10px] text-gray-500 uppercase font-semibold tracking-wide">Pending Delegation</div>
     </div>
@@ -65,10 +78,14 @@ ob_start();
         <div class="flex items-center gap-2 mb-2">
             <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd"></path>
                 </svg>
             </div>
-            <div class="text-2xl font-bold text-gray-900"><?php echo number_format($data['stats']['survey_approved'] ?? 0); ?></div>
+            <div class="text-2xl font-bold text-gray-900">
+                <?php echo number_format($data['stats']['survey_approved'] ?? 0); ?>
+            </div>
         </div>
         <div class="text-[10px] text-gray-500 uppercase font-semibold tracking-wide">Survey Approved</div>
     </div>
@@ -78,10 +95,14 @@ ob_start();
         <div class="flex items-center gap-2 mb-2">
             <div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                        clip-rule="evenodd"></path>
                 </svg>
             </div>
-            <div class="text-2xl font-bold text-gray-900"><?php echo number_format($data['stats']['survey_pending'] ?? 0); ?></div>
+            <div class="text-2xl font-bold text-gray-900">
+                <?php echo number_format($data['stats']['survey_pending'] ?? 0); ?>
+            </div>
         </div>
         <div class="text-[10px] text-gray-500 uppercase font-semibold tracking-wide">Survey Pending</div>
     </div>
@@ -91,10 +112,14 @@ ob_start();
         <div class="flex items-center gap-2 mb-2">
             <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clip-rule="evenodd"></path>
                 </svg>
             </div>
-            <div class="text-2xl font-bold text-gray-900"><?php echo number_format($data['stats']['survey_rejected'] ?? 0); ?></div>
+            <div class="text-2xl font-bold text-gray-900">
+                <?php echo number_format($data['stats']['survey_rejected'] ?? 0); ?>
+            </div>
         </div>
         <div class="text-[10px] text-gray-500 uppercase font-semibold tracking-wide">Survey Rejected</div>
     </div>
@@ -104,10 +129,14 @@ ob_start();
         <div class="flex items-center gap-2 mb-2">
             <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
                 <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd"
+                        d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                        clip-rule="evenodd"></path>
                 </svg>
             </div>
-            <div class="text-2xl font-bold text-gray-900"><?php echo number_format($data['stats']['installation_done'] ?? 0); ?></div>
+            <div class="text-2xl font-bold text-gray-900">
+                <?php echo number_format($data['stats']['installation_done'] ?? 0); ?>
+            </div>
         </div>
         <div class="text-[10px] text-gray-500 uppercase font-semibold tracking-wide">Installation Done</div>
     </div>
@@ -118,7 +147,8 @@ ob_start();
     <div class="flex items-center gap-2">
         <div class="w-2 h-2 rounded-full bg-gray-400"></div>
         <span class="text-xs text-gray-600">Installation Pending:</span>
-        <span class="text-sm font-bold text-gray-900"><?php echo number_format($data['stats']['installation_pending'] ?? 0); ?></span>
+        <span
+            class="text-sm font-bold text-gray-900"><?php echo number_format($data['stats']['installation_pending'] ?? 0); ?></span>
     </div>
 </div>
 
@@ -127,7 +157,9 @@ ob_start();
     <div class="flex items-center justify-between mb-3">
         <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wide flex items-center">
             <svg class="w-4 h-4 mr-1.5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                <path
+                    d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z">
+                </path>
             </svg>
             Customer-wise Sites
         </h3>
@@ -136,14 +168,18 @@ ob_start();
         <?php
         if (!empty($data['stats']['customer_counts'])) {
             foreach ($data['stats']['customer_counts'] as $customer):
-        ?>
-        <div class="bg-gray-50 rounded-md p-2.5 border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group">
-            <div class="text-lg font-bold text-gray-900 group-hover:text-blue-600"><?php echo $customer['site_count']; ?></div>
-            <div class="text-[9px] text-gray-500 font-medium truncate mt-0.5" title="<?php echo htmlspecialchars($customer['customer_name']); ?>">
-                <?php echo htmlspecialchars($customer['customer_name']); ?>
-            </div>
-        </div>
-        <?php 
+                ?>
+                <div
+                    class="bg-gray-50 rounded-md p-2.5 border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group">
+                    <div class="text-lg font-bold text-gray-900 group-hover:text-blue-600">
+                        <?php echo $customer['site_count']; ?>
+                    </div>
+                    <div class="text-[9px] text-gray-500 font-medium truncate mt-0.5"
+                        title="<?php echo htmlspecialchars($customer['customer_name']); ?>">
+                        <?php echo htmlspecialchars($customer['customer_name']); ?>
+                    </div>
+                </div>
+                <?php
             endforeach;
         } else {
             echo '<p class="text-gray-500 col-span-full text-center py-3 text-xs">No customer data available</p>';
@@ -157,35 +193,44 @@ ob_start();
         <p class="mt-2 text-sm text-gray-700">Manage installation sites and track progress</p>
     </div>
     <div class="flex space-x-2">
-        <a href="export-sites.php<?php echo !empty($data['search']) ? '?search=' . urlencode($data['search']) : ''; ?>" 
-           class="btn btn-success">
+        <a href="export-sites.php<?php echo !empty($data['search']) ? '?search=' . urlencode($data['search']) : ''; ?>"
+            class="btn btn-success">
             <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                <path fill-rule="evenodd"
+                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                    clip-rule="evenodd"></path>
             </svg>
             Export Sites
         </a>
-        
+
         <div class="relative inline-block">
             <a href="bulk_upload.php" class="btn btn-secondary">
                 <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd"
+                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
+                        clip-rule="evenodd"></path>
                 </svg> Upload Sites In Bulk
             </a>
-            
+
             <a href="vendor_assign_bulk_upload.php" class="btn btn-secondary">
                 <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                </svg> Upload Vendor Assigned Bulk 
+                    <path fill-rule="evenodd"
+                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
+                        clip-rule="evenodd"></path>
+                </svg> Upload Vendor Assigned Bulk
             </a>
 
-            <div id="bulkUploadMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+            <div id="bulkUploadMenu"
+                class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
                 <div class="py-1">
                 </div>
             </div>
         </div>
         <button onclick="openModal('createSiteModal')" class="btn btn-primary" title="Add New Site">
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                <path fill-rule="evenodd"
+                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                    clip-rule="evenodd"></path>
             </svg>
         </button>
     </div>
@@ -199,14 +244,19 @@ ob_start();
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                            <path fill-rule="evenodd"
+                                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                clip-rule="evenodd"></path>
                         </svg>
                     </div>
-                    <input type="text" id="searchInput" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search sites..." value="<?php echo htmlspecialchars($data['search']); ?>">
+                    <input type="text" id="searchInput"
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="Search sites..." value="<?php echo htmlspecialchars($data['search']); ?>">
                 </div>
             </div>
             <div>
-                <select id="cityFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                <select id="cityFilter"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     <option value="">All Cities</option>
                     <?php foreach ($data['filter_options']['cities'] as $city): ?>
                         <option value="<?php echo htmlspecialchars($city); ?>" <?php echo $data['filters']['city'] === $city ? 'selected' : ''; ?>>
@@ -216,7 +266,8 @@ ob_start();
                 </select>
             </div>
             <div>
-                <select id="stateFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                <select id="stateFilter"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     <option value="">All States</option>
                     <?php foreach ($data['filter_options']['states'] as $state): ?>
                         <option value="<?php echo htmlspecialchars($state); ?>" <?php echo $data['filters']['state'] === $state ? 'selected' : ''; ?>>
@@ -226,7 +277,8 @@ ob_start();
                 </select>
             </div>
             <div>
-                <select id="statusFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                <select id="statusFilter"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     <option value="">All Status</option>
                     <?php foreach ($data['filter_options']['activity_statuses'] as $status): ?>
                         <option value="<?php echo htmlspecialchars($status); ?>" <?php echo $data['filters']['activity_status'] === $status ? 'selected' : ''; ?>>
@@ -236,7 +288,8 @@ ob_start();
                 </select>
             </div>
             <div>
-                <select id="surveyStatusFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                <select id="surveyStatusFilter"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                     <option value="">All Survey Status</option>
                     <option value="pending" <?php echo ($data['filters']['survey_status'] ?? '') === 'pending' ? 'selected' : ''; ?>>Pending</option>
                     <option value="submitted" <?php echo ($data['filters']['survey_status'] ?? '') === 'submitted' ? 'selected' : ''; ?>>Submitted</option>
@@ -255,134 +308,188 @@ ob_start();
             <table class="min-w-full divide-y divide-gray-200" id="sitesTable">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">#</th>
-                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
-                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Site Details</th>
-                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Site Ticket ID</th>
-                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
-                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Customer/Contact</th>
-                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Vendor</th>
-                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Progress</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">#
+                        </th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Actions</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Site Details</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Site Ticket ID</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Location</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Customer/Contact</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Vendor</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Status</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Surveyor & Time</th>
+                        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Progress</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    <?php 
+                    <?php
                     $serial_number = (($data['pagination']['current_page'] - 1) * $data['pagination']['limit']) + 1;
                     foreach ($data['sites'] as $site):
 
                         // echo '<pre>';
                         // var_dump($site);
                         // echo '</pre>';
-
-                    ?>
+                    
+                        ?>
                         <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-600"><?php echo $serial_number++; ?></td>
+                            <td class="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-600">
+                                <?php echo $serial_number++; ?>
+                            </td>
                             <td class="px-3 py-2 whitespace-nowrap">
                                 <div class="flex items-center space-x-2">
-                                    <button onclick="viewSite(<?php echo $site['id']; ?>)" class="btn btn-sm btn-secondary" title="View">
+                                    <button onclick="viewSite(<?php echo $site['id']; ?>)" class="btn btn-sm btn-secondary"
+                                        title="View">
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                            <path fill-rule="evenodd"
+                                                d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                                                clip-rule="evenodd"></path>
                                         </svg>
                                     </button>
 
                                     <?php if (can('sites', 'edit')): ?>
-                                    <button onclick="editSite(<?php echo $site['id']; ?>)" class="btn btn-sm btn-primary" title="Edit">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
-                                        </svg>
-                                    </button>
+                                        <button onclick="editSite(<?php echo $site['id']; ?>)" class="btn btn-sm btn-primary"
+                                            title="Edit">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path
+                                                    d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z">
+                                                </path>
+                                            </svg>
+                                        </button>
                                     <?php endif; ?>
                                     <?php if ($site['has_survey_submitted']): ?>
-                                        <button onclick="viewSiteSurvey(<?php echo $site['survey_id']; ?>)" class="btn btn-sm btn-success" title="View Site Survey">
+                                        <button onclick="viewSiteSurvey(<?php echo $site['survey_id']; ?>)"
+                                            class="btn btn-sm btn-success" title="View Site Survey">
                                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd"></path>
+                                                <path fill-rule="evenodd"
+                                                    d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
+                                                    clip-rule="evenodd"></path>
                                             </svg>
                                         </button>
                                     <?php else: ?>
-                                        <button onclick="delegateSite(<?php echo $site['id']; ?>)" class="btn btn-sm btn-info" title="Delegate Site">
+                                        <button onclick="delegateSite(<?php echo $site['id']; ?>)" class="btn btn-sm btn-info"
+                                            title="Delegate Site">
                                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"></path>
+                                                <path fill-rule="evenodd"
+                                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z"
+                                                    clip-rule="evenodd"></path>
                                             </svg>
                                         </button>
                                     <?php endif; ?>
-                                    
+
                                     <?php if (can('sites', 'delete')): ?>
-                                    <button onclick="deleteSite(<?php echo $site['id']; ?>)" class="btn btn-sm btn-danger" title="Delete">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd"></path>
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V7a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                        </svg>
-                                    </button>
+                                        <button onclick="deleteSite(<?php echo $site['id']; ?>)" class="btn btn-sm btn-danger"
+                                            title="Delete">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"
+                                                    clip-rule="evenodd"></path>
+                                                <path fill-rule="evenodd"
+                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V7a1 1 0 00-1-1z"
+                                                    clip-rule="evenodd"></path>
+                                            </svg>
+                                        </button>
                                     <?php endif; ?>
-                                    
+
                                     <?php if ($site['delegation_status'] === 'active' && !$site['has_survey_submitted']): ?>
-                                    <button onclick="conductSurvey(<?php echo $site['id']; ?>)" 
-                                            class="group relative inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-lg hover:shadow-xl transition-all duration-200" 
+                                        <button onclick="conductSurvey(<?php echo $site['id']; ?>)"
+                                            class="group relative inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-lg hover:shadow-xl transition-all duration-200"
                                             title="Conduct Site Survey">
-                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        Survey
-                                    </button>
+                                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"
+                                                    clip-rule="evenodd"></path>
+                                            </svg>
+                                            Survey
+                                        </button>
                                     <?php elseif ($site['delegation_status'] === 'active' && $site['has_survey_submitted']): ?>
-                                    <button onclick="conductSurvey(<?php echo $site['id']; ?>)" 
-                                            class="group relative inline-flex items-center justify-center px-4 py-2 border border-green-600 text-sm font-medium rounded-lg text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200" 
+                                        <button onclick="conductSurvey(<?php echo $site['id']; ?>)"
+                                            class="group relative inline-flex items-center justify-center px-4 py-2 border border-green-600 text-sm font-medium rounded-lg text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
                                             title="Update Site Survey">
-                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        Update Survey
-                                    </button>
+                                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"
+                                                    clip-rule="evenodd"></path>
+                                            </svg>
+                                            Update Survey
+                                        </button>
                                     <?php endif; ?>
-                                    
+
                                     <?php if (in_array($site['actual_survey_status'], ['completed', 'approved'])): ?>
                                         <!-- Material Request Button -->
-                                        <button onclick="conductMaterials(<?php echo $site['id']; ?>,<?php echo $site['survey_id']; ?>)" 
-                                        
-                                           class="group relative inline-flex items-center justify-center px-4 py-2 border border-green-300 text-sm font-medium rounded-lg text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200" 
-                                           title="Generate Material Request">
+                                        <button
+                                            onclick="conductMaterials(<?php echo $site['id']; ?>,<?php echo $site['survey_id']; ?>)"
+                                            class="group relative inline-flex items-center justify-center px-4 py-2 border border-green-300 text-sm font-medium rounded-lg text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200"
+                                            title="Generate Material Request">
                                             <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zM8 6a2 2 0 114 0v1H8V6zM6 9a1 1 0 012 0v1a1 1 0 11-2 0V9zm8 0a1 1 0 012 0v1a1 1 0 11-2 0V9z" clip-rule="evenodd"></path>
+                                                <path fill-rule="evenodd"
+                                                    d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zM8 6a2 2 0 114 0v1H8V6zM6 9a1 1 0 012 0v1a1 1 0 11-2 0V9zm8 0a1 1 0 012 0v1a1 1 0 11-2 0V9z"
+                                                    clip-rule="evenodd"></path>
                                             </svg>
                                             Materials
-                                        </button>    
+                                        </button>
                                         <!--</a>-->
                                     <?php endif; ?>
-                                    
+
                                 </div>
                             </td>
                             <td class="px-3 py-2">
                                 <div>
-                                    <div class="text-xs font-semibold text-gray-900"><?php echo htmlspecialchars($site['site_id'] ?? ''); ?></div>
+                                    <div class="text-xs font-semibold text-gray-900">
+                                        <?php echo htmlspecialchars($site['site_id'] ?? ''); ?>
+                                    </div>
                                     <?php if ($site['store_id']): ?>
-                                        <div class="text-[10px] text-gray-500">Store: <?php echo htmlspecialchars($site['store_id'] ?? ''); ?></div>
+                                        <div class="text-[10px] text-gray-500">Store:
+                                            <?php echo htmlspecialchars($site['store_id'] ?? ''); ?>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if ($site['po_number']): ?>
-                                        <div class="text-[10px] text-gray-500">PO: <?php echo htmlspecialchars($site['po_number'] ?? ''); ?></div>
+                                        <div class="text-[10px] text-gray-500">PO:
+                                            <?php echo htmlspecialchars($site['po_number'] ?? ''); ?>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                             </td>
                             <td class="px-3 py-2">
-                                <div class="text-xs font-semibold text-gray-900"><?php echo htmlspecialchars($site['site_ticket_id'] ?? ''); ?></div>
+                                <div class="text-xs font-semibold text-gray-900">
+                                    <?php echo htmlspecialchars($site['site_ticket_id'] ?? ''); ?>
+                                </div>
                             </td>
                             <td class="px-3 py-2">
-                                <div class="text-xs text-gray-900"><?php echo htmlspecialchars($site['city'] ?? ''); ?>, <?php echo htmlspecialchars($site['state'] ?? ''); ?></div>
-                                <div class="text-[10px] text-gray-500"><?php echo htmlspecialchars($site['country'] ?? ''); ?></div>
+                                <div class="text-xs text-gray-900"><?php echo htmlspecialchars($site['city'] ?? ''); ?>,
+                                    <?php echo htmlspecialchars($site['state'] ?? ''); ?>
+                                </div>
+                                <div class="text-[10px] text-gray-500">
+                                    <?php echo htmlspecialchars($site['country'] ?? ''); ?>
+                                </div>
                                 <?php if ($site['zone']): ?>
-                                    <div class="text-[10px] text-gray-500">Zone: <?php echo htmlspecialchars($site['zone']); ?></div>
+                                    <div class="text-[10px] text-gray-500">Zone: <?php echo htmlspecialchars($site['zone']); ?>
+                                    </div>
                                 <?php endif; ?>
                                 <?php if ($site['pincode']): ?>
-                                    <div class="text-[10px] text-gray-500">PIN: <?php echo htmlspecialchars($site['pincode']); ?></div>
+                                    <div class="text-[10px] text-gray-500">PIN:
+                                        <?php echo htmlspecialchars($site['pincode']); ?>
+                                    </div>
                                 <?php endif; ?>
                                 <?php if ($site['branch']): ?>
-                                    <div class="text-[10px] text-gray-500">Branch: <?php echo htmlspecialchars($site['branch'] ?? ''); ?></div>
+                                    <div class="text-[10px] text-gray-500">Branch:
+                                        <?php echo htmlspecialchars($site['branch'] ?? ''); ?>
+                                    </div>
                                 <?php endif; ?>
                             </td>
                             <td class="px-3 py-2">
                                 <?php if ($site['customer']): ?>
-                                    <div class="text-xs text-gray-900 font-medium"><?php echo htmlspecialchars($site['customer'] ?? ''); ?></div>
+                                    <div class="text-xs text-gray-900 font-medium">
+                                        <?php echo htmlspecialchars($site['customer'] ?? ''); ?>
+                                    </div>
                                 <?php endif; ?>
                                 <?php if ($site['contact_person_name']): ?>
                                     <div class="text-[10px] text-gray-600 mt-1">
@@ -404,8 +511,9 @@ ob_start();
                                 <?php if ($site['delegation_status'] === 'active' && $site['delegated_vendor_name']): ?>
                                     <!-- Delegated Vendor -->
                                     <div class="flex items-center space-x-2">
-                                        <span class="badge badge-warning">Delegated</span>
-                                        <span class="text-sm text-orange-600"><?php echo htmlspecialchars($site['delegated_vendor_name'] ?? ''); ?></span>
+                                        <!-- <span class="badge badge-warning">Delegated</span> -->
+                                        <span
+                                            class="text-sm text-orange-600"><?php echo htmlspecialchars($site['delegated_vendor_name'] ?? ''); ?></span>
                                     </div>
                                     <div class="text-xs text-gray-500 mt-1">
                                         Since: <?php echo date('M d, Y', strtotime($site['delegation_date'])); ?>
@@ -414,7 +522,8 @@ ob_start();
                                     <!-- Survey Vendor -->
                                     <div class="flex items-center space-x-2">
                                         <span class="badge badge-info">Survey By</span>
-                                        <span class="text-sm text-blue-600"><?php echo htmlspecialchars($site['survey_vendor_name']); ?></span>
+                                        <span
+                                            class="text-sm text-blue-600"><?php echo htmlspecialchars($site['survey_vendor_name']); ?></span>
                                     </div>
                                 <?php elseif ($site['vendor']): ?>
                                     <!-- Regular Vendor -->
@@ -426,10 +535,32 @@ ob_start();
                             </td>
                             <td>
                                 <?php if ($site['activity_status']): ?>
-                                    <span class="badge badge-info"><?php echo htmlspecialchars($site['activity_status'] ?? ''); ?></span>
+                                    <span
+                                        class="badge badge-info"><?php echo htmlspecialchars($site['activity_status'] ?? ''); ?></span>
                                 <?php else: ?>
                                     <span class="badge badge-secondary">No Status</span>
                                 <?php endif; ?>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap">
+                                <div class="flex flex-col gap-1">
+                                    <?php if (!empty($site['surveyor_name'])): ?>
+                                        <div class="flex items-center space-x-1">
+                                            <i class="fas fa-user-circle text-gray-400 text-[10px]"></i>
+                                            <span
+                                                class="text-xs font-semibold text-gray-900"><?php echo htmlspecialchars($site['surveyor_name']); ?></span>
+                                        </div>
+                                        <?php if (!empty($site['survey_submitted_date'])): ?>
+                                            <div class="flex items-center space-x-1 text-gray-500">
+                                                <i class="far fa-clock text-[9px]"></i>
+                                                <span class="text-[10px]">
+                                                    <?php echo date('M d, Y h:i A', strtotime($site['survey_submitted_date'])); ?>
+                                                </span>
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <span class="text-[10px] italic text-gray-400">Not submitted</span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                             <td>
                                 <div class="space-y-1">
@@ -439,15 +570,17 @@ ob_start();
                                             <?php if ($site['actual_survey_status'] === 'approved'): ?>
                                                 <div class="flex items-center space-x-1">
                                                     <span class="badge badge-success">Approved</span>
-                                                    <?php 
-                                                        $viewUrl = ($site['survey_type'] === 'dynamic') ? "../../shared/view-survey2.php" : "../../shared/view-survey.php";
+                                                    <?php
+                                                    $viewUrl = ($site['survey_type'] === 'dynamic') ? "../../shared/view-survey2.php" : "../../shared/view-survey.php";
                                                     ?>
-                                                    <a href="<?php echo $viewUrl; ?>?id=<?php echo $site['survey_id']; ?>" 
-                                                       class="inline-flex items-center justify-center w-6 h-6 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors" 
-                                                       title="View Survey">
+                                                    <a href="<?php echo $viewUrl; ?>?id=<?php echo $site['survey_id']; ?>"
+                                                        class="inline-flex items-center justify-center w-6 h-6 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors"
+                                                        title="View Survey">
                                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                                            <path fill-rule="evenodd"
+                                                                d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                                                                clip-rule="evenodd"></path>
                                                         </svg>
                                                     </a>
                                                 </div>
@@ -456,15 +589,17 @@ ob_start();
                                             <?php else: ?>
                                                 <div class="flex items-center space-x-1">
                                                     <span class="badge badge-info">Submitted</span>
-                                                    <?php 
-                                                        $viewUrl = ($site['survey_type'] === 'dynamic') ? "../../shared/view-survey2.php" : "../../shared/view-survey.php";
+                                                    <?php
+                                                    $viewUrl = ($site['survey_type'] === 'dynamic') ? "../../shared/view-survey2.php" : "../../shared/view-survey.php";
                                                     ?>
-                                                    <a href="<?php echo $viewUrl; ?>?id=<?php echo $site['survey_id']; ?>" 
-                                                       class="inline-flex items-center justify-center w-6 h-6 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors" 
-                                                       title="View Survey">
+                                                    <a href="<?php echo $viewUrl; ?>?id=<?php echo $site['survey_id']; ?>"
+                                                        class="inline-flex items-center justify-center w-6 h-6 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                                                        title="View Survey">
                                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                                            <path fill-rule="evenodd"
+                                                                d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                                                                clip-rule="evenodd"></path>
                                                         </svg>
                                                     </a>
                                                 </div>
@@ -474,19 +609,22 @@ ob_start();
                                         <?php endif; ?>
                                     </div>
                                     <div class="flex items-center">
-                                        
+
                                         <span class="text-xs text-gray-500 w-16">Install:</span>
                                         <div class="flex items-center space-x-2">
-                                            <span class="badge <?php echo $site['installation_status'] ? 'badge-success' : 'badge-warning'; ?>">
+                                            <span
+                                                class="badge <?php echo $site['installation_status'] ? 'badge-success' : 'badge-warning'; ?>">
                                                 <?php echo $site['installation_status'] ? 'Done' : 'Pending'; ?>
                                             </span>
                                             <?php if ($site['installation_status'] && $site['installation_id']): ?>
-                                                <a href="../installations/view.php?id=<?php echo $site['installation_id']; ?>" 
-                                                   class="inline-flex items-center justify-center w-6 h-6 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors" 
-                                                   title="View Installation Details">
+                                                <a href="../installations/view.php?id=<?php echo $site['installation_id']; ?>"
+                                                    class="inline-flex items-center justify-center w-6 h-6 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                                                    title="View Installation Details">
                                                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                         <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                                        <path fill-rule="evenodd"
+                                                            d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                                                            clip-rule="evenodd"></path>
                                                     </svg>
                                                 </a>
                                             <?php endif; ?>
@@ -494,7 +632,7 @@ ob_start();
                                     </div>
                                 </div>
                             </td>
-                           
+
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -507,14 +645,14 @@ ob_start();
                 <div class="flex-1 flex justify-between sm:hidden">
                     <!-- Mobile Pagination -->
                     <?php if ($data['pagination']['current_page'] > 1): ?>
-                        <a href="?page=<?php echo $data['pagination']['current_page'] - 1; ?><?php echo !empty($data['search']) ? '&search=' . urlencode($data['search']) : ''; ?>" 
-                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <a href="?page=<?php echo $data['pagination']['current_page'] - 1; ?><?php echo !empty($data['search']) ? '&search=' . urlencode($data['search']) : ''; ?>"
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                             Previous
                         </a>
                     <?php endif; ?>
                     <?php if ($data['pagination']['current_page'] < $data['pagination']['total_pages']): ?>
-                        <a href="?page=<?php echo $data['pagination']['current_page'] + 1; ?><?php echo !empty($data['search']) ? '&search=' . urlencode($data['search']) : ''; ?>" 
-                           class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        <a href="?page=<?php echo $data['pagination']['current_page'] + 1; ?><?php echo !empty($data['search']) ? '&search=' . urlencode($data['search']) : ''; ?>"
+                            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                             Next
                         </a>
                     <?php endif; ?>
@@ -523,9 +661,11 @@ ob_start();
                     <div>
                         <p class="text-sm text-gray-700">
                             Showing
-                            <span class="font-medium"><?php echo (($data['pagination']['current_page'] - 1) * $data['pagination']['limit']) + 1; ?></span>
+                            <span
+                                class="font-medium"><?php echo (($data['pagination']['current_page'] - 1) * $data['pagination']['limit']) + 1; ?></span>
                             to
-                            <span class="font-medium"><?php echo min($data['pagination']['current_page'] * $data['pagination']['limit'], $data['pagination']['total_records']); ?></span>
+                            <span
+                                class="font-medium"><?php echo min($data['pagination']['current_page'] * $data['pagination']['limit'], $data['pagination']['total_records']); ?></span>
                             of
                             <span class="font-medium"><?php echo $data['pagination']['total_records']; ?></span>
                             results
@@ -537,44 +677,54 @@ ob_start();
                             $current = $data['pagination']['current_page'];
                             $total = $data['pagination']['total_pages'];
                             $search_param = !empty($data['search']) ? '&search=' . urlencode($data['search']) : '';
-                            
+
                             // First button
                             if ($current > 1): ?>
-                                <a href="?page=1<?php echo $search_param; ?>" 
-                                   class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="?page=1<?php echo $search_param; ?>"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     <span class="sr-only">First</span>
                                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                                        <path fill-rule="evenodd"
+                                            d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z"
+                                            clip-rule="evenodd" />
                                     </svg>
                                 </a>
                             <?php else: ?>
-                                <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
+                                <span
+                                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
                                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
+                                        <path fill-rule="evenodd"
+                                            d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z"
+                                            clip-rule="evenodd" />
                                     </svg>
                                 </span>
                             <?php endif;
-                            
+
                             // Previous button
                             if ($current > 1): ?>
-                                <a href="?page=<?php echo $current - 1; ?><?php echo $search_param; ?>" 
-                                   class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="?page=<?php echo $current - 1; ?><?php echo $search_param; ?>"
+                                    class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     <span class="sr-only">Previous</span>
                                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                        <path fill-rule="evenodd"
+                                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
                                     </svg>
                                 </a>
                             <?php else: ?>
-                                <span class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
+                                <span
+                                    class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
                                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                        <path fill-rule="evenodd"
+                                            d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                            clip-rule="evenodd" />
                                     </svg>
                                 </span>
                             <?php endif;
-                            
+
                             // Page numbers with smart ellipsis
                             $range = 2; // Show 2 pages on each side of current
-                            
+                        
                             // Always show first page
                             if ($current > $range + 2) {
                                 echo '<a href="?page=1' . $search_param . '" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">1</a>';
@@ -582,7 +732,7 @@ ob_start();
                                     echo '<span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>';
                                 }
                             }
-                            
+
                             // Show pages around current
                             for ($i = max(1, $current - $range); $i <= min($total, $current + $range); $i++) {
                                 if ($i == $current) {
@@ -591,7 +741,7 @@ ob_start();
                                     echo '<a href="?page=' . $i . $search_param . '" class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">' . $i . '</a>';
                                 }
                             }
-                            
+
                             // Always show last page
                             if ($current < $total - $range - 1) {
                                 if ($current < $total - $range - 2) {
@@ -599,39 +749,53 @@ ob_start();
                                 }
                                 echo '<a href="?page=' . $total . $search_param . '" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">' . $total . '</a>';
                             }
-                            
+
                             // Next button
                             if ($current < $total): ?>
-                                <a href="?page=<?php echo $current + 1; ?><?php echo $search_param; ?>" 
-                                   class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="?page=<?php echo $current + 1; ?><?php echo $search_param; ?>"
+                                    class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     <span class="sr-only">Next</span>
                                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                        <path fill-rule="evenodd"
+                                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                            clip-rule="evenodd" />
                                     </svg>
                                 </a>
                             <?php else: ?>
-                                <span class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
+                                <span
+                                    class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
                                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                        <path fill-rule="evenodd"
+                                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                            clip-rule="evenodd" />
                                     </svg>
                                 </span>
                             <?php endif;
-                            
+
                             // Last button
                             if ($current < $total): ?>
-                                <a href="?page=<?php echo $total; ?><?php echo $search_param; ?>" 
-                                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <a href="?page=<?php echo $total; ?><?php echo $search_param; ?>"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                                     <span class="sr-only">Last</span>
                                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                                        <path fill-rule="evenodd" d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                        <path fill-rule="evenodd"
+                                            d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                                            clip-rule="evenodd" />
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                                            clip-rule="evenodd" />
                                     </svg>
                                 </a>
                             <?php else: ?>
-                                <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
+                                <span
+                                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
                                     <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-                                        <path fill-rule="evenodd" d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                        <path fill-rule="evenodd"
+                                            d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                                            clip-rule="evenodd" />
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z"
+                                            clip-rule="evenodd" />
                                     </svg>
                                 </span>
                             <?php endif; ?>
@@ -650,7 +814,9 @@ ob_start();
             <h3 class="modal-title">Add New Site</h3>
             <button type="button" class="modal-close" onclick="closeModal('createSiteModal')">
                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clip-rule="evenodd"></path>
                 </svg>
             </button>
         </div>
@@ -671,8 +837,10 @@ ob_start();
                         <div class="form-group md:col-span-2">
                             <label class="form-label">Location & Pincode *</label>
                             <div class="flex gap-2">
-                                <input type="text" id="location" name="location" class="form-input" style="width: 70%;" placeholder="Enter location address" required>
-                                <input type="text" id="pincode" name="pincode" class="form-input" style="width: 30%;" placeholder="Pincode" maxlength="6" pattern="[0-9]{6}">
+                                <input type="text" id="location" name="location" class="form-input" style="width: 70%;"
+                                    placeholder="Enter location address" required>
+                                <input type="text" id="pincode" name="pincode" class="form-input" style="width: 30%;"
+                                    placeholder="Pincode" maxlength="6" pattern="[0-9]{6}">
                             </div>
                         </div>
                     </div>
@@ -684,13 +852,15 @@ ob_start();
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         <div class="form-group">
                             <label for="country_id" class="form-label">Country *</label>
-                            <select id="country_id" name="country_id" class="form-select" required onchange="loadStatesForSite(this.value)">
+                            <select id="country_id" name="country_id" class="form-select" required
+                                onchange="loadStatesForSite(this.value)">
                                 <option value="">Select Country</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="state_id" class="form-label">State *</label>
-                            <select id="state_id" name="state_id" class="form-select" required onchange="loadCitiesForSite(this.value)">
+                            <select id="state_id" name="state_id" class="form-select" required
+                                onchange="loadCitiesForSite(this.value)">
                                 <option value="">Select State</option>
                             </select>
                         </div>
@@ -746,15 +916,18 @@ ob_start();
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="form-group">
                             <label for="contact_person_name" class="form-label">Contact Person Name</label>
-                            <input type="text" name="contact_person_name" id="contact_person_name" class="form-input" placeholder="Enter contact person name">
+                            <input type="text" name="contact_person_name" id="contact_person_name" class="form-input"
+                                placeholder="Enter contact person name">
                         </div>
                         <div class="form-group">
                             <label for="contact_person_number" class="form-label">Contact Person Number</label>
-                            <input type="tel" name="contact_person_number" id="contact_person_number" class="form-input" placeholder="+91-9876543210">
+                            <input type="tel" name="contact_person_number" id="contact_person_number" class="form-input"
+                                placeholder="+91-9876543210">
                         </div>
                         <div class="form-group">
                             <label for="contact_person_email" class="form-label">Contact Person Email</label>
-                            <input type="email" name="contact_person_email" id="contact_person_email" class="form-input" placeholder="contact@example.com">
+                            <input type="email" name="contact_person_email" id="contact_person_email" class="form-input"
+                                placeholder="contact@example.com">
                         </div>
                     </div>
                 </div>
@@ -775,7 +948,9 @@ ob_start();
             <h3 class="modal-title">Edit Site</h3>
             <button type="button" class="modal-close" onclick="closeModal('editSiteModal')">
                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clip-rule="evenodd"></path>
                 </svg>
             </button>
         </div>
@@ -790,13 +965,13 @@ ob_start();
                             <label for="edit_site_id" class="form-label">Site ID *</label>
                             <input type="text" id="edit_site_id" name="site_id" class="form-input" required>
                         </div>
-                        
-                         <div class="form-group">
+
+                        <div class="form-group">
                             <label for="edit_site_ticket_id" class="form-label">Site Ticket ID *</label>
                             <input type="text" id="edit_site_ticket_id" name="site_ticket_id" class="form-input"
                                 readonly>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="edit_store_id" class="form-label">Store ID</label>
                             <input type="text" id="edit_store_id" name="store_id" class="form-input">
@@ -804,8 +979,10 @@ ob_start();
                         <div class="form-group md:col-span-2">
                             <label class="form-label">Location & Pincode *</label>
                             <div class="flex gap-2">
-                                <input type="text" id="edit_location" name="location" class="form-input" style="width: 70%;" placeholder="Enter location address" required>
-                                <input type="text" id="edit_pincode" name="pincode" class="form-input" style="width: 30%;" placeholder="Pincode" maxlength="6" pattern="[0-9]{6}">
+                                <input type="text" id="edit_location" name="location" class="form-input"
+                                    style="width: 70%;" placeholder="Enter location address" required>
+                                <input type="text" id="edit_pincode" name="pincode" class="form-input"
+                                    style="width: 30%;" placeholder="Pincode" maxlength="6" pattern="[0-9]{6}">
                             </div>
                         </div>
                     </div>
@@ -817,13 +994,15 @@ ob_start();
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                         <div class="form-group">
                             <label for="edit_country_id" class="form-label">Country *</label>
-                            <select id="edit_country_id" name="country_id" class="form-select" required onchange="loadStatesForSite(this.value, 'edit_state_id')">
+                            <select id="edit_country_id" name="country_id" class="form-select" required
+                                onchange="loadStatesForSite(this.value, 'edit_state_id')">
                                 <option value="">Select Country</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="edit_state_id" class="form-label">State *</label>
-                            <select id="edit_state_id" name="state_id" class="form-select" required onchange="loadCitiesForSite(this.value, 'edit_city_id')">
+                            <select id="edit_state_id" name="state_id" class="form-select" required
+                                onchange="loadCitiesForSite(this.value, 'edit_city_id')">
                                 <option value="">Select State</option>
                             </select>
                         </div>
@@ -835,7 +1014,8 @@ ob_start();
                         </div>
                         <div class="form-group">
                             <label for="edit_zone" class="form-label">Zone</label>
-                            <input type="text" id="edit_zone" name="zone" class="form-input" placeholder="e.g. West Zone">
+                            <input type="text" id="edit_zone" name="zone" class="form-input"
+                                placeholder="e.g. West Zone">
                         </div>
                         <div class="form-group">
                             <label for="edit_branch" class="form-label">Branch</label>
@@ -886,15 +1066,18 @@ ob_start();
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="form-group">
                             <label for="edit_contact_person_name" class="form-label">Contact Person Name</label>
-                            <input type="text" name="contact_person_name" id="edit_contact_person_name" class="form-input" placeholder="Enter contact person name">
+                            <input type="text" name="contact_person_name" id="edit_contact_person_name"
+                                class="form-input" placeholder="Enter contact person name">
                         </div>
                         <div class="form-group">
                             <label for="edit_contact_person_number" class="form-label">Contact Person Number</label>
-                            <input type="tel" name="contact_person_number" id="edit_contact_person_number" class="form-input" placeholder="+91-9876543210">
+                            <input type="tel" name="contact_person_number" id="edit_contact_person_number"
+                                class="form-input" placeholder="+91-9876543210">
                         </div>
                         <div class="form-group">
                             <label for="edit_contact_person_email" class="form-label">Contact Person Email</label>
-                            <input type="email" name="contact_person_email" id="edit_contact_person_email" class="form-input" placeholder="contact@example.com">
+                            <input type="email" name="contact_person_email" id="edit_contact_person_email"
+                                class="form-input" placeholder="contact@example.com">
                         </div>
                     </div>
                 </div>
@@ -927,12 +1110,15 @@ ob_start();
                                     <label for="edit_survey_status" class="text-sm">Survey Completed</label>
                                 </div>
                                 <div class="flex items-center">
-                                    <input type="checkbox" id="edit_installation_status" name="installation_status" class="mr-2">
+                                    <input type="checkbox" id="edit_installation_status" name="installation_status"
+                                        class="mr-2">
                                     <label for="edit_installation_status" class="text-sm">Installation Done</label>
                                 </div>
                                 <div class="flex items-center">
-                                    <input type="checkbox" id="edit_is_material_request_generated" name="is_material_request_generated" class="mr-2">
-                                    <label for="edit_is_material_request_generated" class="text-sm">Material Request Generated</label>
+                                    <input type="checkbox" id="edit_is_material_request_generated"
+                                        name="is_material_request_generated" class="mr-2">
+                                    <label for="edit_is_material_request_generated" class="text-sm">Material Request
+                                        Generated</label>
                                 </div>
                             </div>
                         </div>
@@ -945,11 +1131,13 @@ ob_start();
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="form-group">
                             <label for="edit_survey_submission_date" class="form-label">Survey Submission Date</label>
-                            <input type="datetime-local" id="edit_survey_submission_date" name="survey_submission_date" class="form-input">
+                            <input type="datetime-local" id="edit_survey_submission_date" name="survey_submission_date"
+                                class="form-input">
                         </div>
                         <div class="form-group">
                             <label for="edit_installation_date" class="form-label">Installation Date</label>
-                            <input type="datetime-local" id="edit_installation_date" name="installation_date" class="form-input">
+                            <input type="datetime-local" id="edit_installation_date" name="installation_date"
+                                class="form-input">
                         </div>
                         <div class="form-group md:col-span-2">
                             <label for="edit_remarks" class="form-label">Remarks</label>
@@ -974,7 +1162,9 @@ ob_start();
             <h3 class="modal-title">Site Details</h3>
             <button type="button" class="modal-close" onclick="closeModal('viewSiteModal')">
                 <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clip-rule="evenodd"></path>
                 </svg>
             </button>
         </div>
@@ -991,7 +1181,7 @@ ob_start();
                         <label class="block text-sm font-medium text-gray-700 mb-1">Site Ticket ID</label>
                         <p id="view_site_ticket_id" class="text-sm text-gray-900 bg-gray-50 p-2 rounded"></p>
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Store ID</label>
                         <p id="view_store_id" class="text-sm text-gray-900 bg-gray-50 p-2 rounded"></p>
@@ -1098,7 +1288,8 @@ ob_start();
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Progress Flags</label>
-                        <div id="view_progress_flags" class="text-sm text-gray-900 bg-gray-50 p-2 rounded space-y-1"></div>
+                        <div id="view_progress_flags" class="text-sm text-gray-900 bg-gray-50 p-2 rounded space-y-1">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1147,16 +1338,16 @@ ob_start();
 
 
 <script>
-    
+
     const BASE_URL = '<?php echo BASE_URL; ?>';
-    
+
     console.log('Sites page script loaded');
 
     // Test if basic JavaScript is working
     console.log('JavaScript execution test: OK');
 
     // Load dropdown data when page loads
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         loadCountriesForSite();
         loadCustomersForSite();
         loadBanksForSite();
@@ -1292,11 +1483,11 @@ ob_start();
     }
 
     // Wait for DOM to be ready
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Search functionality
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
-            searchInput.addEventListener('keyup', debounce(function() {
+            searchInput.addEventListener('keyup', debounce(function () {
                 applyFilters();
             }, 500));
         }
@@ -1362,36 +1553,36 @@ ob_start();
     }
 
     // Create site form submission
-    document.getElementById('createSiteForm').addEventListener('submit', function(e) {
+    document.getElementById('createSiteForm').addEventListener('submit', function (e) {
         e.preventDefault();
-        
+
         // Validate contact person fields
         const contactNumber = document.getElementById('contact_person_number').value.trim();
         const contactEmail = document.getElementById('contact_person_email').value.trim();
-        
+
         let validationErrors = [];
-        
+
         // Validate phone number if provided
         if (contactNumber) {
             if (!validatePhoneNumberClient(contactNumber)) {
                 validationErrors.push('Contact Person Number: Invalid phone number format. Must be 10 digits starting with 6-9');
             }
         }
-        
+
         // Validate email if provided
         if (contactEmail) {
             if (!validateEmailClient(contactEmail)) {
                 validationErrors.push('Contact Person Email: Invalid email address format');
             }
         }
-        
+
         // Show validation errors if any
         if (validationErrors.length > 0) {
             showAlert(validationErrors.join('\n'), 'error');
             return;
         }
-        
-        submitForm('createSiteForm', function(data) {
+
+        submitForm('createSiteForm', function (data) {
             closeModal('createSiteModal');
             showAlert('Site created successfully!', 'success');
             setTimeout(() => location.reload(), 1500);
@@ -1402,7 +1593,8 @@ ob_start();
     function viewSite(id) {
         fetch(`view.php?id=${id}`)
             .then(response => response.json())
-            .then(data => { debugger;
+            .then(data => {
+                debugger;
                 if (data.success) {
                     const site = data.site;
                     populateViewModal(site);
@@ -1419,7 +1611,7 @@ ob_start();
 
     function populateViewModal(site) {
         document.getElementById('view_site_id').textContent = site.site_id || 'N/A';
-         document.getElementById('view_site_ticket_id').textContent = site.site_ticket_id || 'N/A';
+        document.getElementById('view_site_ticket_id').textContent = site.site_ticket_id || 'N/A';
         document.getElementById('view_store_id').textContent = site.store_id || 'N/A';
         document.getElementById('view_location').textContent = site.location || 'N/A';
         document.getElementById('view_city').textContent = site.city_name || site.city || 'N/A';
@@ -1429,7 +1621,7 @@ ob_start();
         document.getElementById('view_po_number').textContent = site.po_number || 'N/A';
         document.getElementById('view_po_date').textContent = site.po_date || 'N/A';
         document.getElementById('view_customer').textContent = site.customer_name || site.customer || 'N/A';
-       // document.getElementById('view_bank').textContent = site.bank_name || site.bank || 'N/A';
+        // document.getElementById('view_bank').textContent = site.bank_name || site.bank || 'N/A';
         document.getElementById('view_vendor').textContent = site.vendor || 'N/A';
         document.getElementById('view_delegated_vendor').textContent = site.delegated_vendor || 'N/A';
         document.getElementById('view_activity_status').textContent = site.activity_status || 'N/A';
@@ -1551,23 +1743,23 @@ ob_start();
         showConfirmDialog(
             'Request Site Deletion',
             'This will create a deletion request for superadmin approval. The site will remain active until the request is approved.',
-            function() {
+            function () {
                 fetch(`delete.php?id=${id}`, {
                     method: 'POST'
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showAlert(data.message, 'success');
-                        setTimeout(() => location.reload(), 1500);
-                    } else {
-                        showAlert(data.message, 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showAlert('Failed to submit deletion request', 'error');
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showAlert(data.message, 'success');
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            showAlert(data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showAlert('Failed to submit deletion request', 'error');
+                    });
             }
         );
     }
@@ -1577,7 +1769,7 @@ ob_start();
         const overlay = document.createElement('div');
         overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-[9998] flex items-center justify-center';
         overlay.style.animation = 'fadeIn 0.2s ease-out';
-        
+
         // Create dialog
         const dialog = document.createElement('div');
         dialog.className = 'bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all';
@@ -1605,10 +1797,10 @@ ob_start();
                 </div>
             </div>
         `;
-        
+
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
-        
+
         // Add animations
         const style = document.createElement('style');
         style.textContent = `
@@ -1622,11 +1814,11 @@ ob_start();
             }
         `;
         document.head.appendChild(style);
-        
+
         // Handle buttons
         const confirmBtn = dialog.querySelector('#confirmBtn');
         const cancelBtn = dialog.querySelector('#cancelBtn');
-        
+
         const closeDialog = () => {
             overlay.style.animation = 'fadeIn 0.2s ease-out reverse';
             setTimeout(() => {
@@ -1634,17 +1826,17 @@ ob_start();
                 document.head.removeChild(style);
             }, 200);
         };
-        
+
         confirmBtn.addEventListener('click', () => {
             closeDialog();
             if (onConfirm) onConfirm();
         });
-        
+
         cancelBtn.addEventListener('click', () => {
             closeDialog();
             if (onCancel) onCancel();
         });
-        
+
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
                 closeDialog();
@@ -1678,7 +1870,7 @@ ob_start();
     }
 
     // File upload handling - wrapped in DOMContentLoaded to ensure elements exist
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
 
         const fileInput = document.getElementById('excel_file');
         if (!fileInput) {
@@ -1686,7 +1878,7 @@ ob_start();
         } else {
 
             // Simple file validation
-            fileInput.addEventListener('change', function(e) {
+            fileInput.addEventListener('change', function (e) {
                 const file = e.target.files[0];
                 if (file) {
                     const allowedTypes = ['xlsx', 'xls', 'csv'];
@@ -1717,7 +1909,7 @@ ob_start();
             console.error('Bulk upload form not found');
         } else {
 
-            bulkUploadForm.addEventListener('submit', function(e) {
+            bulkUploadForm.addEventListener('submit', function (e) {
                 e.preventDefault();
 
                 const formData = new FormData(this);
@@ -1750,9 +1942,9 @@ ob_start();
                 }, 200);
 
                 fetch('bulk_upload.php', {
-                        method: 'POST',
-                        body: formData
-                    })
+                    method: 'POST',
+                    body: formData
+                })
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
@@ -1817,39 +2009,39 @@ ob_start();
 
 
     // Edit site form submission - moved outside DOMContentLoaded to ensure it's available
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const editSiteForm = document.getElementById('editSiteForm');
         if (editSiteForm) {
-            editSiteForm.addEventListener('submit', function(e) {
+            editSiteForm.addEventListener('submit', function (e) {
                 e.preventDefault();
-                
+
                 // Validate contact person fields
                 const contactNumber = document.getElementById('edit_contact_person_number').value.trim();
                 const contactEmail = document.getElementById('edit_contact_person_email').value.trim();
-                
+
                 let validationErrors = [];
-                
+
                 // Validate phone number if provided
                 if (contactNumber) {
                     if (!validatePhoneNumberClient(contactNumber)) {
                         validationErrors.push('Contact Person Number: Invalid phone number format. Must be 10 digits starting with 6-9');
                     }
                 }
-                
+
                 // Validate email if provided
                 if (contactEmail) {
                     if (!validateEmailClient(contactEmail)) {
                         validationErrors.push('Contact Person Email: Invalid email address format');
                     }
                 }
-                
+
                 // Show validation errors if any
                 if (validationErrors.length > 0) {
                     showAlert(validationErrors.join('\n'), 'error');
                     return;
                 }
-                
-                submitForm('editSiteForm', function(data) {
+
+                submitForm('editSiteForm', function (data) {
                     closeModal('editSiteModal');
                     showAlert('Site updated successfully!', 'success');
                     setTimeout(() => location.reload(), 1500);
@@ -1871,12 +2063,13 @@ ob_start();
     function downloadTemplate() {
         window.open('download_template.php', '_blank');
     }
-    
+
     function conductSurvey(delegationId) {
         window.location.href = `${BASE_URL}/admin/site-survey2.php?delegation_id=${delegationId}`;
     }
 
-    function conductMaterials(siteId,surveyId) { debugger;
+    function conductMaterials(siteId, surveyId) {
+        debugger;
         var url = `${BASE_URL}/admin/material-request.php?site_id=${siteId}&survey_id=${surveyId}`;
         //alert(url);
         window.location.href = `${BASE_URL}/admin/material-request.php?site_id=${siteId}&survey_id=${surveyId}`;
@@ -1884,7 +2077,7 @@ ob_start();
 
     // Override modal close to clear forms
     const originalCloseModal = window.closeModal;
-    window.closeModal = function(modalId) {
+    window.closeModal = function (modalId) {
         if (modalId === 'createSiteModal') {
             clearCreateForm();
         } else if (modalId === 'bulkUploadModal') {
@@ -1912,7 +2105,7 @@ ob_start();
     }
 
     // Close dropdown when clicking outside
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', function (event) {
         const menu = document.getElementById('bulkUploadMenu');
         const button = event.target.closest('.relative');
 
@@ -1926,16 +2119,16 @@ ob_start();
         if (!phone || phone.trim() === '') {
             return true; // Optional field
         }
-        
+
         // Remove all spaces, hyphens, and parentheses
         const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
-        
+
         // Remove +91 country code if present
         const withoutCountryCode = cleanPhone.replace(/^\+91/, '');
-        
+
         // Remove leading 0 if present
         const finalPhone = withoutCountryCode.replace(/^0/, '');
-        
+
         // Check if it's exactly 10 digits starting with 6-9
         return /^[6-9][0-9]{9}$/.test(finalPhone);
     }
@@ -1944,20 +2137,20 @@ ob_start();
         if (!email || email.trim() === '') {
             return true; // Optional field
         }
-        
+
         // Basic email validation regex
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email) && email.length <= 255;
     }
 
     // Add real-time validation feedback
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Phone number validation feedback
         const phoneInputs = ['contact_person_number', 'edit_contact_person_number'];
         phoneInputs.forEach(inputId => {
             const input = document.getElementById(inputId);
             if (input) {
-                input.addEventListener('blur', function() {
+                input.addEventListener('blur', function () {
                     const value = this.value.trim();
                     if (value && !validatePhoneNumberClient(value)) {
                         this.classList.add('border-red-500');
@@ -1977,7 +2170,7 @@ ob_start();
         emailInputs.forEach(inputId => {
             const input = document.getElementById(inputId);
             if (input) {
-                input.addEventListener('blur', function() {
+                input.addEventListener('blur', function () {
                     const value = this.value.trim();
                     if (value && !validateEmailClient(value)) {
                         this.classList.add('border-red-500');
@@ -1996,12 +2189,12 @@ ob_start();
     function showFieldError(input, message) {
         // Remove existing error message
         hideFieldError(input);
-        
+
         // Create error message element
         const errorDiv = document.createElement('div');
         errorDiv.className = 'text-red-500 text-xs mt-1 field-error';
         errorDiv.textContent = message;
-        
+
         // Insert after the input
         input.parentNode.insertBefore(errorDiv, input.nextSibling);
     }

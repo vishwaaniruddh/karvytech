@@ -47,8 +47,14 @@ try {
                 sd.status as delegation_status,
                 v.name as delegated_vendor_name,
                 sd.delegation_date,
-                ss.survey_status as actual_survey_status,
-                ss.submitted_date as survey_submitted_date,
+                COALESCE(ss_dynamic.survey_status, ss_legacy.survey_status) as actual_survey_status,
+                COALESCE(ss_dynamic.submitted_date, ss_legacy.submitted_date) as survey_submitted_date,
+                COALESCE(
+                    NULLIF(TRIM(CONCAT_WS(' ', du.first_name, du.last_name)), ''), 
+                    du.username, 
+                    NULLIF(TRIM(CONCAT_WS(' ', lu.first_name, lu.last_name)), ''), 
+                    lu.username
+                ) as surveyor_name,
                 sv.name as survey_vendor_name,
                 s.installation_status,
                 s.installation_date,
@@ -65,15 +71,26 @@ try {
             LEFT JOIN site_delegations sd ON s.id = sd.site_id AND sd.status = 'active'
             LEFT JOIN vendors v ON sd.vendor_id = v.id
             LEFT JOIN (
-                SELECT ss1.site_id, ss1.id, ss1.survey_status, ss1.submitted_date, ss1.vendor_id
+                SELECT ss1.site_id, ss1.id, ss1.survey_status, ss1.submitted_date, ss1.vendor_id, ss1.created_by
                 FROM site_surveys ss1
                 INNER JOIN (
                     SELECT site_id, MAX(id) as max_id
                     FROM site_surveys
                     GROUP BY site_id
                 ) ss2 ON ss1.site_id = ss2.site_id AND ss1.id = ss2.max_id
-            ) ss ON s.id = ss.site_id
-            LEFT JOIN vendors sv ON ss.vendor_id = sv.id
+            ) ss_legacy ON s.id = ss_legacy.site_id
+            LEFT JOIN (
+                SELECT dr1.site_id, dr1.id, dr1.survey_status, dr1.submitted_date, dr1.surveyor_id
+                FROM dynamic_survey_responses dr1
+                INNER JOIN (
+                    SELECT site_id, MAX(id) as max_id
+                    FROM dynamic_survey_responses
+                    GROUP BY site_id
+                ) dr2 ON dr1.site_id = dr2.site_id AND dr1.id = dr2.max_id
+            ) ss_dynamic ON s.id = ss_dynamic.site_id
+            LEFT JOIN users lu ON ss_legacy.created_by = lu.id
+            LEFT JOIN users du ON ss_dynamic.surveyor_id = du.id
+            LEFT JOIN vendors sv ON ss_legacy.vendor_id = sv.id
             WHERE 1=1";
     
     $params = [];
@@ -112,16 +129,16 @@ try {
     if ($survey_status) {
         switch ($survey_status) {
             case 'pending':
-                $sql .= " AND (ss.survey_status IS NULL OR ss.survey_status = '')";
+                $sql .= " AND (ss_legacy.survey_status IS NULL OR ss_legacy.survey_status = '') AND (ss_dynamic.survey_status IS NULL OR ss_dynamic.survey_status = '')";
                 break;
             case 'submitted':
-                $sql .= " AND ss.survey_status = 'completed'";
+                $sql .= " AND (ss_legacy.survey_status = 'completed' OR ss_dynamic.survey_status = 'submitted')";
                 break;
             case 'approved':
-                $sql .= " AND ss.survey_status = 'approved'";
+                $sql .= " AND (ss_legacy.survey_status = 'approved' OR ss_dynamic.survey_status = 'approved')";
                 break;
             case 'rejected':
-                $sql .= " AND ss.survey_status = 'rejected'";
+                $sql .= " AND (ss_legacy.survey_status = 'rejected' OR ss_dynamic.survey_status = 'rejected')";
                 break;
         }
     }
@@ -143,7 +160,7 @@ try {
         'H' => 12, 'I' => 12, 'J' => 12, 'K' => 18, 'L' => 15, 'M' => 15, 'N' => 20,
         'O' => 15, 'P' => 12, 'Q' => 12, 'R' => 15, 'S' => 25, 'T' => 12, 'U' => 15,
         'V' => 12, 'W' => 12, 'X' => 15, 'Y' => 15, 'Z' => 12, 'AA' => 15, 'AB' => 10,
-        'AC' => 15, 'AD' => 15, 'AE' => 12, 'AF' => 12
+        'AC' => 15, 'AD' => 15, 'AE' => 12, 'AF' => 12, 'AG' => 20
     ];
     
     foreach ($columnWidths as $col => $width) {
@@ -183,7 +200,7 @@ try {
         'PO Number', 'PO Date', 'Activity Status',
         'Remarks',
         'Delegation Status', 'Delegated Vendor', 'Delegation Date',
-        'Survey Status', 'Survey Date', 'Survey Vendor',
+        'Survey Status', 'Survey Date', 'Survey Vendor', 'Surveyor Name',
         'Installation Status', 'Installation Date',
         'Material Request',
         'Created At', 'Updated At', 'Created By', 'Updated By'
@@ -231,13 +248,14 @@ try {
         $sheet->setCellValue('W' . $row, $item['actual_survey_status'] ?? 'Pending');
         $sheet->setCellValue('X' . $row, $item['survey_submitted_date'] ?? '');
         $sheet->setCellValue('Y' . $row, $item['survey_vendor_name'] ?? '');
-        $sheet->setCellValue('Z' . $row, $item['installation_status'] ? 'Done' : 'Pending');
-        $sheet->setCellValue('AA' . $row, $item['installation_date'] ?? '');
-        $sheet->setCellValue('AB' . $row, $item['is_material_request_generated'] ? 'Yes' : 'No');
-        $sheet->setCellValue('AC' . $row, $item['created_at'] ?? '');
-        $sheet->setCellValue('AD' . $row, $item['updated_at'] ?? '');
-        $sheet->setCellValue('AE' . $row, $item['created_by'] ?? '');
-        $sheet->setCellValue('AF' . $row, $item['updated_by'] ?? '');
+        $sheet->setCellValue('Z' . $row, $item['surveyor_name'] ?? '');
+        $sheet->setCellValue('AA' . $row, $item['installation_status'] ? 'Done' : 'Pending');
+        $sheet->setCellValue('AB' . $row, $item['installation_date'] ?? '');
+        $sheet->setCellValue('AC' . $row, $item['is_material_request_generated'] ? 'Yes' : 'No');
+        $sheet->setCellValue('AD' . $row, $item['created_at'] ?? '');
+        $sheet->setCellValue('AE' . $row, $item['updated_at'] ?? '');
+        $sheet->setCellValue('AF' . $row, $item['created_by'] ?? '');
+        $sheet->setCellValue('AG' . $row, $item['updated_by'] ?? '');
         
         $row++;
     }

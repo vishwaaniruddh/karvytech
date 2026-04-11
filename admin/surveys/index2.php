@@ -276,15 +276,19 @@ ob_start();
                                 <div class="flex items-center justify-center space-x-2">
                                     <a href="../../shared/view-survey.php?id=<?php echo $survey['id']; ?>" class="text-blue-600 hover:text-blue-900 text-xs">View</a>
                                     
-                                    <?php if ($survey['survey_status'] === 'pending'): ?>
+                                    <?php if ($survey['survey_status'] === 'pending' && (Auth::hasPermission('surveys', 'approve') || Auth::hasPermission('surveys', 'reject'))): ?>
                                         <select class="form-control form-control-sm action-dropdown" data-id="<?php echo $survey['id']; ?>" style="width:auto; display:inline-block; font-size: 11px;">
                                             <option value="">Survey Action</option>
-                                            <option value="approve">Approve</option>
-                                            <option value="reject">Reject</option>
+                                            <?php if (Auth::hasPermission('surveys', 'approve')): ?>
+                                                <option value="approve">Approve</option>
+                                            <?php endif; ?>
+                                            <?php if (Auth::hasPermission('surveys', 'reject')): ?>
+                                                <option value="reject">Reject</option>
+                                            <?php endif; ?>
                                         </select>
                                     <?php endif; ?>
                                     
-                                    <?php if ($survey['survey_status'] === 'approved' && ($survey['installation_status'] ?? 'not_delegated') === 'not_delegated'): ?>
+                                    <?php if ($survey['survey_status'] === 'approved' && ($survey['installation_status'] ?? 'not_delegated') === 'not_delegated' && Auth::hasPermission('installations', 'delegate')): ?>
                                         <button onclick="delegateForInstallation(<?php echo $survey['id']; ?>)" class="text-green-600 hover:text-green-900 text-xs">
                                             Delegate Installation
                                         </button>

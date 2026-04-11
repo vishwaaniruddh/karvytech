@@ -8,7 +8,11 @@ if (!Auth::isLoggedIn()) {
     exit;
 }
 
+// Check if user has permission to view surveys
+Auth::requirePermission('surveys', 'view');
+
 $responseId = $_GET['id'] ?? null;
+$revisionId = $_GET['rev_id'] ?? null;
 if (!$responseId) {
     header('Location: ../admin/surveys/index2.php');
     exit;
@@ -25,7 +29,7 @@ $stmt = $db->prepare("
            ds.title as survey_title, 
            ds.description as survey_description,
            s.site_id, s.store_id, s.site_ticket_id,
-           CONCAT_WS(' ', u.first_name, u.last_name) as surveyor_name,
+           COALESCE(NULLIF(TRIM(CONCAT_WS(' ', u.first_name, u.last_name)), ''), u.username) as surveyor_name,
            c.name as customer_name,
            approved_u.username as approved_by_name
     FROM dynamic_survey_responses sr
@@ -42,6 +46,32 @@ $response = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$response) {
     header('Location: ../admin/surveys/index2.php');
     exit;
+}
+
+// Fetch Revision History
+$stmt = $db->prepare("
+    SELECT rev.*, u.username as updated_by_name 
+    FROM dynamic_survey_revisions rev
+    LEFT JOIN users u ON rev.updated_by = u.id
+    WHERE rev.response_id = ?
+    ORDER BY rev.revision_number DESC
+");
+$stmt->execute([$responseId]);
+$revisions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// If viewing a specific revision, override response data
+$currentRevision = null;
+if ($revisionId) {
+    foreach ($revisions as $rev) {
+        if ($rev['id'] == $revisionId) {
+            $currentRevision = $rev;
+            $response['form_data'] = $rev['form_data'];
+            $response['site_master_data'] = $rev['site_master_data'];
+            $response['submitted_date'] = $rev['updated_at'];
+            $response['surveyor_name'] = $rev['updated_by_name'];
+            break;
+        }
+    }
 }
 
 // Decode JSON data
@@ -96,6 +126,32 @@ if (Auth::isVendor()) {
 ob_start();
 ?>
 
+<?php if ($revisionId): ?>
+    <!-- Historical View Banner -->
+    <div class="bg-amber-50 border-l-4 border-amber-400 p-4 mb-8 rounded-r-lg shadow-sm">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-amber-700">
+                        <span class="font-bold">Historical Mode:</span> You are viewing 
+                        <span class="font-bold underline">Revision #<?php echo $currentRevision['revision_number']; ?></span> 
+                        submitted on <?php echo date('M d, Y h:i A', strtotime($currentRevision['updated_at'])); ?>.
+                    </p>
+                </div>
+            </div>
+            <a href="view-survey2.php?id=<?php echo $responseId; ?>" 
+               class="ml-4 px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded hover:bg-amber-200 transition-colors">
+               Back to Latest
+            </a>
+        </div>
+    </div>
+<?php endif; ?>
+
 <!-- Header Section -->
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
@@ -104,8 +160,9 @@ ob_start();
             <p class="mt-2 text-lg text-gray-600">Site: <span
                     class="font-semibold text-blue-600"><?php echo htmlspecialchars($response['site_id'] ?? 'Unknown'); ?></span>
             </p>
-            <p class="text-sm text-gray-500 mt-1">Submitted on
-                <?php echo date('M d, Y H:i', strtotime($response['submitted_date'])); ?>
+            <p class="text-sm text-gray-500 mt-1">Submitted by 
+                <span class="font-medium text-gray-900"><?php echo htmlspecialchars($response['surveyor_name'] ?? 'Unknown'); ?></span>
+                on <?php echo date('M d, Y h:i A', strtotime($response['submitted_date'])); ?>
             </p>
         </div>
         <div class="mt-6 lg:mt-0 lg:ml-6">
@@ -154,7 +211,7 @@ ob_start();
                     <?php endif; ?>
                 <?php endif; ?>
 
-                <?php if ($response['survey_status'] !== 'approved'): ?>
+                <?php if ($response['survey_status'] !== 'approved' && Auth::hasPermission('surveys', 'edit')): ?>
                     <a href="edit-survey2.php?id=<?php echo $responseId; ?>"
                         class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
                         <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -485,6 +542,71 @@ ob_start();
     </div>
 <?php endif; ?>
 
+<?php if (!empty($revisions)): ?>
+    <!-- Revision History Section -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-8 mb-8">
+        <div class="flex items-center justify-between mb-6 border-b pb-4">
+            <div>
+                <h3 class="text-xl font-bold text-gray-900">Revision History</h3>
+                <p class="text-sm text-gray-500 mt-1">Audit log of all changes made to this survey.</p>
+            </div>
+            <div class="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                <?php echo count($revisions); ?> Revisions
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rev #</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Updated By</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date & Time</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Summary of Changes</th>
+                        <th class="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <?php foreach ($revisions as $rev): ?>
+                        <tr class="<?php echo ($revisionId == $rev['id']) ? 'bg-blue-50/50' : ''; ?> hover:bg-gray-50 transition-colors">
+                            <td class="px-4 py-3 text-sm font-bold text-gray-900">
+                                #<?php echo $rev['revision_number']; ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-700">
+                                <div class="flex items-center">
+                                    <div class="h-8 w-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center mr-2 text-xs font-bold">
+                                        <?php echo strtoupper(substr($rev['updated_by_name'] ?? 'U', 0, 1)); ?>
+                                    </div>
+                                    <?php echo htmlspecialchars($rev['updated_by_name'] ?? 'Unknown'); ?>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600">
+                                <?php echo date('M d, Y h:i A', strtotime($rev['updated_at'])); ?>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600 italic">
+                                <?php echo htmlspecialchars($rev['change_summary'] ?? 'No summary provided'); ?>
+                            </td>
+                            <td class="px-4 py-3 text-right">
+                                <?php if ($revisionId == $rev['id']): ?>
+                                    <span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">Currently Viewing</span>
+                                <?php else: ?>
+                                    <a href="view-survey2.php?id=<?php echo $responseId; ?>&rev_id=<?php echo $rev['id']; ?>" 
+                                       class="inline-flex items-center text-indigo-600 hover:text-indigo-900 font-medium text-sm transition-colors group">
+                                        View Version
+                                        <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </a>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<?php endif; ?>
+
 <?php if (Auth::hasPermission('surveys', 'approve') || Auth::hasPermission('surveys', 'reject')): ?>
     <!-- Admin Survey Action Modal -->
     <div id="surveyActionModal"
@@ -581,9 +703,27 @@ ob_start();
             document.getElementById('surveyActionForm').reset();
         }
 
-        document.getElementById('surveyActionForm').addEventListener('submit', function (e) {
+        document.getElementById('surveyActionForm').addEventListener('submit', async function (e) {
             e.preventDefault();
+            const action = document.getElementById('actionType').value;
+            const actionLabel = action === 'approve' ? 'Approve' : 'Reject';
+            
+            const confirmed = await showConfirm(
+                `${actionLabel} Survey`,
+                `Are you sure you want to ${action} this survey response? This action cannot be undone.`,
+                { 
+                    confirmText: `Yes, ${actionLabel}`,
+                    confirmType: action === 'approve' ? 'success' : 'danger'
+                }
+            );
+
+            if (!confirmed) return;
+
             const formData = new FormData(this);
+            const submitBtn = document.getElementById('actionSubmitBtn');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
 
             fetch('../admin/surveys/process-survey-action-dynamic.php', {
                 method: 'POST',
@@ -592,15 +732,19 @@ ob_start();
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert(data.message);
-                        location.reload();
+                        showToast(data.message, 'success');
+                        setTimeout(() => location.reload(), 1500);
                     } else {
-                        alert('Error: ' + data.message);
+                        showToast(data.message, 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('An error occurred while processing the request.');
+                    showToast('An error occurred while processing the request.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
                 });
         });
     </script>

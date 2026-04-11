@@ -84,15 +84,14 @@ try {
                 $stmt = $db->prepare("DELETE FROM user_permissions WHERE user_id = ?");
                 $stmt->execute([$userId]);
                 
-                // Add user-specific permissions (only those different from role)
-                $stmt = $db->prepare("
-                    INSERT INTO user_permissions (user_id, permission_id, granted_by, notes, status)
-                    VALUES (?, ?, ?, ?, 'active')
-                ");
-                
                 foreach ($permissionIds as $permId) {
                     // Only add if not in role's default permissions
                     if (!isset($rolePermSet[$permId])) {
+                        $stmt = $db->prepare("
+                            INSERT INTO user_permissions (user_id, permission_id, granted_by, notes, status)
+                            VALUES (?, ?, ?, ?, 'active')
+                            ON DUPLICATE KEY UPDATE status = 'active', granted_by = VALUES(granted_by), notes = VALUES(notes)
+                        ");
                         $stmt->execute([
                             $userId,
                             $permId,
@@ -102,13 +101,13 @@ try {
                     }
                 }
                 
-                // Also track removed permissions (permissions in role but not selected)
                 foreach ($rolePermissions as $rolePermId) {
                     if (!in_array($rolePermId, $permissionIds)) {
                         // Add as inactive to track removal
                         $stmt = $db->prepare("
                             INSERT INTO user_permissions (user_id, permission_id, granted_by, notes, status)
                             VALUES (?, ?, ?, ?, 'inactive')
+                            ON DUPLICATE KEY UPDATE status = 'inactive', granted_by = VALUES(granted_by), notes = VALUES(notes)
                         ");
                         $stmt->execute([
                             $userId,
@@ -120,6 +119,11 @@ try {
                 }
                 
                 $db->commit();
+                
+                // If updating current user's permissions, refresh the session
+                if ($userId == $currentUser['id']) {
+                    $_SESSION['permissions'] = $userModel->getUserPermissions($userId);
+                }
                 
                 echo json_encode([
                     'success' => true,

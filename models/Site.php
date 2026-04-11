@@ -110,6 +110,12 @@ class Site extends BaseModel {
                            WHEN ss_dynamic.id IS NOT NULL THEN 'dynamic'
                            ELSE 'legacy'
                        END as survey_type,
+                       COALESCE(
+                           NULLIF(TRIM(CONCAT_WS(' ', du.first_name, du.last_name)), ''), 
+                           du.username, 
+                           NULLIF(TRIM(CONCAT_WS(' ', lu.first_name, lu.last_name)), ''), 
+                           lu.username
+                       ) as surveyor_name,
                        id.id as installation_id, id.status as installation_delegation_status,
                        CASE 
                            WHEN ss_dynamic.survey_status IN ('completed', 'approved', 'submitted') THEN 1
@@ -125,7 +131,7 @@ class Site extends BaseModel {
                 LEFT JOIN vendors v ON sd.vendor_id = v.id
                 LEFT JOIN banks ON s.bank_id=banks.id
                 LEFT JOIN (
-                    SELECT ss1.site_id, ss1.id, ss1.survey_status, ss1.submitted_date, ss1.vendor_id
+                    SELECT ss1.site_id, ss1.id, ss1.survey_status, ss1.submitted_date, ss1.vendor_id, ss1.created_by
                     FROM site_surveys ss1
                     INNER JOIN (
                         SELECT site_id, MAX(id) as max_id
@@ -134,7 +140,7 @@ class Site extends BaseModel {
                     ) ss2 ON ss1.site_id = ss2.site_id AND ss1.id = ss2.max_id
                 ) ss_legacy ON s.id = ss_legacy.site_id
                 LEFT JOIN (
-                    SELECT dr1.site_id, dr1.id, dr1.survey_status, dr1.submitted_date
+                    SELECT dr1.site_id, dr1.id, dr1.survey_status, dr1.submitted_date, dr1.surveyor_id
                     FROM dynamic_survey_responses dr1
                     INNER JOIN (
                         SELECT site_id, MAX(id) as max_id
@@ -142,6 +148,8 @@ class Site extends BaseModel {
                         GROUP BY site_id
                     ) dr2 ON dr1.site_id = dr2.site_id AND dr1.id = dr2.max_id
                 ) ss_dynamic ON s.id = ss_dynamic.site_id
+                LEFT JOIN users lu ON ss_legacy.created_by = lu.id
+                LEFT JOIN users du ON ss_dynamic.surveyor_id = du.id
                 LEFT JOIN vendors sv ON ss_legacy.vendor_id = sv.id
                 LEFT JOIN installation_delegations id ON s.id = id.site_id
                 $whereClause 
