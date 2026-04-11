@@ -1,0 +1,42 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+auth/logs/
+logs/
+*.log
+
+# Uploads and temporary files
+uploads/
+assets/uploads/
+assets/installation_progress/
+temp/
+tmp/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Composer
+vendor/composer/
+
+# Node modules (if any)
+node_modules/
+
+# Cache files
+cache/
+*.cache

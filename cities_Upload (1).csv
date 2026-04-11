@@ -1,0 +1,530 @@
+City Name,Country,State,Status
+Navi Mumbai,India,Maharashtra,active
+Bangalore,India,Karnataka,active
+Margao,India,Goa,active
+Thiruvalla,India,Kerala,active
+Gulbarga,India,Karnataka,active
+Karaikudi,India,Tamil Nadu,active
+Shimoga,India,Karnataka,active
+Narasaraopet,India,Andhra Pradesh,active
+Hosur,India,Tamil Nadu,active
+Karaikal,India,Tamil Nadu,active
+Payyannur,India,Kerala,active
+Ongole,India,Andhra Pradesh,active
+Dabolim,India,Goa,active
+Kanchipuram,India,Tamil Nadu,active
+Tiruvannamalai,India,Tamil Nadu,active
+Aurangabad,India,Maharashtra,active
+Nadiad,India,Gujarat,active
+Bellary,India,Karnataka,active
+Rajahmundry,India,Andhra Pradesh,active
+Udumalaipettai,India,Tamil Nadu,active
+Kanhangad,India,Kerala,active
+Vizag,India,Andhra Pradesh,active
+Hospet,India,Karnataka,active
+Vizag,India,Andhra Pradesh,active
+Kunnamkulam,India,Kerala,active
+Sulur,India,Tamil Nadu,active
+Vizag,India,Andhra Pradesh,active
+Karwar,India,Karnataka,active
+Palani,India,Tamil Nadu,active
+Nagercoil,India,Tamil Nadu,active
+Rajahmundry,India,Andhra Pradesh,active
+Chennai,India,Tamil Nadu,active
+Tirupathur,India,Tamil Nadu,active
+Trivandrum,India,Kerala,active
+Kundrathur,India,Tamil Nadu,active
+Mahbubnagar,India,Telangana,active
+Pala,India,Kerala,active
+Taliparamba,India,Kerala,active
+Pondicherry,India,Tamil Nadu,active
+Doddaballapura,India,Karnataka,active
+Pollachi,India,Tamil Nadu,active
+Hosur,India,Tamil Nadu,active
+Poojappura,India,Kerala,active
+Karamana,India,Kerala,active
+Chikmagalur,India,Karnataka,active
+Tumkur,India,Karnataka,active
+Kadapa,India,Andhra Pradesh,active
+Hyderabad,India,Telangana,active
+Proddatur,India,Andhra Pradesh,active
+Kasargod,India,Kerala,active
+Changanassery,India,Kerala,active
+Pattukottai,India,Tamil Nadu,active
+Amalapuram,India,Andhra Pradesh,active
+Madanapalle,India,Andhra Pradesh,active
+Vadakara,India,Kerala,active
+Irininjalakuda,India,Kerala,active
+Bhimavaram,India,Andhra Pradesh,active
+Tenali,India,Andhra Pradesh,active
+Shimoga,India,Karnataka,active
+Vapi,India,Gujarat,active
+Sindhanur,India,Karnataka,active
+Chandapura,India,Karnataka,active
+Edappal,India,Kerala,active
+Palanpur,India,Gujarat,active
+Jagityal,India,Telangana,active
+Kattappana,India,Kerala,active
+Surendra Nagar,India,Gujarat,active
+Kayamkulam,India,Kerala,active
+Kochi,India,Kerala,active
+Attur,India,Tamil Nadu,active
+Kochi,India,Kerala,active
+Mangalore,India,Karnataka,active
+Paravur,India,Kerala,active
+Vizag,India,Andhra Pradesh,active
+Chiplun,India,Maharashtra,active
+Sirsi,India,Karnataka,active
+Sarjapura,India,Karnataka,active
+Madikeri,India,Karnataka,active
+Chakan,India,Maharashtra,active
+Baramati,India,Maharashtra,active
+Trivandrum,India,Kerala,active
+Ottapalam,India,Kerala,active
+Ranni,India,Kerala,active
+Valliyur,India,Tamil Nadu,active
+Perumbavoor,India,Kerala,active
+Mangalore,India,Karnataka,active
+Arani,India,Tamil Nadu,active
+Ankleshwar,India,Gujarat,active
+Arakkonam,India,Tamil Nadu,active
+Aurangabad,India,Maharashtra,active
+Walajapet,India,Tamil Nadu,active
+Attingal,India,Kerala,active
+Ongole,India,Andhra Pradesh,active
+Chilakaluripet,India,Andhra Pradesh,active
+Bardoli,India,Gujarat,active
+Wagholi,India,Maharashtra,active
+Himmatnagar,India,Gujarat,active
+Kadapa,India,Andhra Pradesh,active
+Kammaguda,India,Telangana,active
+Gandhidham,India,Gujarat,active
+Kochi,India,Kerala,active
+Ramagundam,India,Telangana,active
+Veraval,India,Gujarat,active
+Modasa,India,Gujarat,active
+Robertsonpete,India,Karnataka,active
+Aurangabad,India,Maharashtra,active
+Kottakkal,India,Kerala,active
+Kadiri,India,Andhra Pradesh,active
+Manipal-Udupi,India,Karnataka,active
+Dharmavaram,India,Andhra Pradesh,active
+Kambam,India,Tamil Nadu,active
+Gulbarga,India,Karnataka,active
+Armoor,India,Telangana,active
+Siricilla,India,Telangana,active
+Palakollu,India,Andhra Pradesh,active
+Adoni,India,Andhra Pradesh,active
+Tadepallegudem,India,Andhra Pradesh,active
+Ameenpur,India,Telangana,active
+Kavali,India,Andhra Pradesh,active
+Chennai,India,Tamil Nadu,active
+Shadnagar,India,Telangana,active
+Palavancha,India,Telangana,active
+Puttur,India,Andhra Pradesh,active
+Kundara,India,Kerala,active
+Thiruvallur,India,Tamil Nadu,active
+Tuticorin,India,Tamil Nadu,active
+Cuddalore,India,Tamil Nadu,active
+Kallakurchi,India,Tamil Nadu,active
+Tadepalli,India,Andhra Pradesh,active
+Arupukottai,India,Tamil Nadu,active
+Rayachoti,India,Andhra Pradesh,active
+Rajampet,India,Andhra Pradesh,active
+Thirumazhisai,India,Tamil Nadu,active
+Mettupalayam,India,Tamil Nadu,active
+Yadagir,India,Karnataka,active
+Bhuj,India,Gujarat,active
+Haripad,India,Kerala,active
+Shirpur,India,Maharashtra,active
+Gulbarga,India,Karnataka,active
+Payakaraopet,India,Andhra Pradesh,active
+Mannar,India,Kerala,active
+Tiruchengode,India,Tamil Nadu,active
+Kochi,India,Kerala,active
+Nilambur,India,Kerala,active
+Ravulapalem,India,Andhra Pradesh,active
+Bhadravati,India,Karnataka,active
+Balarampuram,India,Kerala,active
+Ranibennur,India,Karnataka,active
+Jamakhandi,India,Karnataka,active
+Talegaon,India,Maharashtra,active
+Manapparai,India,Tamil Nadu,active
+Thirumangalam,India,Tamil Nadu,active
+Pileru,India,Andhra Pradesh,active
+Thriprayar,India,Kerala,active
+Gajwel,India,Telangana,active
+Chintamani,India,Karnataka,active
+Khopoli,India,Maharashtra,active
+Nagole,India,Telangana,active
+Kundapura,India,Karnataka,active
+Kushalnagar,India,Karnataka,active
+Guruvayur,India,Kerala,active
+Tumkur,India,Karnataka,active
+Ottanchathiram,India,Tamil Nadu,active
+Ponneri,India,Tamil Nadu,active
+Pulivendula,India,Andhra Pradesh,active
+Lingasugur,India,Karnataka,active
+Athni,India,Karnataka,active
+Ambasamudram,India,Tamil Nadu,active
+Pondicherry,India,Puducherry,active
+Thiruttani,India,Tamil Nadu,active
+Anekal,India,Karnataka,active
+Ramachandrapuram,India,Andhra Pradesh,active
+Vadakanchery,India,Kerala,active
+Tindivanam,India,Tamil Nadu,active
+Gadwal,India,Telangana,active
+Avalahalli,India,Karnataka,active
+Puttur,India,Karnataka,active
+Thatipaka,India,Andhra Pradesh,active
+Palasa,India,Andhra Pradesh,active
+Kunigal,India,Karnataka,active
+Virudhachalam,India,Tamil Nadu,active
+Bodhan Mandal,India,Telangana,active
+Neyveli,India,Tamil Nadu,active
+Narasapuram,India,Andhra Pradesh,active
+Thingal Nagar,India,Tamil Nadu,active
+Waluj,India,Maharashtra,active
+Anchal,India,Kerala,active
+Karkala,India,Karnataka,active
+Parippally,India,Kerala,active
+Kanakpura,India,Karnataka,active
+Alleppey,India,Kerala,active
+Khamgaon,India,Maharashtra,active
+Kumta,India,Karnataka,active
+Mandapeta,India,Andhra Pradesh,active
+Gangavathi,India,Karnataka,active
+Palladam,India,Tamil Nadu,active
+Sathupally,India,Telangana,active
+Kumbakonam,India,Tamil Nadu,active
+Una,India,Gujarat,active
+Sangamner,India,Maharashtra,active
+Mulanthuruthy,India,Kerala,active
+Metpalle,India,Telangana,active
+Pandharpur,India,Maharashtra,active
+Paratwada,India,Maharashtra,active
+Jangareddygudem,India,Andhra Pradesh,active
+Harur,India,Tamil Nadu,active
+Peddapuram,India,Andhra Pradesh,active
+Sriperumbudur,India,Tamil Nadu,active
+Kottiyam,India,Kerala,active
+Zaheerabad,India,Telangana,active
+Trivandrum,India,Kerala,active
+Malur,India,Karnataka,active
+Piduguralla,India,Andhra Pradesh,active
+Bobbili,India,Andhra Pradesh,active
+Vinukonda,India,Andhra Pradesh,active
+Gudur,India,Andhra Pradesh,active
+Koyilandy,India,Kerala,active
+Pusad,India,Maharashtra,active
+Sagara,India,Karnataka,active
+Chikodi,India,Karnataka,active
+Melur,India,Tamil Nadu,active
+Madhira,India,Telangana,active
+Kuppam,India,Andhra Pradesh,active
+Sholingur,India,Tamil Nadu,active
+Malikipuram,India,Andhra Pradesh,active
+Musiri,India,Tamil Nadu,active
+Channapatna,India,Karnataka,active
+Hanuman Junction,India,Andhra Pradesh,active
+Vadanapally,India,Kerala,active
+Chingavanam,India,Kerala,active
+Mulbagal,India,Karnataka,active
+Kopargaon,India,Maharashtra,active
+Channarayapatna,India,Karnataka,active
+Kotagiri,India,Tamil Nadu,active
+Kanchipuram,India,Tamil Nadu,active
+Sathyamangalam,India,Tamil Nadu,active
+Chirala,India,Andhra Pradesh,active
+Thirukoilur,India,Tamil Nadu,active
+Periyanaickenpalayam,India,Tamil Nadu,active
+Gokak,India,Karnataka,active
+Paravur,India,Kerala,active
+Karanja Lad,India,Maharashtra,active
+Mahbubnagar,India,Telangana,active
+Badvel,India,Andhra Pradesh,active
+Shankarpally,India,Telangana,active
+Chalisgaon,India,Maharashtra,active
+Narsipatnam Santhi Nagar,India,Andhra Pradesh,active
+Bailhongal,India,Karnataka,active
+Gobichettipalayam,India,Tamil Nadu,active
+Warud,India,Maharashtra,active
+Pavagada,India,Karnataka,active
+Sira,India,Karnataka,active
+Wadi,India,Maharashtra,active
+Shirdi,India,Maharashtra,active
+Palamaner,India,Andhra Pradesh,active
+Vyara,India,Gujarat,active
+Arsikere,India,Karnataka,active
+Narayangaon,India,Maharashtra,active
+Mangalore,India,Karnataka,active
+Kothamangalam,India,Kerala,active
+Perambra,India,Kerala,active
+Bellary,India,Karnataka,active
+Ponkunnam,India,Kerala,active
+Deralakatte,India,Karnataka,active
+Karkala,India,Karnataka,active
+Dhone,India,Andhra Pradesh,active
+Achampet,India,Telangana,active
+Bhatkal,India,Karnataka,active
+Mukkam,India,Kerala,active
+Khammam,India,Telangana,active
+Cheruvathoor,India,Kerala,active
+Nakrekal,India,Telangana,active
+Sankeshwar,India,Karnataka,active
+Uthukottai,India,Tamil Nadu,active
+Nippani,India,Karnataka,active
+Choutuppal,India,Telangana,active
+Shahpur,India,Karnataka,active
+Kattakada,India,Kerala,active
+Bharanikkavu,India,Kerala,active
+Uran Islampur,India,Maharashtra,active
+Wani,India,Maharashtra,active
+Dharapuram,India,Tamil Nadu,active
+Korutla,India,Telangana,active
+Chipurapalli,India,Andhra Pradesh,active
+Kozhenchery,India,Kerala,active
+Balussery,India,Kerala,active
+Kadur,India,Karnataka,active
+Rajam,India,Andhra Pradesh,active
+Tiruparankundram,India,Tamil Nadu,active
+Thriprayar,India,Kerala,active
+Mangalore,India,Karnataka,active
+Nagercoil,India,Tamil Nadu,active
+Kondamallepally,India,Telangana,active
+Ambattur,India,Tamil Nadu,active
+Pathanpuram,India,Kerala,active
+Koothattukkulam,India,Kerala,active
+Jadcherla,India,Telangana,active
+Gulbarga,India,Karnataka,active
+Kollegala,India,Karnataka,active
+Markapur,India,Andhra Pradesh,active
+Nidadhavole,India,Andhra Pradesh,active
+Hunsur,India,Karnataka,active
+Akluj,India,Maharashtra,active
+Mudhol,India,Karnataka,active
+Udgir,India,Maharashtra,active
+Mambakkam,India,Tamil Nadu,active
+Gooty,India,Andhra Pradesh,active
+Gonikoppal,India,Karnataka,active
+Parappanangadi,India,Kerala,active
+Achutapuram,India,Andhra Pradesh,active
+Darsi,India,Andhra Pradesh,active
+Alathur,India,Kerala,active
+Toranagallu,India,Karnataka,active
+Perundurai,India,Tamil Nadu,active
+Narsannapeta,India,Andhra Pradesh,active
+Shikarpur,India,Karnataka,active
+Kagaznagar,India,Telangana,active
+Bhadravati,India,Maharashtra,active
+Ahmadpur,India,Maharashtra,active
+Gulbarga,India,Karnataka,active
+Pithapuram,India,Andhra Pradesh,active
+Hiriyur,India,Karnataka,active
+Payyavur,India,Kerala,active
+Tekkali,India,Andhra Pradesh,active
+Pothencode,India,Kerala,active
+Ichchapuram,India,Andhra Pradesh,active
+Wadakkancherry,India,Kerala,active
+Butibori,India,Maharashtra,active
+Macherla,India,Andhra Pradesh,active
+Kamptee,India,Maharashtra,active
+Madurai,India,Tamil Nadu,active
+Saluru,India,Andhra Pradesh,active
+Manamadurai,India,Tamil Nadu,active
+Shahada,India,Maharashtra,active
+Manvi,India,Karnataka,active
+Maddur,India,Karnataka,active
+Isnapur,India,Telangana,active
+Rajura,India,Maharashtra,active
+Nooranad,India,Kerala,active
+Ankola,India,Karnataka,active
+Gingee,India,Tamil Nadu,active
+Kangeyam,India,Tamil Nadu,active
+Katol,India,Maharashtra,active
+Asifabad,India,Telangana,active
+Thokkottu,India,Karnataka,active
+Tarikere,India,Karnataka,active
+Tirora,India,Maharashtra,active
+Sindagi,India,Karnataka,active
+Gadhinglaj,India,Maharashtra,active
+Muddebihal,India,Karnataka,active
+Ramayampet,India,Telangana,active
+Kanigiri,India,Andhra Pradesh,active
+Kadi,India,Gujarat,active
+Kunnamangalam,India,Kerala,active
+Kodakara,India,Kerala,active
+Bhainsa,India,Telangana,active
+Chavakkad,India,Kerala,active
+Madhugiri,India,Karnataka,active
+Sakleshpura,India,Karnataka,active
+Ballarpur,India,Maharashtra,active
+Cumbum,India,Andhra Pradesh,active
+Rayadurg,India,Andhra Pradesh,active
+Jaggayapet,India,Andhra Pradesh,active
+Yeleswaram,India,Andhra Pradesh,active
+Pandharkaoda,India,Maharashtra,active
+Moinabad,India,Telangana,active
+Gubbi,India,Karnataka,active
+Majalgaon,India,Maharashtra,active
+Channagiri,India,Karnataka,active
+Vuyyuru,India,Andhra Pradesh,active
+Nandigama,India,Andhra Pradesh,active
+Mangalore,India,Karnataka,active
+Gajapathinagaram,India,Andhra Pradesh,active
+Edakkara,India,Kerala,active
+Valapadi,India,Tamil Nadu,active
+Saoner,India,Maharashtra,active
+Banswada,India,Telangana,active
+Kanchipuram,India,Tamil Nadu,active
+Meenangadi,India,Kerala,active
+Badami,India,Karnataka,active
+Mundra,India,Gujarat,active
+Raibhag,India,Karnataka,active
+Chodavaram,India,Andhra Pradesh,active
+Pamuru,India,Andhra Pradesh,active
+Chikhali,India,Maharashtra,active
+Ponnani,India,Kerala,active
+Yemmiganur,India,Andhra Pradesh,active
+Penugonda,India,Andhra Pradesh,active
+Murtijapur,India,Maharashtra,active
+Chittur Thathamangalam,India,Kerala,active
+Giddaluru,India,Andhra Pradesh,active
+Kaikaluru,India,Andhra Pradesh,active
+Allagadda,India,Andhra Pradesh,active
+Bagepalli,India,Karnataka,active
+Parigi,India,Telangana,active
+Poovattuparamba,India,Kerala,active
+Ibrahimpatnam,India,Telangana,active
+Basavakalyan,India,Karnataka,active
+Deglur,India,Maharashtra,active
+Talikoti,India,Karnataka,active
+Krishnarajanagar,India,Karnataka,active
+Padubidri,India,Karnataka,active
+Gundlupet,India,Karnataka,active
+Ambejogai,India,Maharashtra,active
+Harugeri,India,Karnataka,active
+Nuzvid,India,Andhra Pradesh,active
+Challakere,India,Karnataka,active
+Kumbakonam,India,Tamil Nadu,active
+Venkatgiri,India,Andhra Pradesh,active
+Kanchipuram,India,Tamil Nadu,active
+Kandukuru,India,Andhra Pradesh,active
+Tumsar,India,Maharashtra,active
+Toopran,India,Telangana,active
+Bhuj,India,Gujarat,active
+Yellandu,India,Telangana,active
+Bargur,India,Tamil Nadu,active
+Pochampalli,India,Tamil Nadu,active
+Chennai,India,Tamil Nadu,active
+Gargoti,India,Maharashtra,active
+Warora,India,Maharashtra,active
+Siruguppa,India,Karnataka,active
+Punganur,India,Andhra Pradesh,active
+Daund,India,Maharashtra,active
+Sankagiri,India,Tamil Nadu,active
+Cherpulassery,India,Kerala,active
+Kuravilangad,India,Kerala,active
+Jammalamadugu,India,Andhra Pradesh,active
+Tiruvuru,India,Andhra Pradesh,active
+Wai,India,Maharashtra,active
+Ramanattukara,India,Kerala,active
+Georai,India,Maharashtra,active
+Devadurga,India,Karnataka,active
+Mangalore,India,Karnataka,active
+Thiruvankulam,India,Kerala,active
+Ilkal,India,Karnataka,active
+Belgaum,India,Karnataka,active
+V Kota,India,Andhra Pradesh,active
+Kalyandurgam,India,Andhra Pradesh,active
+Rabhkavi,India,Karnataka,active
+Wandoor,India,Kerala,active
+Mudigere,India,Karnataka,active
+Mundakayam,India,Kerala,active
+Hagaribommanahalli,India,Karnataka,active
+Erode,India,Tamil Nadu,active
+Indi,India,Karnataka,active
+Sedam,India,Karnataka,active
+Podili,India,Andhra Pradesh,active
+Pathiripala,India,Kerala,active
+Kolhapur,India,Maharashtra,active
+Thamarassery,India,Kerala,active
+Hootagalli,India,Karnataka,active
+Karaikkal,India,Puducherry,active
+Arcot,India,Tamil Nadu,active
+Tumkur,India,Karnataka,active
+Akiveedu,India,Andhra Pradesh,active
+Haliyal,India,Karnataka,active
+Palakonda,India,Andhra Pradesh,active
+Virajpet,India,Karnataka,active
+Somvarpet (Somwarpet),India,Karnataka,active
+Srirangapatna,India,Karnataka,active
+Mysore,India,Karnataka,active
+Digras,India,Maharashtra,active
+Narasipura,India,Karnataka,active
+Hadagali,India,Karnataka,active
+Puthuppally,India,Kerala,active
+Davangere,India,Karnataka,active
+Dabhoi,India,Gujarat,active
+Honnalli,India,Karnataka,active
+Kothakota,India,Telangana,active
+Piravom,India,Kerala,active
+Eramalloor,India,Kerala,active
+Nagpur,India,Maharashtra,active
+Thrissur,India,Kerala,active
+Sadashivpet,India,Telangana,active
+Gajendragad,India,Karnataka,active
+Hukkeri,India,Karnataka,active
+Charummoodu,India,Kerala,active
+Husnabad,India,Telangana,active
+Gannavaram,India,Andhra Pradesh,active
+Karatagi,India,Karnataka,active
+Vemulawada,India,Telangana,active
+Mysore,India,Karnataka,active
+Narayankhed,India,Telangana,active
+Davanagere,India,Karnataka,active
+Harapanahalli,India,Karnataka,active
+Hyderabad,India,Telangana,active
+Harihara,India,Karnataka,active
+Kotturu,India,Karnataka,active
+Mundargi,India,Karnataka,active
+Thiruvallur,India,Tamil Nadu,active
+Gudivada,India,Andhra Pradesh,active
+Vijapur,India,Gujarat,active
+Wyra,India,Telangana,active
+Anjar,India,Gujarat,active
+Sandur,India,Karnataka,active
+Aswaraopeta,India,Telangana,active
+Krishnarajpete,India,Karnataka,active
+Himmat Nagar,India,Gujarat,active
+Rajahmundry,India,Andhra Pradesh,active
+Thiruwilmala,India,Kerala,active
+Manipal,India,Karnataka,active
+Vissannapeta,India,Andhra Pradesh,active
+Godkondla,India,Telangana,active
+Dabhel,India,Gujarat,active
+Jewargi,India,Karnataka,active
+Jasdan,India,Gujarat,active
+Savanur,India,Karnataka,active
+Hyderabad,India,Telangana,active
+Chennur,India,Telangana,active
+Kollam,India,Kerala,active
+Tanjore,India,Tamil Nadu,active
+Kochi,India,Kerala,active
+Kollam,India,Kerala,active
+Hyderabad,India,Telangana,active
+Nagarbhavi,India,Karnataka,active
+Pollachi,India,Tamil Nadu,active
+Viramgam,India,Gujarat,active
+Salem,India,Tamil Nadu,active
+Pondicherry,India,Tamil Nadu,active
+Malpe,India,Karnataka,active
+Mangalore,India,Karnataka,active
+Bangalore,India,Karnataka,active
+Vadodara,India,Gujarat,active
+Payyannur,India,Kerala,active
+Ahmedabad,India,Gujarat,active
+Bangalore,India,Karnataka,active
+Kumarapalayam,India,Tamil Nadu,active
+Anand,India,Gujarat,active
+Ahmedabad,India,Gujarat,active

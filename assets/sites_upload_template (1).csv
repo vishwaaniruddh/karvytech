@@ -1,0 +1,2 @@
+"Site ID","Store ID",Location,Country,State,City,Zone,Pincode,Branch,Customer,"Contact Person Name","Contact Person Number","Contact Person Email","PO Number","PO Date",Remarks
+SITE001,STORE001,"Main Street, Commercial Complex",India,Maharashtra,Mumbai,"West Zone",400001,"Andheri Branch",Croma,"John Doe",+91-9876543210,john.doe@example.com,PO2024001,2024-01-15,"Sample site for installation"

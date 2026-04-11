@@ -1,0 +1,151 @@
+ssh -p 65002 u444388293@89.116.138.57
+site_id or store_id could be varchar(20-30) -Done
+
+
+1) remove bank from sites 
+https://project.sarsspl.com/admin/sites/bulk_upload.php (Done)
+
+2) site upload format need to add: 
+    contact name , number,  emailid , region (zone), pincode (Done)
+
+
+3) https://project.sarsspl.com/admin/sites/delegate.php?id=7
+Delegation Date - Site Allocation date
+layout upload  - as an attachement (Done)
+
+vendor part dispute comes .. 
+
+https://project.sarsspl.com/vendor/site-survey.php?delegation_id=7
+Working Hours - should calculate auto on submit 
+
+
+Store Model - Store Format (add this in sites master ..)
+
+
+Type of Ceiling
+- true and false 
+
+Nos. of SLP Cameras ( new field )
+Number of Analytic Cameras - Nos. of Analytic Cameras
+Total Number of Cameras - 
+
+
+
+for every attachment - need one remark record to capture
+
+site survey - vendor 
+RRL Materials Delivered?
+
+
+Site Accessibility
+10AM - 10PM
+10PM - 10AM
+others (manual input)
+
+Power Availability
+    Raw power 
+    UPS Socket
+
+Space Adequacy
+    Size of Ladder required
+
+ladder height
+    6ft - 20ft drop down
+
+Space Adequacy change into (nos of ladder)
+    manual input with number
+
+Check Out - diable or remve (it should be save when checkout)
+
+------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+admin/requests/view-request.php?id=5
+    admin/manager should able to edit materials and quntity
+
+
+
+
+
+
+---------------------------------------------------------------------------------
+    while accepting material frm vendors end he has has to upload  THE LR Copy and receved materials (pending)
+
+
+https://project.sarsspl.com/vendor/manage-installation.php?id=4
+
+Update Installation Progress (Modal)
+Progress Percentage *
+
+remove it to manual enter.. 
+instead backoffice team will manually check the installaion process and based on the approvval they can verify the succesfful installation work.
+
+
+https://project.sarsspl.com/vendor/manage-installation.php?id=4
+
+
+
+admin - 
+    when approving installation add disclaimer.. about his responsibility.
+
+
+user roles 
+    Super Admin 
+    -1 Project Manager (will approve with disclaimer - level 2)
+    -2 Back Office (will approve with disclaimer - level 1)
+
+
+    Vendor
+
+
+if installation rejects then backoffice team will reassign the installaton delegation to vendor and vendor will have to do the process again from start.
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    in material inward we have to make the location masters..  
+    Courier Name (as dropdown)
+    add POD attachment field
+    https://project.sarsspl.com/admin/requests/view-request.php?id=5
+    Required Date - ETA
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8th december 2025
+
+    1) no of floor - site survey
+
+bulk 
+
+user add
+site upload 
+site delegation
+mateial upload
+
+https://project.sarsspl.com/admin/installations/view.php?id=9
+progress attachments not showing

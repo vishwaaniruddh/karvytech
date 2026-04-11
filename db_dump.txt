@@ -1,0 +1,82 @@
+--- MENU ITEMS ---
+ID: 1, Parent: NULL, Title: Dashboard, URL: /admin/dashboard.php, Icon: dashboard
+ID: 2, Parent: NULL, Title: Sites, URL: /admin/sites/, Icon: location
+ID: 3, Parent: NULL, Title: Admin, URL: , Icon: settings
+ID: 4, Parent: NULL, Title: Inventory, URL: , Icon: inventory
+ID: 51, Parent: NULL, Title: Surveys, URL: /admin/surveys/, Icon: reports
+ID: 6, Parent: NULL, Title: Reports, URL: /admin/reports/, Icon: reports
+ID: 53, Parent: NULL, Title: Installation, URL: /admin/installations/, Icon: settings
+ID: 10, Parent: 3, Title: Users, URL: /admin/users/, Icon: users
+ID: 11, Parent: 3, Title: Location, URL: , Icon: location-sub
+ID: 12, Parent: 3, Title: Business, URL: , Icon: business
+ID: 13, Parent: 3, Title: BOQ, URL: /admin/boq/, Icon: boq
+ID: 41, Parent: 4, Title: All Stocks, URL: /admin/inventory/, Icon: inventory
+ID: 42, Parent: 4, Title: Material Requests, URL: /admin/requests/, Icon: requests
+ID: 43, Parent: 4, Title: Material Received, URL: /admin/inventory/inwards/, Icon: location-sub
+ID: 44, Parent: 4, Title: Material Dispatches, URL: /admin/inventory/dispatches/, Icon: business
+ID: 57, Parent: 4, Title: Quantity Audits, URL: admin/inventory/quantity-audits.php, Icon: audit
+ID: 20, Parent: 11, Title: Countries, URL: /admin/masters/?type=countries, Icon: country
+ID: 21, Parent: 11, Title: Zones, URL: /admin/masters/?type=zones, Icon: zone
+ID: 22, Parent: 11, Title: States, URL: /admin/masters/?type=states, Icon: state
+ID: 23, Parent: 11, Title: Cities, URL: /admin/masters/?type=cities, Icon: city
+ID: 24, Parent: 11, Title: Couriers, URL: /admin/masters/couriers/, Icon: courier
+ID: 30, Parent: 12, Title: Banks, URL: /admin/masters/?type=banks, Icon: bank
+ID: 31, Parent: 12, Title: Customers, URL: /admin/masters/?type=customers, Icon: customer
+ID: 32, Parent: 12, Title: Vendors, URL: /admin/vendors/, Icon: vendor
+ID: 54, Parent: 53, Title: All Installations, URL: /admin/installations/, Icon: inventory
+ID: 55, Parent: 53, Title: Active Installations, URL: /admin/installations/?status=in_progress, Icon: requests
+ID: 56, Parent: 53, Title: Completed Installations, URL: /admin/installations/?status=completed, Icon: reports
+
+--- MODULES ---
+ID: 1, Name: users, Display: User Management
+ID: 2, Name: sites, Display: Site Management
+ID: 3, Name: surveys, Display: Site Surveys
+ID: 4, Name: installations, Display: Installations
+ID: 5, Name: inventory, Display: Inventory Management
+ID: 6, Name: materials, Display: Material Requests
+ID: 7, Name: reports, Display: Reports
+ID: 8, Name: masters, Display: Master Data
+ID: 9, Name: settings, Display: Settings
+ID: 10, Name: logs, Display: Logs
+
+--- PERMISSIONS (Sample) ---
+ID: 1, Module ID: 1, Name: view, Display: View Users
+ID: 2, Module ID: 1, Name: create, Display: Create User
+ID: 3, Module ID: 1, Name: edit, Display: Edit User
+ID: 4, Module ID: 1, Name: delete, Display: Delete User
+ID: 5, Module ID: 1, Name: manage_roles, Display: Manage Roles
+ID: 6, Module ID: 2, Name: view, Display: View Sites
+ID: 7, Module ID: 2, Name: create, Display: Create Site
+ID: 8, Module ID: 2, Name: edit, Display: Edit Site
+ID: 9, Module ID: 2, Name: delete, Display: Delete Site
+ID: 10, Module ID: 2, Name: delegate, Display: Delegate Site
+ID: 11, Module ID: 3, Name: view, Display: View Surveys
+ID: 12, Module ID: 3, Name: create, Display: Create Survey
+ID: 13, Module ID: 3, Name: edit, Display: Edit Survey
+ID: 14, Module ID: 3, Name: approve, Display: Approve Survey
+ID: 15, Module ID: 4, Name: view, Display: View Installations
+ID: 16, Module ID: 4, Name: create, Display: Create Installation
+ID: 17, Module ID: 4, Name: edit, Display: Edit Installation
+ID: 18, Module ID: 4, Name: manage, Display: Manage Installation
+ID: 19, Module ID: 5, Name: view, Display: View Inventory
+ID: 20, Module ID: 5, Name: create, Display: Add Stock
+ID: 21, Module ID: 5, Name: edit, Display: Edit Stock
+ID: 22, Module ID: 5, Name: delete, Display: Delete Stock
+ID: 23, Module ID: 6, Name: view, Display: View Requests
+ID: 24, Module ID: 6, Name: create, Display: Create Request
+ID: 25, Module ID: 6, Name: approve, Display: Approve Request
+ID: 26, Module ID: 6, Name: dispatch, Display: Dispatch Materials
+ID: 27, Module ID: 7, Name: view, Display: View Reports
+ID: 28, Module ID: 7, Name: export, Display: Export Reports
+ID: 29, Module ID: 8, Name: view, Display: View Masters
+ID: 30, Module ID: 8, Name: manage, Display: Manage Masters
+ID: 31, Module ID: 9, Name: view, Display: View Settings
+ID: 32, Module ID: 9, Name: manage, Display: Manage Settings
+ID: 33, Module ID: 10, Name: view, Display: View Logs
+
+--- ROLES ---
+ID: 1, Name: superadmin, Display: Super Administrator
+ID: 2, Name: admin, Display: Administrator
+ID: 3, Name: manager, Display: Manager
+ID: 4, Name: contractor, Display: Contractor
+ID: 5, Name: accountmanager, Display: Account Manager

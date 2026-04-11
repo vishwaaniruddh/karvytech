@@ -1,0 +1,3 @@
+ID,Username,Email,Phone,Role,Status,"Created At","Updated At"
+9,"Ganesh Panchal",ganesh@gmail.com,8888888888,vendor,active,"2025-11-04 17:01:20","2025-11-04 22:55:25"
+1,admin,admin@example.com,+1234567890,admin,active,"2025-11-01 14:33:15","2025-11-05 01:42:44"

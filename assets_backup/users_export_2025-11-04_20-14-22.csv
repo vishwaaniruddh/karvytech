@@ -1,0 +1,7 @@
+ID,Username,Email,Phone,Role,Status,"Last Login","Created At","Updated At"
+<br />
+<b>Warning</b>:  Undefined array key "last_login" in <b>C:\xampp\htdocs\project\admin\users\export-users.php</b> on line <b>91</b><br />
+9,"Ganesh Panchal",ganesh@gmail.com,8888888888,vendor,active,,"2025-11-04 17:01:20","2025-11-04 22:55:25"
+<br />
+<b>Warning</b>:  Undefined array key "last_login" in <b>C:\xampp\htdocs\project\admin\users\export-users.php</b> on line <b>91</b><br />
+1,admin,admin@example.com,+1234567890,admin,active,,"2025-11-01 14:33:15","2025-11-05 01:42:44"

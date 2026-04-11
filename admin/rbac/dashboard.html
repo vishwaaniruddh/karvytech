@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RBAC Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loading { opacity: 0.6; pointer-events: none; }
+        .spinner { border: 3px solid #f3f4f6; border-top: 3px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .alert { padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; }
+        .alert-success { background-color: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+        .alert-error { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .alert-info { background-color: #dbeafe; color: #0c2340; border: 1px solid #93c5fd; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Navigation -->
+        <nav class="bg-white shadow-md">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-900">RBAC Management</h1>
+                <div class="flex gap-4">
+                    <button onclick="loadDashboard()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Dashboard</button>
+                    <button onclick="loadRoles()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Roles</button>
+                    <button onclick="loadModules()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Modules</button>
+                    <button onclick="loadPermissions()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Permissions</button>
+                    <button onclick="loadUsers()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Users</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 py-8">
+            <div id="alert-container"></div>
+            <div id="content"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/karvy/api/rbac';
+
+        // API Helper
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                };
+
+                if (data) {
+                    options.body = JSON.stringify(data);
+                }
+
+                const response = await fetch(`${API_BASE}/${endpoint}`, options);
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'API Error');
+                }
+
+                return result;
+            } catch (error) {
+                showAlert(error.message, 'error');
+                throw error;
+            }
+        }
+
+        // Alert Helper
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // Dashboard
+        async function loadDashboard() {
+            try {
+                const stats = await apiCall('stats');
+                const html = `
+                    <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg p-6 mb-8 text-white">
+                        <h1 class="text-3xl font-bold">RBAC Management Dashboard</h1>
+                        <p class="text-blue-100 mt-2">Manage roles, modules, and permissions</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="text-3xl font-bold text-blue-600">${stats.data.roles}</div>
+                            <div class="text-gray-600 text-sm mt-2">Total Roles</div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="text-3xl font-bold text-green-600">${stats.data.modules}</div>
+                            <div class="text-gray-600 text-sm mt-2">Total Modules</div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="text-3xl font-bold text-purple-600">${stats.data.permissions}</div>
+                            <div class="text-gray-600 text-sm mt-2">Total Permissions</div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="text-3xl font-bold text-orange-600">${stats.data.role_permissions}</div>
+                            <div class="text-gray-600 text-sm mt-2">Role-Permission Maps</div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="text-3xl font-bold text-indigo-600">${stats.data.users_with_roles}</div>
+                            <div class="text-gray-600 text-sm mt-2">Users with Roles</div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('content').innerHTML = html;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Roles
+        async function loadRoles() {
+            try {
+                const result = await apiCall('roles');
+                let html = '<h2 class="text-2xl font-bold mb-6">Manage Roles</h2>';
+                html += '<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">';
+
+                for (const role of result.data) {
+                    html += `
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-900">${role.display_name}</h3>
+                                    <p class="text-gray-600 text-sm mt-1"><code class="bg-gray-100 px-2 py-1 rounded">${role.name}</code></p>
+                                </div>
+                                <span class="px-3 py-1 rounded text-sm font-semibold ${role.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                    ${role.status.charAt(0).toUpperCase() + role.status.slice(1)}
+                                </span>
+                            </div>
+                            <p class="text-gray-600 mb-4">${role.description || 'No description'}</p>
+                            <button onclick="editRole(${role.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">
+                                Edit Permissions
+                            </button>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+                document.getElementById('content').innerHTML = html;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Edit Role
+        async function editRole(roleId) {
+            try {
+                const result = await apiCall(`roles/${roleId}`);
+                const role = result.data.role;
+                const currentPerms = result.data.permissions.map(p => p.id);
+
+                const allPerms = await apiCall('permissions');
+
+                let html = `
+                    <div class="mb-6">
+                        <button onclick="loadRoles()" class="text-blue-600 hover:text-blue-800">← Back to Roles</button>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-2xl font-bold mb-6">Edit Role: ${role.display_name}</h2>
+                        <form id="roleForm">
+                            <div class="space-y-4">
+                `;
+
+                for (const module of allPerms.data) {
+                    html += `
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h3 class="font-bold text-gray-900 mb-3">${module.module_display_name}</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    `;
+
+                    for (const perm of module.permissions) {
+                        const checked = currentPerms.includes(perm.id) ? 'checked' : '';
+                        html += `
+                            <label class="flex items-center">
+                                <input type="checkbox" name="permissions" value="${perm.id}" ${checked} class="w-4 h-4 text-blue-600 rounded">
+                                <span class="ml-2 text-sm text-gray-700">${perm.display_name}</span>
+                            </label>
+                        `;
+                    }
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                            </div>
+                            <div class="flex gap-4 mt-6">
+                                <button type="button" onclick="saveRolePermissions(${roleId})" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition">
+                                    Save Permissions
+                                </button>
+                                <button type="button" onclick="loadRoles()" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded transition">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
+                document.getElementById('content').innerHTML = html;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Save Role Permissions
+        async function saveRolePermissions(roleId) {
+            try {
+                const form = document.getElementById('roleForm');
+                const checkboxes = form.querySelectorAll('input[name="permissions"]:checked');
+                const permissions = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+                await apiCall(`roles/${roleId}`, 'PUT', { permissions });
+                showAlert('Role permissions updated successfully', 'success');
+                loadRoles();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Modules
+        async function loadModules() {
+            try {
+                const result = await apiCall('modules');
+                let html = '<h2 class="text-2xl font-bold mb-6">Modules</h2>';
+                html += '<div class="space-y-6">';
+
+                for (const module of result.data) {
+                    html += `
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-900">${module.display_name}</h3>
+                                    <p class="text-gray-600 text-sm mt-1"><code class="bg-gray-100 px-2 py-1 rounded">${module.name}</code></p>
+                                </div>
+                                <span class="px-3 py-1 rounded text-sm font-semibold ${module.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                    ${module.status.charAt(0).toUpperCase() + module.status.slice(1)}
+                                </span>
+                            </div>
+                            <p class="text-gray-600 mb-4">${module.description || 'No description'}</p>
+                            <button onclick="viewModuleDetails(${module.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">
+                                View Permissions
+                            </button>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+                document.getElementById('content').innerHTML = html;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // View Module Details
+        async function viewModuleDetails(moduleId) {
+            try {
+                const result = await apiCall(`modules/${moduleId}`);
+                const module = result.data.module;
+                const permissions = result.data.permissions;
+
+                let html = `
+                    <div class="mb-6">
+                        <button onclick="loadModules()" class="text-blue-600 hover:text-blue-800">← Back to Modules</button>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-2xl font-bold mb-2">${module.display_name}</h2>
+                        <p class="text-gray-600 mb-6">${module.description || 'No description'}</p>
+                        <h3 class="text-xl font-bold mb-4">Permissions (${permissions.length})</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                `;
+
+                for (const perm of permissions) {
+                    html += `
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <p class="font-semibold text-gray-900">${perm.display_name}</p>
+                            <p class="text-sm text-gray-600 mt-1"><code>${perm.name}</code></p>
+                            <p class="text-xs text-gray-500 mt-2">${perm.description || 'No description'}</p>
+                        </div>
+                    `;
+                }
+
+                html += `
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('content').innerHTML = html;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Permissions
+        async function loadPermissions() {
+            try {
+                const result = await apiCall('permissions');
+                let html = '<h2 class="text-2xl font-bold mb-6">Permissions</h2>';
+                html += '<div class="space-y-6">';
+
+                for (const module of result.data) {
+                    html += `
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">${module.module_display_name}</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    `;
+
+                    for (const perm of module.permissions) {
+                        html += `
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <p class="font-semibold text-gray-900">${perm.display_name}</p>
+                                <p class="text-sm text-gray-600 mt-1"><code>${perm.name}</code></p>
+                                <p class="text-xs text-gray-500 mt-2">${perm.description || 'No description'}</p>
+                                ${perm.action ? `<p class="text-xs text-gray-500 mt-1"><strong>Action:</strong> ${perm.action}</p>` : ''}
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += '</div>';
+                document.getElementById('content').innerHTML = html;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Users
+        async function loadUsers() {
+            try {
+                const result = await apiCall('user-roles');
+                let html = '<h2 class="text-2xl font-bold mb-6">Users and Roles</h2>';
+                html += `
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                        <table class="w-full">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Username</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Role</th>
+                                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                `;
+
+                for (const user of result.data) {
+                    html += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 text-sm text-gray-900">${user.id}</td>
+                            <td class="px-6 py-4 text-sm text-gray-900">${user.username}</td>
+                            <td class="px-6 py-4 text-sm text-gray-600">${user.email}</td>
+                            <td class="px-6 py-4 text-sm">
+                                ${user.role_display ? `<span class="px-2 py-1 rounded text-white bg-blue-600">${user.role_display}</span>` : '<span class="text-red-600">Not assigned</span>'}
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <button onclick="assignUserRole(${user.id})" class="text-blue-600 hover:text-blue-800">Assign Role</button>
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                document.getElementById('content').innerHTML = html;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Assign User Role
+        async function assignUserRole(userId) {
+            try {
+                const roles = await apiCall('roles');
+                let html = `
+                    <div class="mb-6">
+                        <button onclick="loadUsers()" class="text-blue-600 hover:text-blue-800">← Back to Users</button>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6 max-w-md">
+                        <h2 class="text-2xl font-bold mb-6">Assign Role to User</h2>
+                        <form id="assignRoleForm">
+                            <div class="mb-4">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Select Role</label>
+                                <select id="roleSelect" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                                    <option value="">-- Select a role --</option>
+                `;
+
+                for (const role of roles.data) {
+                    html += `<option value="${role.id}">${role.display_name}</option>`;
+                }
+
+                html += `
+                                </select>
+                            </div>
+                            <div class="flex gap-4">
+                                <button type="button" onclick="saveUserRole(${userId})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">
+                                    Assign
+                                </button>
+                                <button type="button" onclick="loadUsers()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded transition">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                `;
+
+                document.getElementById('content').innerHTML = html;
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Save User Role
+        async function saveUserRole(userId) {
+            try {
+                const roleId = document.getElementById('roleSelect').value;
+                if (!roleId) {
+                    showAlert('Please select a role', 'error');
+                    return;
+                }
+
+                await apiCall(`user-roles/${userId}`, 'PUT', { role_id: parseInt(roleId) });
+                showAlert('User role assigned successfully', 'success');
+                loadUsers();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Load dashboard on page load
+        window.addEventListener('load', loadDashboard);
+    </script>
+</body>
+</html>
