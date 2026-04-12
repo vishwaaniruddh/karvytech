@@ -450,5 +450,20 @@ class Installation {
         $stmt->execute([$installationId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    
+    public function getInstallationHistory($siteId) {
+        $sql = "SELECT id.*, 
+                       COALESCE(NULLIF(v.company_name, ''), v.name) as vendor_name,
+                       u.username as delegated_by_name
+                FROM installation_delegations id
+                LEFT JOIN vendors v ON id.vendor_id = v.id
+                LEFT JOIN users u ON id.delegated_by = u.id
+                WHERE id.site_id = ?
+                ORDER BY id.delegation_date DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$siteId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

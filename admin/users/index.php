@@ -7,112 +7,134 @@ ob_start();
 ?>
 
 <style>
-/* Premium Stats Cards */
-.stats-card {
-    background: white;
-    border-radius: 20px;
-    border: 1px solid rgba(229, 231, 235, 0.8);
-    padding: 24px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-}
+    /* Premium Stats Cards */
+    .stats-card {
+        background: white;
+        border-radius: 20px;
+        border: 1px solid rgba(229, 231, 235, 0.8);
+        padding: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
 
-.stats-card:hover {
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    border-color: rgba(59, 130, 246, 0.3);
-}
+    .stats-card:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border-color: rgba(59, 130, 246, 0.3);
+    }
 
-.stats-card::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
+    .stats-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
 
-.stats-card.card-total::after { background: #6366f1; }
-.stats-card.card-active::after { background: #10b981; }
-.stats-card.card-disabled::after { background: #ef4444; }
+    .stats-card.card-total::after {
+        background: #6366f1;
+    }
 
-.stats-card:hover::after {
-    opacity: 1;
-}
+    .stats-card.card-active::after {
+        background: #10b981;
+    }
 
-.stats-card.active {
-    border-color: #3b82f6;
-    background: linear-gradient(to bottom right, #ffffff, #f9fafb);
-}
+    .stats-card.card-disabled::after {
+        background: #ef4444;
+    }
 
-.stats-card .card-header {
-    font-size: 11px;
-    color: #9ca3af;
-    text-transform: uppercase;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    margin-bottom: 6px;
-}
+    .stats-card:hover::after {
+        opacity: 1;
+    }
 
-.stats-card .card-number {
-    font-size: 38px;
-    font-weight: 800;
-    color: #111827;
-    margin-bottom: 4px;
-    line-height: 1;
-    letter-spacing: -0.02em;
-}
+    .stats-card.active {
+        border-color: #3b82f6;
+        background: linear-gradient(to bottom right, #ffffff, #f9fafb);
+    }
 
-.stats-card .card-subtitle {
-    font-size: 13px;
-    color: #6b7280;
-    font-weight: 500;
-}
+    .stats-card .card-header {
+        font-size: 11px;
+        color: #9ca3af;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        margin-bottom: 6px;
+    }
 
-.stats-card .card-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.4s ease;
-    box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.02);
-}
+    .stats-card .card-number {
+        font-size: 38px;
+        font-weight: 800;
+        color: #111827;
+        margin-bottom: 4px;
+        line-height: 1;
+        letter-spacing: -0.02em;
+    }
 
-.stats-card:hover .card-icon {
-    transform: rotate(-3deg) scale(1.1);
-}
+    .stats-card .card-subtitle {
+        font-size: 13px;
+        color: #6b7280;
+        font-weight: 500;
+    }
 
-.user-name-cell {
-    line-height: 1.1;
-    font-weight: 600;
-    color: #111827;
-}
+    .stats-card .card-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.4s ease;
+        box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+    }
+
+    .stats-card:hover .card-icon {
+        transform: rotate(-3deg) scale(1.1);
+    }
+
+    .user-name-cell {
+        line-height: 1.1;
+        font-weight: 600;
+        color: #111827;
+    }
 </style>
 
 <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
         <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Users Management</h1>
-        <p class="text-[13px] text-gray-500 mt-0.5">Create, edit, and manage user accounts, roles, and access permissions for your system.</p>
+        <p class="text-[13px] text-gray-500 mt-0.5">Create, edit, and manage user accounts, roles, and access
+            permissions for your system.</p>
     </div>
     <div class="flex items-center gap-2">
-        <a href="bulk_upload.php" class="inline-flex items-center px-3.5 py-2 text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95">
-            <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+        <a href="bulk_upload.php"
+            class="inline-flex items-center px-3.5 py-2 text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95">
+            <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
             Bulk Import
         </a>
-        <button onclick="exportUsersData()" class="inline-flex items-center px-3.5 py-2 text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95">
-            <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        <button onclick="exportUsersData()"
+            class="inline-flex items-center px-3.5 py-2 text-xs font-bold text-gray-700 bg-white border border-gray-200 rounded-xl shadow-sm hover:bg-gray-50 transition-all active:scale-95">
+            <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                </path>
+            </svg>
             Export
         </button>
-        <button onclick="resetCreateUserForm(); openModal('createUserModal')" class="inline-flex items-center px-4 py-2 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 focus:ring-4 focus:ring-blue-50 focus:border-blue-300">
-            <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+        <button onclick="resetCreateUserForm(); openModal('createUserModal')"
+            class="inline-flex items-center px-4 py-2 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 focus:ring-4 focus:ring-blue-50 focus:border-blue-300">
+            <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6">
+                </path>
+            </svg>
             Create User
         </button>
     </div>
@@ -128,7 +150,10 @@ ob_start();
                 <div class="card-subtitle">System Records</div>
             </div>
             <div class="card-icon" style="background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);">
-                <svg style="color: #4f46e5;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+                <svg style="color: #4f46e5;" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                        clip-rule="evenodd"></path>
+                </svg>
             </div>
         </div>
     </div>
@@ -140,7 +165,11 @@ ob_start();
                 <div class="card-subtitle">Currently Online</div>
             </div>
             <div class="card-icon" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);">
-                <svg style="color: #059669;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                <svg style="color: #059669;" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd"></path>
+                </svg>
             </div>
         </div>
     </div>
@@ -152,7 +181,11 @@ ob_start();
                 <div class="card-subtitle">Access Revoked</div>
             </div>
             <div class="card-icon" style="background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);">
-                <svg style="color: #dc2626;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                <svg style="color: #dc2626;" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clip-rule="evenodd"></path>
+                </svg>
             </div>
         </div>
     </div>
@@ -164,7 +197,11 @@ ob_start();
                 <div class="card-subtitle">Privileged Access</div>
             </div>
             <div class="card-icon" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
-                <svg style="color: #2563eb;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.9L10 1.55l7.834 3.35a1 1 0 01.666.945V10c0 5.825-3.824 10.29-9 11.622C4.324 20.29.5 15.825.5 10V5.845a1 1 0 01.666-.945zM10 8a1 1 0 00-1 1v5a1 1 0 102 0V9a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                <svg style="color: #2563eb;" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M2.166 4.9L10 1.55l7.834 3.35a1 1 0 01.666.945V10c0 5.825-3.824 10.29-9 11.622C4.324 20.29.5 15.825.5 10V5.845a1 1 0 01.666-.945zM10 8a1 1 0 00-1 1v5a1 1 0 102 0V9a1 1 0 00-1-1z"
+                        clip-rule="evenodd"></path>
+                </svg>
             </div>
         </div>
     </div>
@@ -174,19 +211,29 @@ ob_start();
 <div class="flex flex-col lg:flex-row lg:items-center gap-3 mb-6">
     <div class="flex-1 relative group">
         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-            <svg class="h-3.5 w-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <svg class="h-3.5 w-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
         </div>
-        <input type="text" id="searchInput" placeholder="Search accounts..." class="block w-full pl-10 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-50 focus:border-blue-200 transition-all outline-none shadow-sm" onkeyup="debounceFilter()">
+        <input type="text" id="searchInput" placeholder="Search accounts..."
+            class="block w-full pl-10 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-50 focus:border-blue-200 transition-all outline-none shadow-sm"
+            onkeyup="debounceFilter()">
     </div>
     <div class="flex items-center gap-2">
-        <select id="roleFilter" class="appearance-none px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-50 focus:border-blue-200 shadow-sm outline-none cursor-pointer min-w-[130px]" onchange="applyFilters()">
+        <select id="roleFilter"
+            class="appearance-none px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-50 focus:border-blue-200 shadow-sm outline-none cursor-pointer min-w-[130px]"
+            onchange="applyFilters()">
             <option value="">All Roles</option>
             <option value="superadmin">Superadmin</option>
             <option value="administrator">Administrator</option>
             <option value="admin">Admin</option>
             <option value="vendor">Vendor</option>
         </select>
-        <select id="statusFilter" class="appearance-none px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-50 focus:border-blue-200 shadow-sm outline-none cursor-pointer min-w-[130px]" onchange="applyFilters()">
+        <select id="statusFilter"
+            class="appearance-none px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-50 focus:border-blue-200 shadow-sm outline-none cursor-pointer min-w-[130px]"
+            onchange="applyFilters()">
             <option value="">All Status</option>
             <option value="active">Active Only</option>
             <option value="disabled">Disabled Only</option>
@@ -203,13 +250,20 @@ ob_start();
         <table class="w-full text-left border-collapse">
             <thead>
                 <tr class="bg-gray-50/50 border-b border-gray-100">
-                    <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center w-16">#</th>
-                    <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">User Profile</th>
-                    <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Contact Details</th>
+                    <th
+                        class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center w-16">
+                        #</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">User Profile
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Contact Details
+                    </th>
                     <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">System Role</th>
-                    <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Access Status</th>
-                    <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Registration</th>
-                    <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Management</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Access Status
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Registration
+                    </th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">
+                        Management</th>
                 </tr>
             </thead>
             <tbody id="usersTableBody" class="bg-white divide-y divide-gray-50">
@@ -219,7 +273,8 @@ ob_start();
     </div>
 
     <!-- Pagination -->
-    <div id="paginationContainer" class="px-6 py-4 bg-white border-t border-gray-100 flex items-center justify-between hidden">
+    <div id="paginationContainer"
+        class="px-6 py-4 bg-white border-t border-gray-100 flex items-center justify-between hidden">
         <div id="paginationInfo" class="text-sm text-gray-700"></div>
         <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" id="paginationNav">
             <!-- Pagination buttons injected here -->
@@ -228,85 +283,177 @@ ob_start();
 </div>
 
 <!-- Simple Modals (Generic Container) -->
-<div id="createUserModal" class="modal"><div class="modal-content max-w-xl rounded-2xl p-6">
-    <div class="flex justify-between items-center mb-6 border-b pb-4">
-        <h3 class="font-bold text-gray-900">New Account</h3>
-        <button onclick="closeModal('createUserModal')" class="text-gray-400 hover:text-gray-600">&times;</button>
+<div id="createUserModal" class="modal">
+    <div class="modal-content max-w-xl rounded-2xl p-6">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h3 class="font-bold text-gray-900">New Account</h3>
+            <button onclick="closeModal('createUserModal')" class="text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
+        <form id="createUserForm" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <input type="text" name="username" placeholder="Username"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                    required>
+                <input type="email" name="email" placeholder="Email"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                    required>
+                <input type="tel" name="phone" placeholder="Phone"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100">
+                <input type="password" name="password" placeholder="Password"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                    required>
+                <select name="role"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                    onchange="toggleVendorField(this.value)" required>
+                    <option value="">Role</option>
+                    <option value="admin">Admin</option>
+                    <option value="vendor">Vendor</option>
+                </select>
+                <select name="status"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100">
+                    <option value="active">Active</option>
+                    <option value="disabled">Disabled</option>
+                </select>
+            </div>
+            <div id="vendor_field" class="hidden">
+                <select id="vendor_id" name="vendor_id"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100">
+                    <option value="">Assign Vendor</option>
+                </select>
+            </div>
+            <button type="submit"
+                class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-100">Create
+                Account</button>
+        </form>
     </div>
-    <form id="createUserForm" class="space-y-4">
-        <div class="grid grid-cols-2 gap-4">
-            <input type="text" name="username" placeholder="Username" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100" required>
-            <input type="email" name="email" placeholder="Email" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100" required>
-            <input type="tel" name="phone" placeholder="Phone" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100">
-            <input type="password" name="password" placeholder="Password" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100" required>
-            <select name="role" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100" onchange="toggleVendorField(this.value)" required>
-                <option value="">Role</option>
-                <option value="admin">Admin</option>
-                <option value="vendor">Vendor</option>
-            </select>
-            <select name="status" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100">
-                <option value="active">Active</option>
-                <option value="disabled">Disabled</option>
-            </select>
-        </div>
-        <div id="vendor_field" class="hidden">
-            <select id="vendor_id" name="vendor_id" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100">
-                <option value="">Assign Vendor</option>
-            </select>
-        </div>
-        <button type="submit" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-blue-100">Create Account</button>
-    </form>
-</div></div>
+</div>
 
-<div id="editUserModal" class="modal"><div class="modal-content max-w-xl rounded-2xl p-6">
-    <div class="flex justify-between items-center mb-6 border-b pb-4">
-        <h3 class="font-bold text-gray-900">Edit Account</h3>
-        <button onclick="closeModal('editUserModal')" class="text-gray-400 hover:text-gray-600">&times;</button>
+<div id="editUserModal" class="modal">
+    <div class="modal-content max-w-xl rounded-2xl p-6">
+        <div class="flex justify-between items-center mb-6 border-b pb-4">
+            <h3 class="font-bold text-gray-900">Edit Account</h3>
+            <button onclick="closeModal('editUserModal')" class="text-gray-400 hover:text-gray-600">&times;</button>
+        </div>
+        <form id="editUserForm" class="space-y-4">
+            <input type="hidden" id="edit_user_id">
+            <div class="grid grid-cols-2 gap-4">
+                <input type="text" id="edit_username" name="username" placeholder="Username"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none" required>
+                <input type="email" id="edit_email" name="email" placeholder="Email"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none" required>
+                <input type="tel" id="edit_phone" name="phone" placeholder="Phone"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none">
+                <input type="password" id="edit_password" name="password" placeholder="New Password (Optional)"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none">
+                <select id="edit_role" name="role"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none"
+                    onchange="toggleEditVendorField(this.value)" required>
+                    <option value="admin">Admin</option>
+                    <option value="vendor">Vendor</option>
+                </select>
+                <select id="edit_status" name="status"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none">
+                    <option value="active">Active</option>
+                    <option value="disabled">Disabled</option>
+                </select>
+            </div>
+            <div id="edit_vendor_field" class="hidden">
+                <select id="edit_vendor_id" name="vendor_id"
+                    class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none">
+                    <option value="">Assign Vendor</option>
+                </select>
+            </div>
+            <button type="submit" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl">Update
+                Account</button>
+        </form>
     </div>
-    <form id="editUserForm" class="space-y-4">
-        <input type="hidden" id="edit_user_id">
-        <div class="grid grid-cols-2 gap-4">
-            <input type="text" id="edit_username" name="username" placeholder="Username" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none" required>
-            <input type="email" id="edit_email" name="email" placeholder="Email" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none" required>
-            <input type="tel" id="edit_phone" name="phone" placeholder="Phone" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none">
-            <input type="password" id="edit_password" name="password" placeholder="New Password (Optional)" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none">
-            <select id="edit_role" name="role" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none" onchange="toggleEditVendorField(this.value)" required>
-                <option value="admin">Admin</option>
-                <option value="vendor">Vendor</option>
-            </select>
-            <select id="edit_status" name="status" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none">
-                <option value="active">Active</option>
-                <option value="disabled">Disabled</option>
-            </select>
-        </div>
-        <div id="edit_vendor_field" class="hidden">
-            <select id="edit_vendor_id" name="vendor_id" class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none">
-                <option value="">Assign Vendor</option>
-            </select>
-        </div>
-        <button type="submit" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl">Update Account</button>
-    </form>
-</div></div>
+</div>
 
-<div id="viewUserModal" class="modal"><div class="modal-content max-w-lg rounded-2xl p-0 overflow-hidden text-center">
-    <div class="p-8 bg-gray-50/50">
-        <div id="view_avatar_circle" class="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-xl font-bold bg-white shadow-sm mb-4"></div>
-        <h3 id="view_fullname" class="font-bold text-gray-900">---</h3>
-        <p id="view_role_badge" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">---</p>
-    </div>
-    <div class="p-6 grid grid-cols-2 gap-4 text-left">
-        <div class="p-3 bg-gray-50 rounded-xl"><label class="text-[9px] font-bold text-gray-400 block mb-1 uppercase">Email</label> <span id="view_email" class="text-xs font-bold text-gray-900"></span></div>
-        <div class="p-3 bg-gray-50 rounded-xl"><label class="text-[9px] font-bold text-gray-400 block mb-1 uppercase">Phone</label> <span id="view_phone" class="text-xs font-bold text-gray-900"></span></div>
-        <div id="view_vendor_container" class="p-3 bg-emerald-50 rounded-xl hidden col-span-2"><label class="text-[9px] font-bold text-emerald-400 block mb-1 uppercase">Vendor</label> <span id="view_vendor_name" class="text-xs font-bold text-emerald-700"></span></div>
-        <div class="p-3 bg-blue-50 rounded-xl col-span-2"><label class="text-[9px] font-bold text-blue-400 block mb-1 uppercase">Secret Key</label> <span id="view_plain_password" class="text-xs font-mono text-blue-700"></span></div>
-        <div class="p-3 bg-gray-900 rounded-xl col-span-2 relative group mt-2">
-            <label class="text-[9px] font-bold text-gray-500 block mb-1 uppercase">Access Token</label>
-            <div id="view_jwt_token" class="text-[9px] text-emerald-400 font-mono break-all opacity-80 mt-1"></div>
-            <button onclick="copyToClipboard(document.getElementById('view_jwt_token').textContent)" class="absolute top-3 right-3 p-1 text-gray-500 hover:text-white"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg></button>
+<div id="viewUserModal" class="modal">
+    <div class="modal-content max-w-md rounded-2xl p-8 bg-white shadow-2xl">
+        <div class="flex items-start justify-between mb-8">
+            <div class="flex items-center gap-4">
+                <div id="view_avatar_circle"
+                    class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-2xl font-black text-blue-600 border border-blue-100/50">
+                </div>
+                <div>
+                    <h3 id="view_fullname" class="text-xl font-bold text-gray-900 leading-tight">---</h3>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span id="view_role_badge"
+                            class="text-[10px] font-bold text-blue-600 uppercase tracking-wider">---</span>
+                        <span class="text-gray-300">•</span>
+                        <div id="view_status_badge_container" class="flex items-center">
+                            <div id="view_status_dot" class="w-1.5 h-1.5 rounded-full mr-1.5"></div>
+                            <span id="view_status_badge"
+                                class="text-[10px] font-bold uppercase tracking-wider">---</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeModal('viewUserModal')"
+                class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="space-y-6">
+            <div class="grid grid-cols-1 gap-5">
+                <div class="flex items-start gap-3">
+                    <svg class="w-4 h-4 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                    <div class="min-w-0">
+                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Contact Email</p>
+                        <p id="view_email" class="text-sm font-medium text-gray-700 truncate"></p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <svg class="w-4 h-4 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z">
+                        </path>
+                    </svg>
+                    <div>
+                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Phone Number</p>
+                        <p id="view_phone" class="text-sm font-medium text-gray-700"></p>
+                    </div>
+                </div>
+
+                <div id="view_vendor_container" class="flex items-start gap-3 hidden">
+                    <svg class="w-4 h-4 text-emerald-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                        </path>
+                    </svg>
+                    <div>
+                        <p class="text-[9px] font-bold text-emerald-500 uppercase tracking-widest mb-0.5">Vendor Partner
+                        </p>
+                        <p id="view_vendor_name" class="text-sm font-bold text-emerald-700"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-gray-100">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Created</p>
+                        <p id="view_created_at" class="text-[11px] text-gray-600 font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Updated</p>
+                        <p id="view_updated_at" class="text-[11px] text-gray-600 font-medium"></p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="p-4 border-t"><button onclick="closeModal('viewUserModal')" class="w-full py-2 text-sm font-bold text-gray-500 hover:text-gray-900">Close</button></div>
-</div></div>
+</div>
 
 <script>
     let currentData = null;
@@ -365,11 +512,11 @@ ob_start();
         document.getElementById('count-active').textContent = stats.active.toLocaleString();
         document.getElementById('count-inactive').textContent = stats.disabled.toLocaleString();
         document.getElementById('count-admins').textContent = stats.admins.toLocaleString();
-        
+
         // Active card state
         const params = new URLSearchParams(window.location.search);
         const status = params.get('status');
-        
+
         document.querySelectorAll('.stats-card').forEach(c => c.classList.remove('active'));
         if (status === 'active') document.getElementById('stat-active').classList.add('active');
         else if (status === 'disabled') document.getElementById('stat-disabled').classList.add('active');
@@ -402,11 +549,11 @@ ob_start();
             const initial = user.username.charAt(0).toUpperCase();
             const colors = ['bg-blue-100 text-blue-600', 'bg-emerald-100 text-emerald-600', 'bg-purple-100 text-purple-600', 'bg-orange-100 text-orange-600'];
             const colorClass = colors[user.username.length % colors.length];
-            
+
             const role = (user.rbac_role || user.role || 'user').toLowerCase();
-            const roleClass = role.includes('admin') ? 'bg-blue-50 text-blue-600 border border-blue-100/50' : 
-                             (role.includes('vendor') || role.includes('contractor') ? 'bg-amber-50 text-amber-600 border border-amber-100/50' : 'bg-gray-100 text-gray-600');
-            
+            const roleClass = role.includes('admin') ? 'bg-blue-50 text-blue-600 border border-blue-100/50' :
+                (role.includes('vendor') || role.includes('contractor') ? 'bg-amber-50 text-amber-600 border border-amber-100/50' : 'bg-gray-100 text-gray-600');
+
             const row = `
                 <tr class="hover:bg-gray-50/50 transition-colors group">
                     <td class="px-6 py-3 whitespace-nowrap text-xs font-bold text-gray-400 text-center">
@@ -451,10 +598,13 @@ ob_start();
                         </div>
                     </td>
                     <td class="px-6 py-3 whitespace-nowrap">
-                        <div class="text-[11px] font-bold text-gray-900">${new Date(user.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</div>
+                        <div class="text-[11px] font-bold text-gray-900">${new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                     </td>
                     <td class="px-6 py-3 whitespace-nowrap text-right">
-                        <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div class="flex items-center justify-end gap-1">
+                            <a href="assign-role.php?user_id=${user.id}" class="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all" title="Assign Role/Permissions">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            </a>
                             <button onclick="viewUser(${user.id})" class="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="View Details">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                             </button>
@@ -479,7 +629,7 @@ ob_start();
         const container = document.getElementById('paginationContainer');
         const info = document.getElementById('paginationInfo');
         const nav = document.getElementById('paginationNav');
-        
+
         if (pagination.total_pages <= 1) {
             container.classList.add('hidden');
             return;
@@ -489,7 +639,7 @@ ob_start();
         const start = ((pagination.current_page - 1) * pagination.limit) + 1;
         const end = Math.min(pagination.current_page * pagination.limit, pagination.total_records);
         info.innerHTML = `Showing <span class="font-medium">${start}</span> to <span class="font-medium">${end}</span> of <span class="font-medium">${pagination.total_records}</span> results`;
-        
+
         nav.innerHTML = '';
         const current = pagination.current_page;
         const total = pagination.total_pages;
@@ -502,14 +652,14 @@ ob_start();
                 btn.onclick = (e) => { e.preventDefault(); applyFilters(page); };
             }
             btn.className = `relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ${isActive ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : isDisabled ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}`;
-            
+
             if (icon) {
                 btn.innerHTML = `<span class="sr-only">${label}</span>${icon}`;
                 btn.classList.add('px-2');
             } else {
                 btn.textContent = label;
             }
-            
+
             nav.appendChild(btn);
         };
 
@@ -552,7 +702,7 @@ ob_start();
         addBtn('Next', current + 1, false, current === total, nextIcon);
         addBtn('Last', total, false, current === total, lastIcon);
     }
-    
+
     function max(a, b) { return a > b ? a : b; }
     function min(a, b) { return a < b ? a : b; }
 
@@ -562,49 +712,76 @@ ob_start();
         document.getElementById('vendor_field').className = 'hidden';
     }
 
-    document.getElementById('createUserForm').addEventListener('submit', async function(e) {
+    document.getElementById('createUserForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         const formData = new FormData(this);
-        const response = await fetch('../../api/users.php?action=create', {method:'POST', body:formData});
+        const response = await fetch('../../api/users.php?action=create', { method: 'POST', body: formData });
         const result = await response.json();
-        if(result.success) { closeModal('createUserModal'); fetchUsers(); } else alert(result.message);
+        if (result.success) {
+            closeModal('createUserModal');
+            showToast('User account created successfully!', 'success');
+            fetchUsers();
+        } else {
+            showToast(result.message, 'error');
+        }
     });
 
-    document.getElementById('editUserForm').addEventListener('submit', async function(e) {
+    document.getElementById('editUserForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         const id = document.getElementById('edit_user_id').value;
         const formData = new FormData(this);
-        const response = await fetch(`../../api/users.php?action=update&id=${id}`, {method:'POST', body:formData});
+        const response = await fetch(`../../api/users.php?action=update&id=${id}`, { method: 'POST', body: formData });
         const result = await response.json();
-        if(result.success) { closeModal('editUserModal'); fetchUsers(); } else alert(result.message);
+        if (result.success) {
+            closeModal('editUserModal');
+            showToast('User account updated successfully!', 'success');
+            fetchUsers();
+        } else {
+            showToast(result.message, 'error');
+        }
     });
 
     async function viewUser(id) {
         const res = await fetch(`../../api/users.php?action=view&id=${id}`);
         const data = await res.json();
-        if(data.success) {
+        if (data.success) {
             const u = data.user;
             document.getElementById('view_fullname').textContent = u.username;
-            document.getElementById('view_role_badge').textContent = u.role.toUpperCase();
+            document.getElementById('view_role_badge').textContent = (u.rbac_role || u.role).toUpperCase();
             document.getElementById('view_email').textContent = u.email;
-            document.getElementById('view_phone').textContent = u.phone || 'N/A';
-            document.getElementById('view_plain_password').textContent = u.plain_password || '******';
-            document.getElementById('view_jwt_token').textContent = u.jwt_token;
+            document.getElementById('view_phone').textContent = u.phone || 'Not Provided';
+
+            // Status
+            const statusBadge = document.getElementById('view_status_badge');
+            const statusDot = document.getElementById('view_status_dot');
+            statusBadge.textContent = u.status.toUpperCase();
+            statusBadge.className = `text-[10px] font-bold uppercase tracking-wider ${u.status === 'active' ? 'text-emerald-600' : 'text-rose-600'}`;
+            statusDot.className = `w-1.5 h-1.5 rounded-full mr-1.5 ${u.status === 'active' ? 'bg-emerald-500' : 'bg-rose-500'}`;
+
+            // Dates
+            const dateOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+            document.getElementById('view_created_at').textContent = u.created_at ? new Date(u.created_at).toLocaleDateString('en-US', dateOptions) : '---';
+            document.getElementById('view_updated_at').textContent = u.updated_at ? new Date(u.updated_at).toLocaleDateString('en-US', dateOptions) : '---';
+
             document.getElementById('view_avatar_circle').textContent = u.username.charAt(0).toUpperCase();
-            
+
             const vc = document.getElementById('view_vendor_container');
-            if(u.role === 'vendor' && u.vendor_name) {
+            if (u.vendor_name) {
                 document.getElementById('view_vendor_name').textContent = u.vendor_name;
-                vc.className = 'p-3 bg-emerald-50 rounded-xl col-span-2 block';
-            } else vc.className = 'hidden';
+                vc.classList.remove('hidden');
+            } else {
+                vc.classList.add('hidden');
+            }
             openModal('viewUserModal');
+        } else {
+            showToast(data.message || 'Failed to fetch user details', 'error');
         }
     }
 
     async function editUser(id) {
         const res = await fetch(`../../api/users.php?action=edit&id=${id}`);
         const data = await res.json();
-        if(data.success) {
+        if (data.success) {
             const u = data.user;
             document.getElementById('edit_user_id').value = u.id;
             document.getElementById('edit_username').value = u.username;
@@ -613,36 +790,60 @@ ob_start();
             document.getElementById('edit_role').value = u.role;
             document.getElementById('edit_status').value = u.status;
             toggleEditVendorField(u.role);
-            if(u.role === 'vendor') {
+            if (u.role === 'vendor') {
                 setTimeout(() => document.getElementById('edit_vendor_id').value = u.vendor_id || '', 300);
             }
             openModal('editUserModal');
+        } else {
+            showToast(data.message || 'Failed to fetch user data', 'error');
         }
     }
 
     async function toggleUserStatus(id) {
-        if(confirm('Toggle user status?')) {
-            await fetch(`../../api/users.php?action=toggle-status&id=${id}`, {method:'POST'});
-            fetchUsers();
+        const confirmed = await showConfirm('Toggle Status', 'Are you sure you want to change this user\'s access status?', {
+            confirmType: 'primary',
+            confirmText: 'Yes, Change Status'
+        });
+
+        if (confirmed) {
+            const response = await fetch(`../../api/users.php?action=toggle-status&id=${id}`, { method: 'POST' });
+            const result = await response.json();
+            if (result.success) {
+                showToast('User status updated successfully!', 'info');
+                fetchUsers();
+            } else {
+                showToast(result.message, 'error');
+            }
         }
     }
 
     async function deleteUser(id) {
-        if(confirm('Delete user?')) {
-            await fetch(`../../api/users.php?action=delete&id=${id}`, {method:'POST'});
-            fetchUsers();
+        const confirmed = await showConfirm('Delete User', 'Are you sure you want to permanently delete this user account? This action cannot be reversed.', {
+            confirmType: 'danger',
+            confirmText: 'Yes, Delete Account'
+        });
+
+        if (confirmed) {
+            const response = await fetch(`../../api/users.php?action=delete&id=${id}`, { method: 'POST' });
+            const result = await response.json();
+            if (result.success) {
+                showToast('User account deleted forever.', 'success');
+                fetchUsers();
+            } else {
+                showToast(result.message, 'error');
+            }
         }
     }
 
     function toggleVendorField(role) {
         const f = document.getElementById('vendor_field');
-        if(role === 'vendor') { f.className = 'block'; loadVendors('vendor_id'); }
+        if (role === 'vendor') { f.className = 'block'; loadVendors('vendor_id'); }
         else f.className = 'hidden';
     }
 
     function toggleEditVendorField(role) {
         const f = document.getElementById('edit_vendor_field');
-        if(role === 'vendor') { f.className = 'block'; loadVendors('edit_vendor_id'); }
+        if (role === 'vendor') { f.className = 'block'; loadVendors('edit_vendor_id'); }
         else f.className = 'hidden';
     }
 
@@ -651,7 +852,7 @@ ob_start();
         fetch('../../api/masters.php?path=vendors&status=active&limit=1000')
             .then(res => res.json())
             .then(data => {
-                if(data.success && data.data.records) {
+                if (data.success && data.data.records) {
                     s.innerHTML = '<option value="">Choose Vendor</option>';
                     data.data.records.forEach(v => s.innerHTML += `<option value="${v.id}">${v.name}</option>`);
                 }
@@ -680,4 +881,4 @@ ob_start();
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../../includes/admin_layout.php';
-?> contraband 389面向对象
+?>

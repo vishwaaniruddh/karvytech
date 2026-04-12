@@ -85,7 +85,10 @@ class Vendor extends BaseModel {
     }
     
     public function getActiveVendors() {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE status = 'active' ORDER BY name");
+        $sql = "SELECT * FROM {$this->table} 
+                WHERE status = 'active' 
+                ORDER BY COALESCE(NULLIF(company_name, ''), name) ASC";
+        $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll();
     }

@@ -1,54 +1,57 @@
 <?php
 require_once __DIR__ . '/BaseModel.php';
 
-class Site extends BaseModel {
+class Site extends BaseModel
+{
     protected $table = 'sites';
-    
-    public function __construct() {
+
+    public function __construct()
+    {
         parent::__construct();
     }
-    
-    public function getAllWithPagination($page = 1, $limit = 20, $search = '', $filters = []) {
+
+    public function getAllWithPagination($page = 1, $limit = 20, $search = '', $filters = [])
+    {
         $offset = ($page - 1) * $limit;
-        
+
         $whereClause = '';
         $params = [];
         $conditions = [];
-        
+
         // Exclude soft-deleted records
         $conditions[] = "s.deleted_at IS NULL";
-        
+
         // Search functionality
         if (!empty($search)) {
             $conditions[] = "(s.site_id LIKE ? OR s.store_id LIKE ? OR s.location LIKE ? OR ct.name LIKE ? OR cu.name LIKE ? OR s.contact_person_name LIKE ?)";
             $searchTerm = "%$search%";
             $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
         }
-        
+
         // Filter by city
         if (!empty($filters['city'])) {
             $conditions[] = "ct.name = ?";
             $params[] = $filters['city'];
         }
-        
+
         // Filter by state
         if (!empty($filters['state'])) {
             $conditions[] = "st.name = ?";
             $params[] = $filters['state'];
         }
-        
+
         // Filter by activity status
         if (!empty($filters['activity_status'])) {
             $conditions[] = "s.activity_status = ?";
             $params[] = $filters['activity_status'];
         }
-        
+
         // Filter by vendor
         if (!empty($filters['vendor'])) {
             $conditions[] = "s.vendor = ?";
             $params[] = $filters['vendor'];
         }
-        
+
         // Filter by survey status
         if (!empty($filters['survey_status'])) {
             switch ($filters['survey_status']) {
@@ -66,11 +69,11 @@ class Site extends BaseModel {
                     break;
             }
         }
-        
+
         if (!empty($conditions)) {
             $whereClause = "WHERE " . implode(" AND ", $conditions);
         }
-        
+
         // Get total count
         $countSql = "SELECT COUNT(DISTINCT s.id) FROM {$this->table} s 
                      LEFT JOIN cities ct ON s.city_id = ct.id 
@@ -93,19 +96,19 @@ class Site extends BaseModel {
         $stmt = $this->db->prepare($countSql);
         $stmt->execute($params);
         $total = $stmt->fetchColumn();
-        
+
         // Get paginated results with relationships
         $sql = "SELECT s.*, 
                        ct.name as city, st.name as state, co.name as country,
                        cu.name as customer,
                         banks.name as bank_name,
-                       sd.id as delegation_id, v.name as delegated_vendor_name,
+                       sd.id as delegation_id, COALESCE(NULLIF(v.company_name, ''), v.name) as delegated_vendor_name,
                        sd.status as delegation_status, sd.delegation_date,
                        COALESCE(ss_dynamic.id, ss_legacy.id) as survey_id, 
                        COALESCE(ss_dynamic.survey_status, ss_legacy.survey_status) as actual_survey_status,
                        COALESCE(ss_dynamic.submitted_date, ss_legacy.submitted_date) as survey_submitted_date,
                        ss_legacy.vendor_id as survey_vendor_id,
-                       sv.name as survey_vendor_name,
+                       COALESCE(NULLIF(sv.company_name, ''), sv.name) as survey_vendor_name,
                        CASE 
                            WHEN ss_dynamic.id IS NOT NULL THEN 'dynamic'
                            ELSE 'legacy'
@@ -116,7 +119,7 @@ class Site extends BaseModel {
                            NULLIF(TRIM(CONCAT_WS(' ', lu.first_name, lu.last_name)), ''), 
                            lu.username
                        ) as surveyor_name,
-                       id.id as installation_id, id.status as installation_delegation_status,
+                       id.installation_id, id.installation_delegation_status,
                        CASE 
                            WHEN ss_dynamic.survey_status IN ('completed', 'approved', 'submitted') THEN 1
                            WHEN ss_legacy.survey_status IN ('completed', 'approved') THEN 1
@@ -151,16 +154,24 @@ class Site extends BaseModel {
                 LEFT JOIN users lu ON ss_legacy.created_by = lu.id
                 LEFT JOIN users du ON ss_dynamic.surveyor_id = du.id
                 LEFT JOIN vendors sv ON ss_legacy.vendor_id = sv.id
-                LEFT JOIN installation_delegations id ON s.id = id.site_id
+                LEFT JOIN (
+                     SELECT id1.site_id, id1.id as installation_id, id1.status as installation_delegation_status
+                     FROM installation_delegations id1
+                     INNER JOIN (
+                         SELECT site_id, MAX(id) as max_id
+                         FROM installation_delegations
+                         GROUP BY site_id
+                     ) id2 ON id1.site_id = id2.site_id AND id1.id = id2.max_id
+                 ) id ON s.id = id.site_id
                 $whereClause 
                 ORDER BY s.created_at DESC 
                 LIMIT $limit OFFSET $offset";
 
-                
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $sites = $stmt->fetchAll();
-        
+
         return [
             'sites' => $sites,
             'total' => $total,
@@ -169,20 +180,23 @@ class Site extends BaseModel {
             'pages' => ceil($total / $limit)
         ];
     }
-    
-    public function findBySiteId($siteId) {
+
+    public function findBySiteId($siteId)
+    {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE site_id = ?");
         $stmt->execute([$siteId]);
         return $stmt->fetch();
     }
-    
-    public function findByStoreId($storeId) {
+
+    public function findByStoreId($storeId)
+    {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE store_id = ?");
         $stmt->execute([$storeId]);
         return $stmt->fetch();
     }
-    
-    public function findWithRelations($id) {
+
+    public function findWithRelations($id)
+    {
         $sql = "SELECT s.*, 
                        ct.name as city_name, st.name as state_name, co.name as country_name,
                        cu.name as customer_name,
@@ -204,16 +218,18 @@ class Site extends BaseModel {
         $stmt->execute([$id]);
         return $stmt->fetch();
     }
-    
-    public function getUniqueValues($column) {
+
+    public function getUniqueValues($column)
+    {
         $stmt = $this->db->prepare("SELECT DISTINCT $column FROM {$this->table} WHERE $column IS NOT NULL AND $column != '' ORDER BY $column");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
-    
-    public function validateSiteData($data, $isUpdate = false, $siteId = null) {
+
+    public function validateSiteData($data, $isUpdate = false, $siteId = null)
+    {
         $errors = [];
-        
+
         // Site ID validation
         if (empty($data['site_id'])) {
             $errors['site_id'] = 'Site ID is required';
@@ -224,7 +240,7 @@ class Site extends BaseModel {
                 $errors['site_id'] = 'Site ID already exists';
             }
         }
-        
+
         // Store ID validation (optional but unique if provided)
         if (!empty($data['store_id'])) {
             $existingSite = $this->findByStoreId($data['store_id']);
@@ -232,131 +248,135 @@ class Site extends BaseModel {
                 $errors['store_id'] = 'Store ID already exists';
             }
         }
-        
+
         // Location validation
         if (empty($data['location'])) {
             $errors['location'] = 'Location is required';
         }
-        
+
         // Location foreign key validation
         if (empty($data['country_id']) || $data['country_id'] <= 0) {
             $errors['country_id'] = 'Country is required';
         }
-        
+
         if (empty($data['state_id']) || $data['state_id'] <= 0) {
             $errors['state_id'] = 'State is required';
         }
-        
+
         if (empty($data['city_id']) || $data['city_id'] <= 0) {
             $errors['city_id'] = 'City is required';
         }
-        
+
         // PO Date validation
         if (!empty($data['po_date']) && !$this->isValidDate($data['po_date'])) {
             $errors['po_date'] = 'Invalid PO date format';
         }
-        
+
         // Survey submission date validation
         if (!empty($data['survey_submission_date']) && !$this->isValidDateTime($data['survey_submission_date'])) {
             $errors['survey_submission_date'] = 'Invalid survey submission date format';
         }
-        
+
         // Installation date validation
         if (!empty($data['installation_date']) && !$this->isValidDateTime($data['installation_date'])) {
             $errors['installation_date'] = 'Invalid installation date format';
         }
-        
+
         return $errors;
     }
-    
-    private function isValidDate($date) {
+
+    private function isValidDate($date)
+    {
         $d = DateTime::createFromFormat('Y-m-d', $date);
         return $d && $d->format('Y-m-d') === $date;
     }
-    
-    private function isValidDateTime($datetime) {
+
+    private function isValidDateTime($datetime)
+    {
         $d = DateTime::createFromFormat('Y-m-d H:i:s', $datetime);
         return $d && $d->format('Y-m-d H:i:s') === $datetime;
     }
-    
-    public function getSiteStats() {
+
+    public function getSiteStats()
+    {
         $stats = [];
-        
+
         // Total sites
         $stmt = $this->db->query("SELECT COUNT(*) FROM {$this->table}");
         $stats['total'] = $stmt->fetchColumn();
-        
+
         // Sites by activity status
         $stmt = $this->db->query("SELECT activity_status, COUNT(*) as count FROM {$this->table} WHERE activity_status IS NOT NULL GROUP BY activity_status");
         $statusStats = $stmt->fetchAll();
         foreach ($statusStats as $status) {
             $stats['by_status'][$status['activity_status']] = $status['count'];
         }
-        
+
         // Survey status
         $stmt = $this->db->query("SELECT survey_status, COUNT(*) as count FROM {$this->table} GROUP BY survey_status");
         $surveyStats = $stmt->fetchAll();
         foreach ($surveyStats as $survey) {
             $stats['survey'][($survey['survey_status'] ? 'completed' : 'pending')] = $survey['count'];
         }
-        
+
         // Installation status
         $stmt = $this->db->query("SELECT installation_status, COUNT(*) as count FROM {$this->table} GROUP BY installation_status");
         $installStats = $stmt->fetchAll();
         foreach ($installStats as $install) {
             $stats['installation'][($install['installation_status'] ? 'completed' : 'pending')] = $install['count'];
         }
-        
+
         // Sites by state
         $stmt = $this->db->query("SELECT state, COUNT(*) as count FROM {$this->table} WHERE state IS NOT NULL GROUP BY state ORDER BY count DESC LIMIT 10");
         $stateStats = $stmt->fetchAll();
         foreach ($stateStats as $state) {
             $stats['by_state'][$state['state']] = $state['count'];
         }
-        
+
         // Recent sites (last 30 days)
         $stmt = $this->db->query("SELECT COUNT(*) FROM {$this->table} WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
         $stats['recent'] = $stmt->fetchColumn();
-        
+
         return $stats;
     }
-    
-    public function getOverallStatistics($search = '', $filters = []) {
+
+    public function getOverallStatistics($search = '', $filters = [])
+    {
         $whereClause = '';
         $params = [];
         $conditions = [];
-        
+
         // Search functionality
         if (!empty($search)) {
             $conditions[] = "(s.site_id LIKE ? OR s.store_id LIKE ? OR s.location LIKE ? OR ct.name LIKE ? OR cu.name LIKE ? OR s.contact_person_name LIKE ?)";
             $searchTerm = "%$search%";
             $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
         }
-        
+
         // Filter by city
         if (!empty($filters['city'])) {
             $conditions[] = "ct.name = ?";
             $params[] = $filters['city'];
         }
-        
+
         // Filter by state
         if (!empty($filters['state'])) {
             $conditions[] = "st.name = ?";
             $params[] = $filters['state'];
         }
-        
+
         // Filter by activity status
         if (!empty($filters['activity_status'])) {
             $conditions[] = "s.activity_status = ?";
             $params[] = $filters['activity_status'];
         }
-        
+
         // Filter by vendor
         if (!empty($filters['vendor'])) {
             $conditions[] = "s.vendor = ?";
             $params[] = $filters['vendor'];
         }
-        
+
         // Filter by survey status
         if (!empty($filters['survey_status'])) {
             switch ($filters['survey_status']) {
@@ -374,11 +394,11 @@ class Site extends BaseModel {
                     break;
             }
         }
-        
+
         if (!empty($conditions)) {
             $whereClause = "WHERE " . implode(" AND ", $conditions);
         }
-        
+
         $sql = "SELECT 
                     COUNT(DISTINCT s.id) as total_sites,
                     SUM(CASE WHEN sd.status = 'active' THEN 1 ELSE 0 END) as delegation_active,
@@ -413,11 +433,11 @@ class Site extends BaseModel {
                     ) dr2 ON dr1.site_id = dr2.site_id AND dr1.id = dr2.max_id
                 ) ss_dynamic ON s.id = ss_dynamic.site_id
                 $whereClause";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $stats = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         // Get customer-wise count
         $customerSql = "SELECT 
                             COALESCE(cu.name, 'No Customer') as customer_name,
@@ -439,45 +459,50 @@ class Site extends BaseModel {
                         $whereClause
                         GROUP BY cu.id, cu.name
                         ORDER BY site_count DESC";
-        
+
         $stmt = $this->db->prepare($customerSql);
         $stmt->execute($params);
         $stats['customer_counts'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         return $stats;
     }
-    
-    public function updateSurveyStatus($id, $status, $submissionDate = null) {
+
+    public function updateSurveyStatus($id, $status, $submissionDate = null)
+    {
         $data = ['survey_status' => $status ? 1 : 0];
         if ($submissionDate) {
             $data['survey_submission_date'] = $submissionDate;
         }
         return $this->update($id, $data);
     }
-    
-    public function updateInstallationStatus($id, $status, $installationDate = null) {
+
+    public function updateInstallationStatus($id, $status, $installationDate = null)
+    {
         $data = ['installation_status' => $status ? 1 : 0];
         if ($installationDate) {
             $data['installation_date'] = $installationDate;
         }
         return $this->update($id, $data);
     }
-    
-    public function delegateSite($id, $delegatedVendor) {
+
+    public function delegateSite($id, $delegatedVendor)
+    {
         return $this->update($id, [
             'is_delegate' => 1,
             'delegated_vendor' => $delegatedVendor
         ]);
     }
-    
-    public function undelegateSite($id) {
+
+    public function undelegateSite($id)
+    {
         return $this->update($id, [
             'is_delegate' => 0,
             'delegated_vendor' => null
         ]);
     }
-    
-    public function getAllSites() {
+
+    public function getAllSites()
+    {
         $sql = "SELECT s.*, 
                        ct.name as city_name, st.name as state_name
                 FROM {$this->table} s 
@@ -488,49 +513,49 @@ class Site extends BaseModel {
         $stmt->execute();
         return $stmt->fetchAll();
     }
-    
-    
-         // 🔑 UNIQUE SITE TICKET GENERATOR
+
+
+    // 🔑 UNIQUE SITE TICKET GENERATOR
     public function generateSiteTicketId(): string
-{
-    $year = date('Y');
+    {
+        $year = date('Y');
 
-    $row = $this->db->query(
-        "SELECT site_ticket_id
+        $row = $this->db->query(
+            "SELECT site_ticket_id
          FROM sites
          WHERE site_ticket_id LIKE 'KARVY-$year-%'
          ORDER BY id DESC
          LIMIT 1"
-    )->fetch();
+        )->fetch();
 
-    if ($row && !empty($row['site_ticket_id'])) {
-        $last = (int) substr($row['site_ticket_id'], -6);
-        $next = $last + 1;
-    } else {
-        $next = 1;
+        if ($row && !empty($row['site_ticket_id'])) {
+            $last = (int) substr($row['site_ticket_id'], -6);
+            $next = $last + 1;
+        } else {
+            $next = 1;
+        }
+
+        return 'KARVY-' . $year . '-' . str_pad($next, 6, '0', STR_PAD_LEFT);
     }
 
-    return 'KARVY-' . $year . '-' . str_pad($next, 6, '0', STR_PAD_LEFT);
-}
+    public function getLastTicketSequence(): int
+    {
+        $year = date('Y');
 
-public function getLastTicketSequence(): int
-{
-    $year = date('Y');
-
-    $row = $this->db->query(
-        "SELECT site_ticket_id
+        $row = $this->db->query(
+            "SELECT site_ticket_id
          FROM sites
          WHERE site_ticket_id LIKE 'KARVY-$year-%'
          ORDER BY id DESC
          LIMIT 1"
-    )->fetch();
+        )->fetch();
 
-    if ($row && !empty($row['site_ticket_id'])) {
-        return (int) substr($row['site_ticket_id'], -6);
+        if ($row && !empty($row['site_ticket_id'])) {
+            return (int) substr($row['site_ticket_id'], -6);
+        }
+
+        return 0;
     }
-
-    return 0;
-}
 
     /**
      * Override delete method to cascade delete related records
@@ -538,12 +563,13 @@ public function getLastTicketSequence(): int
     /**
      * Override delete method to implement soft delete
      */
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             // Get current user for audit
             $currentUser = Auth::getCurrentUser();
             $userId = $currentUser ? $currentUser['id'] : null;
-            
+
             // Soft delete - just mark as deleted
             $stmt = $this->db->prepare("
                 UPDATE {$this->table} 
@@ -551,30 +577,31 @@ public function getLastTicketSequence(): int
                     deleted_by = ? 
                 WHERE id = ?
             ");
-            
+
             return $stmt->execute([$userId, $id]);
-            
+
         } catch (Exception $e) {
             error_log("Site soft deletion failed: " . $e->getMessage());
             throw $e;
         }
     }
-    
+
     /**
      * Permanently delete a site (hard delete) with backup
      * @param int $id Site ID
      * @param int $requestId Superadmin request ID for backup reference
      * @param int $deletedBy User ID who approved deletion
      */
-    public function permanentDelete($id, $requestId = null, $deletedBy = null) {
+    public function permanentDelete($id, $requestId = null, $deletedBy = null)
+    {
         try {
             $this->db->beginTransaction();
-            
+
             // Create backups if requestId is provided
             if ($requestId && $deletedBy) {
                 require_once __DIR__ . '/DeletedDataBackup.php';
                 $backupModel = new DeletedDataBackup();
-                
+
                 // Backup the site record
                 $site = $this->find($id);
                 if ($site) {
@@ -587,12 +614,12 @@ public function getLastTicketSequence(): int
                         'Site record backup before permanent deletion'
                     );
                 }
-                
+
                 // Backup installation_delegations
                 $stmt = $this->db->prepare("SELECT * FROM installation_delegations WHERE site_id = ?");
                 $stmt->execute([$id]);
                 $installations = $stmt->fetchAll();
-                
+
                 foreach ($installations as $installation) {
                     $backupModel->createBackup(
                         $requestId,
@@ -602,12 +629,12 @@ public function getLastTicketSequence(): int
                         $deletedBy,
                         'Installation delegation backup'
                     );
-                    
+
                     // Backup installation_materials for this installation
                     $stmt = $this->db->prepare("SELECT * FROM installation_materials WHERE installation_id = ?");
                     $stmt->execute([$installation['id']]);
                     $materials = $stmt->fetchAll();
-                    
+
                     foreach ($materials as $material) {
                         $backupModel->createBackup(
                             $requestId,
@@ -619,12 +646,12 @@ public function getLastTicketSequence(): int
                         );
                     }
                 }
-                
+
                 // Backup site_surveys
                 $stmt = $this->db->prepare("SELECT * FROM site_surveys WHERE site_id = ?");
                 $stmt->execute([$id]);
                 $surveys = $stmt->fetchAll();
-                
+
                 foreach ($surveys as $survey) {
                     $backupModel->createBackup(
                         $requestId,
@@ -635,12 +662,12 @@ public function getLastTicketSequence(): int
                         'Site survey backup'
                     );
                 }
-                
+
                 // Backup site_delegations
                 $stmt = $this->db->prepare("SELECT * FROM site_delegations WHERE site_id = ?");
                 $stmt->execute([$id]);
                 $delegations = $stmt->fetchAll();
-                
+
                 foreach ($delegations as $delegation) {
                     $backupModel->createBackup(
                         $requestId,
@@ -651,12 +678,12 @@ public function getLastTicketSequence(): int
                         'Site delegation backup'
                     );
                 }
-                
+
                 // Backup dynamic_survey_responses
                 $stmt = $this->db->prepare("SELECT * FROM dynamic_survey_responses WHERE site_id = ?");
                 $stmt->execute([$id]);
                 $dynamicSurveys = $stmt->fetchAll();
-                
+
                 foreach ($dynamicSurveys as $dynamicSurvey) {
                     $backupModel->createBackup(
                         $requestId,
@@ -667,12 +694,12 @@ public function getLastTicketSequence(): int
                         'Dynamic survey response backup'
                     );
                 }
-                
+
                 // Backup material_requests
                 $stmt = $this->db->prepare("SELECT * FROM material_requests WHERE site_id = ?");
                 $stmt->execute([$id]);
                 $materialRequests = $stmt->fetchAll();
-                
+
                 foreach ($materialRequests as $materialRequest) {
                     $backupModel->createBackup(
                         $requestId,
@@ -684,44 +711,44 @@ public function getLastTicketSequence(): int
                     );
                 }
             }
-            
+
             // Now proceed with deletion
             // Get installation IDs for this site to delete installation_materials
             $stmt = $this->db->prepare("SELECT id FROM installation_delegations WHERE site_id = ?");
             $stmt->execute([$id]);
             $installationIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
-            
+
             // Delete installation_materials for all installations of this site
             if (!empty($installationIds)) {
                 $placeholders = implode(',', array_fill(0, count($installationIds), '?'));
                 $stmt = $this->db->prepare("DELETE FROM installation_materials WHERE installation_id IN ($placeholders)");
                 $stmt->execute($installationIds);
             }
-            
+
             // Delete installation_delegations for this site
             $stmt = $this->db->prepare("DELETE FROM installation_delegations WHERE site_id = ?");
             $stmt->execute([$id]);
-            
+
             // Delete site_surveys for this site
             $stmt = $this->db->prepare("DELETE FROM site_surveys WHERE site_id = ?");
             $stmt->execute([$id]);
-            
+
             // Delete site_delegations for this site
             $stmt = $this->db->prepare("DELETE FROM site_delegations WHERE site_id = ?");
             $stmt->execute([$id]);
-            
+
             // Delete dynamic_survey_responses for this site
             $stmt = $this->db->prepare("DELETE FROM dynamic_survey_responses WHERE site_id = ?");
             $stmt->execute([$id]);
-            
+
             // Delete material_requests for this site
             $stmt = $this->db->prepare("DELETE FROM material_requests WHERE site_id = ?");
             $stmt->execute([$id]);
-            
+
             // Finally delete the site itself (hard delete)
             $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = ?");
             $success = $stmt->execute([$id]);
-            
+
             if ($success) {
                 $this->db->commit();
                 return true;
@@ -729,18 +756,19 @@ public function getLastTicketSequence(): int
                 $this->db->rollBack();
                 return false;
             }
-            
+
         } catch (Exception $e) {
             $this->db->rollBack();
             error_log("Site permanent deletion failed: " . $e->getMessage());
             throw $e;
         }
     }
-    
+
     /**
      * Restore a soft-deleted site
      */
-    public function restore($id) {
+    public function restore($id)
+    {
         try {
             $stmt = $this->db->prepare("
                 UPDATE {$this->table} 
@@ -748,36 +776,37 @@ public function getLastTicketSequence(): int
                     deleted_by = NULL 
                 WHERE id = ?
             ");
-            
+
             return $stmt->execute([$id]);
-            
+
         } catch (Exception $e) {
             error_log("Site restoration failed: " . $e->getMessage());
             throw $e;
         }
     }
-    
+
     /**
      * Get all soft-deleted sites
      */
-    public function getTrashed($page = 1, $limit = 20, $search = '') {
+    public function getTrashed($page = 1, $limit = 20, $search = '')
+    {
         $offset = ($page - 1) * $limit;
-        
+
         $whereClause = 'WHERE s.deleted_at IS NOT NULL';
         $params = [];
-        
+
         if (!empty($search)) {
             $whereClause .= " AND (s.site_id LIKE ? OR s.store_id LIKE ? OR s.city LIKE ? OR s.state LIKE ?)";
             $searchParam = "%$search%";
             $params = [$searchParam, $searchParam, $searchParam, $searchParam];
         }
-        
+
         // Get total count
         $countSql = "SELECT COUNT(*) FROM {$this->table} s $whereClause";
         $stmt = $this->db->prepare($countSql);
         $stmt->execute($params);
         $total = $stmt->fetchColumn();
-        
+
         // Get paginated results
         $sql = "SELECT s.*, 
                        u.username as deleted_by_name,
@@ -788,11 +817,11 @@ public function getLastTicketSequence(): int
                 $whereClause
                 ORDER BY s.deleted_at DESC
                 LIMIT $limit OFFSET $offset";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $records = $stmt->fetchAll();
-        
+
         return [
             'records' => $records,
             'total' => $total,
@@ -801,7 +830,7 @@ public function getLastTicketSequence(): int
             'pages' => ceil($total / $limit)
         ];
     }
-    
-    
+
+
 }
 ?>

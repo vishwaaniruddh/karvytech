@@ -296,19 +296,21 @@ $currentUser = Auth::getCurrentUser();
             z-index: 1;
         }
         
-        /* Clean Modern Sidebar Styling */
+        /* Clean Modern Sidebar Styling - Upgraded Variant */
         .admin-sidebar {
-            background: #1f2937;
-            border-right: 1px solid #374151;
-            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.2);
+            background: #0f172a; /* Deeper midnight blue */
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
             position: fixed;
             top: 0;
             left: 0;
             z-index: 50;
             height: 100vh;
-            width: 256px;
+            width: 270px; /* Slightly wider for better breathing room */
             transform: translateX(-100%);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
         }
         
         .admin-sidebar.show {
@@ -492,92 +494,108 @@ $currentUser = Auth::getCurrentUser();
         .sidebar-item {
             display: flex;
             align-items: center;
-            padding: 10px 16px;
-            margin: 2px 8px;
-            border-radius: 8px;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 12px 18px;
+            margin: 4px 12px;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
-            min-height: 44px;
-            color: #d1d5db !important;
+            min-height: 48px;
+            color: #94a3b8 !important; /* Muted slate */
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: 0.925rem;
             position: relative;
+            border: 1px solid transparent;
         }
         
         .sidebar-item:hover {
-            background-color: #374151;
+            background-color: rgba(255, 255, 255, 0.05);
             color: #ffffff !important;
-            transform: translateX(4px);
+            transform: translateX(5px);
+            border-color: rgba(255, 255, 255, 0.1);
         }
         
         .sidebar-item.active {
-            background-color: #374151;
-            color: #6366f1 !important;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.05) 100%);
+            color: #3b82f6 !important;
             font-weight: 600;
+            border-color: rgba(59, 130, 246, 0.2);
         }
 
         .sidebar-item.active::before {
             content: '';
             position: absolute;
-            left: 0;
-            top: 20%;
-            height: 60%;
+            left: -12px;
+            top: 25%;
+            height: 50%;
             width: 4px;
-            background: #6366f1;
+            background: #3b82f6;
             border-radius: 0 4px 4px 0;
-            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+            box-shadow: 0 0 15px #3b82f6;
         }
         
         .sidebar-item svg {
             flex-shrink: 0;
-            width: 18px;
-            height: 18px;
-            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            margin-right: 14px;
             color: inherit;
-            opacity: 0.8;
+            transition: all 0.3s ease;
         }
         
         .sidebar-subitem {
             display: flex;
             align-items: center;
-            padding: 8px 12px;
-            margin: 1px 8px;
+            padding: 10px 15px;
+            margin: 2px 12px;
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 10px;
             font-size: 0.85rem;
-            transition: all 0.2s ease;
-            min-height: 36px;
-            color: #9ca3af !important;
-            font-weight: 400;
+            transition: all 0.25s ease;
+            min-height: 40px;
+            color: #64748b !important; /* Slate 400 */
+            font-weight: 500;
+            position: relative;
         }
         
         .sidebar-subitem:hover {
-            background-color: #374151;
-            color: #e5e7eb !important;
-            transform: translateX(4px);
+            color: #cbd5e1 !important;
+            transform: translateX(6px);
         }
         
         .sidebar-subitem.active {
-            color: #6366f1 !important;
+            color: #3b82f6 !important;
             font-weight: 600;
+        }
+
+        .sidebar-subitem.active::after {
+            content: '';
+            position: absolute;
+            left: -16px;
+            top: 50%;
+            width: 6px;
+            height: 6px;
+            background: #3b82f6;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
         }
         
         .sidebar-subitem svg {
             flex-shrink: 0;
-            width: 14px;
-            height: 14px;
-            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            margin-right: 12px;
             color: inherit;
-            opacity: 0.6;
+            opacity: 0.7;
         }
 
-        /* Hierarchy Indentation & Lines */
+        /* Hierarchy Indentation & Lines - Fixed Gap Issue */
         .submenu-wrapper {
             position: relative;
-            margin-left: 20px !important;
+            margin-left: 28px !important;
             padding-left: 0;
-            border-left: 1px solid rgba(75, 85, 99, 0.4);
-            transition: all 0.3s ease-in-out;
+            border-left: 1px solid rgba(71, 85, 105, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .submenu-wrapper[data-level="2"] {
@@ -958,7 +976,7 @@ $currentUser = Auth::getCurrentUser();
         }
         
         .submenu-open {
-            max-height: 500px;
+            max-height: 2000px; /* Increased to fix cutoff issue */
         }
         
         .submenu-closed {
@@ -966,7 +984,7 @@ $currentUser = Auth::getCurrentUser();
         }
         
         .submenu-arrow {
-            transition: transform 0.3s ease-in-out;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         .submenu-open .submenu-arrow {
@@ -975,7 +993,7 @@ $currentUser = Auth::getCurrentUser();
         
         /* Improved submenu transitions */
         [id^="submenu-"], #inventory-submenu, #admin-submenu {
-            transition: all 0.3s ease-in-out;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
         }
         
@@ -990,7 +1008,7 @@ $currentUser = Auth::getCurrentUser();
         
         [id^="submenu-"]:not(.hidden), #inventory-submenu:not(.hidden), #admin-submenu:not(.hidden) {
             opacity: 1;
-            max-height: 500px;
+            max-height: 2000px; /* Increased to fix cutoff issue */
         }
         
         /* Arrow transitions */
@@ -1114,11 +1132,11 @@ $currentUser = Auth::getCurrentUser();
         /* Smooth scrolling for sidebar */
         .admin-sidebar nav {
             scrollbar-width: thin;
-            scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
         }
         
         .admin-sidebar nav::-webkit-scrollbar {
-            width: 6px;
+            width: 5px;
         }
         
         .admin-sidebar nav::-webkit-scrollbar-track {
@@ -1126,12 +1144,12 @@ $currentUser = Auth::getCurrentUser();
         }
         
         .admin-sidebar nav::-webkit-scrollbar-thumb {
-            background-color: rgba(156, 163, 175, 0.5);
-            border-radius: 3px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
         }
         
         .admin-sidebar nav::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(156, 163, 175, 0.7);
+            background-color: rgba(255, 255, 255, 0.2);
         }
         
         /* Karvy Brand Styling */
@@ -1219,15 +1237,20 @@ $currentUser = Auth::getCurrentUser();
     <div class="admin-sidebar w-64 shadow-lg">
         <div class="flex flex-col h-full">
             <!-- Logo -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-600">
-                <a href="<?php echo url('/admin/dashboard.php'); ?>" class="flex items-center hover:opacity-80 transition-opacity">
+            <div class="flex items-center justify-between px-6 py-6 border-b border-white/5">
+                <a href="<?php echo url('/admin/dashboard.php'); ?>" class="flex items-center gap-3 hover:opacity-90 transition-all active:scale-95">
+                    <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
                     <div class="karvy-brand-container">
-                        <h1 class="text-lg font-bold text-white karvy-brand">Karvy Technologies</h1>
-                        <!-- <p class="text-xs text-gray-300 karvy-subtitle">Pvt Ltd</p> -->
+                        <h1 class="text-lg font-bold text-white karvy-brand tracking-tight">Karvy</h1>
+                        <p class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.2em] leading-none">Technologies</p>
                     </div>
                 </a>
                 <!-- Hamburger menu for large devices -->
-                <button id="sidebarToggle" class="hidden lg:block p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
+                <button id="sidebarToggle" class="hidden lg:flex p-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/5 transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
@@ -1300,13 +1323,7 @@ $currentUser = Auth::getCurrentUser();
                         </span>
                         
                         <div class="relative" id="user-menu">
-                            <!-- Session Timer Display -->
-                            <div id="session-timer" class="hidden lg:flex items-center mr-4 px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
-                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-                                </svg>
-                                <span id="session-time">--:--</span>
-                            </div>
+                            <!-- Session Timer Removed -->
                             
                             <button id="user-menu-button" onclick="toggleUserDropdown()" class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors">
                                 <div class="admin-badge w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs">
@@ -1347,12 +1364,7 @@ $currentUser = Auth::getCurrentUser();
                                     Help & Documentation
                                 </a>
                                 <div class="border-t border-gray-100 mt-2 pt-2">
-                                    <button onclick="extendSession()" class="flex items-center w-full px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors">
-                                        <svg class="w-4 h-4 mr-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        Extend Session
-                                    </button>
+                                    <!-- Session Extension Removed -->
                                     <a href="<?php echo url('/auth/logout.php'); ?>" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
                                         <svg class="w-4 h-4 mr-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"></path>
