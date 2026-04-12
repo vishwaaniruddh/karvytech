@@ -112,7 +112,7 @@ class User extends BaseModel {
         return $this->update($userId, ['jwt_token' => $token]);
     }
     
-    public function getAllWithPagination($page = 1, $limit = 20, $search = '', $roleFilter = '') {
+    public function getAllWithPagination($page = 1, $limit = 20, $search = '', $roleFilter = '', $statusFilter = '') {
         $offset = ($page - 1) * $limit;
         
         $whereClause = '';
@@ -133,6 +133,16 @@ class User extends BaseModel {
                 $whereClause = "WHERE r.name = ?";
             }
             $params[] = $roleFilter;
+        }
+
+        // Add status filter
+        if (!empty($statusFilter)) {
+            if (!empty($whereClause)) {
+                $whereClause .= " AND u.status = ?";
+            } else {
+                $whereClause = "WHERE u.status = ?";
+            }
+            $params[] = $statusFilter;
         }
         
         // Get total count
@@ -230,7 +240,7 @@ class User extends BaseModel {
         }
         
         // Status validation
-        if (isset($data['status']) && !in_array($data['status'], ['active', 'inactive'])) {
+        if (isset($data['status']) && !in_array($data['status'], ['active', 'disabled'])) {
             $errors['status'] = 'Invalid status selected';
         }
         
@@ -272,6 +282,10 @@ class User extends BaseModel {
         // Active users
         $stmt = $this->db->query("SELECT COUNT(*) FROM {$this->table} WHERE status = 'active'");
         $stats['active'] = $stmt->fetchColumn();
+        
+        // Disabled users
+        $stmt = $this->db->query("SELECT COUNT(*) FROM {$this->table} WHERE status = 'disabled'");
+        $stats['disabled'] = $stmt->fetchColumn();
         
         // Users by role
         $stmt = $this->db->query("SELECT role, COUNT(*) as count FROM {$this->table} GROUP BY role");

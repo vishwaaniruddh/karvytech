@@ -102,9 +102,29 @@ if (!$site) {
     exit;
 }
 
-// Get survey details - always try to find the survey for this site and vendor
+// Get survey details - check both legacy and dynamic surveys
 $surveyModel = new SiteSurvey();
 $survey = $surveyModel->findBySiteAndVendor($siteId, $vendorId);
+
+// If no legacy survey found, check for dynamic surveys
+if (!$survey) {
+    $db = Database::getInstance()->getConnection();
+    $stmt = $db->prepare("
+        SELECT dsr.*, 'dynamic' as survey_type, dsr.survey_status, dsr.submitted_date
+        FROM dynamic_survey_responses dsr
+        WHERE dsr.site_id = ?
+        AND dsr.survey_status = 'approved'
+        ORDER BY dsr.submitted_date DESC
+        LIMIT 1
+    ");
+    $stmt->execute([$siteId]);
+    $dynamicSurvey = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($dynamicSurvey) {
+        $survey = $dynamicSurvey;
+        $survey['survey_type'] = 'dynamic';
+    }
+}
 
 // echo '$siteId' . $siteId ; 
 // echo '$vendorId' . $vendorId;
@@ -123,6 +143,26 @@ $boqItems = $boqModel->getActive();
 // Get BOQ Masters for this customer
 $boqMasterModel = new BoqMaster();
 $availableBoqs = $boqMasterModel->getActiveByCustomerId($site['customer_id']);
+
+// Check for existing material requests for this site
+$db = Database::getInstance()->getConnection();
+$stmt = $db->prepare("
+    SELECT mr.*, 
+           JSON_LENGTH(mr.items) as item_count,
+           CASE 
+               WHEN mr.status = 'pending' THEN 'warning'
+               WHEN mr.status = 'approved' THEN 'success'
+               WHEN mr.status = 'rejected' THEN 'danger'
+               WHEN mr.status = 'dispatched' THEN 'info'
+               WHEN mr.status = 'completed' THEN 'success'
+               ELSE 'secondary'
+           END as status_color
+    FROM material_requests mr
+    WHERE mr.site_id = ?
+    ORDER BY mr.created_at DESC
+");
+$stmt->execute([$siteId]);
+$existingRequests = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $title = 'Material Request - ' . ($site['site_id'] ?? 'Site #' . $siteId);
 ob_start();
@@ -162,11 +202,26 @@ ob_start();
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Survey Status</label>
             <?php if ($survey): ?>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Survey Completed
-                </span>
+                <?php if (isset($survey['survey_type']) && $survey['survey_type'] === 'dynamic'): ?>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        Dynamic Survey Completed
+                    </span>
+                <?php else: ?>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        Legacy Survey Completed
+                    </span>
+                <?php endif; ?>
             <?php else: ?>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
                     No Survey Found
                 </span>
             <?php endif; ?>
@@ -174,7 +229,119 @@ ob_start();
     </div>
 </div>
 
+<!-- Existing Material Requests Warning -->
+<?php if (!empty($existingRequests)): ?>
+<div class="bg-amber-50 border border-amber-200 rounded-lg p-6 mb-8">
+    <div class="flex items-start">
+        <div class="flex-shrink-0">
+            <svg class="w-6 h-6 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+        </div>
+        <div class="ml-3 flex-1">
+            <h3 class="text-lg font-semibold text-amber-800 mb-2">
+                <svg class="w-5 h-5 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+                Existing Material Requests Found
+            </h3>
+            <p class="text-amber-700 mb-4">
+                This site already has <?php echo count($existingRequests); ?> material request(s). 
+                Please review existing requests before creating a new one to avoid duplicates.
+            </p>
+            
+            <div class="space-y-3">
+                <?php foreach ($existingRequests as $request): ?>
+                <div class="bg-white border border-amber-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3">
+                                <h4 class="font-semibold text-gray-900">Request #<?php echo $request['id']; ?></h4>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    <?php 
+                                    $status = $request['status'] ?: 'pending';
+                                    echo $status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                              ($status === 'approved' ? 'bg-green-100 text-green-800' : 
+                                              ($status === 'rejected' ? 'bg-red-100 text-red-800' : 
+                                              ($status === 'dispatched' ? 'bg-blue-100 text-blue-800' : 
+                                              ($status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800')))); ?>">
+                                    <?php echo ucfirst($status); ?>
+                                </span>
+                            </div>
+                            <div class="mt-2 text-sm text-gray-600">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <span class="font-medium">Requested:</span> 
+                                        <?php echo date('j M Y', strtotime($request['request_date'])); ?>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">Required:</span> 
+                                        <?php echo date('j M Y', strtotime($request['required_date'])); ?>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">Items:</span> 
+                                        <?php echo $request['item_count']; ?> item(s)
+                                    </div>
+                                </div>
+                                <?php if ($request['request_notes']): ?>
+                                <div class="mt-2">
+                                    <span class="font-medium">Notes:</span> 
+                                    <?php echo htmlspecialchars($request['request_notes']); ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <a href="requests/view-request.php?id=<?php echo $request['id']; ?>" 
+                               class="inline-flex items-center px-3 py-2 border border-amber-300 text-sm font-medium rounded-md text-amber-700 bg-white hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            
+            <div class="mt-4 p-4 bg-amber-100 rounded-lg">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-amber-600 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div class="text-sm text-amber-800">
+                        <p class="font-medium mb-1">Important Guidelines:</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Review existing requests to avoid duplicate orders</li>
+                            <li>Consider modifying existing pending requests instead of creating new ones</li>
+                            <li>Multiple requests may cause inventory confusion and delays</li>
+                            <li>Contact inventory team if you need to modify approved requests</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 flex items-center justify-between">
+                <div class="text-sm text-amber-700">
+                    <strong>Still need to create a new request?</strong> You can proceed below, but please ensure it's necessary.
+                </div>
+                <button onclick="toggleNewRequestForm()" id="toggleFormBtn" 
+                        class="inline-flex items-center px-4 py-2 border border-amber-600 text-sm font-medium rounded-md text-amber-700 bg-white hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 transition-colors">
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    Create New Request Anyway
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Material Request Form -->
+<div id="materialRequestFormContainer" <?php echo !empty($existingRequests) ? 'style="display: none;"' : ''; ?>>
 <form id="materialRequestForm" action="process-material-request.php" method="POST">
     <input type="hidden" name="site_id" value="<?php echo $siteId; ?>">
     <input type="hidden" name="survey_id" value="<?php echo $surveyId ?? ''; ?>">
@@ -281,6 +448,7 @@ ob_start();
         </div>
     </div>
 </form>
+</div> <!-- End materialRequestFormContainer -->
 
 <script>
 let itemCounter = 0;
@@ -288,6 +456,31 @@ const boqItems = <?php echo json_encode($boqItems); ?>;
 
 // Set minimum required date to tomorrow
 document.getElementById('required_date').min = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+function toggleNewRequestForm() {
+    const container = document.getElementById('materialRequestFormContainer');
+    const toggleBtn = document.getElementById('toggleFormBtn');
+    
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        toggleBtn.innerHTML = `
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+            </svg>
+            Hide New Request Form
+        `;
+        // Scroll to form
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        container.style.display = 'none';
+        toggleBtn.innerHTML = `
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+            </svg>
+            Create New Request Anyway
+        `;
+    }
+}
 
 function addMaterialItem() {
     itemCounter++;
@@ -392,14 +585,14 @@ function executeBoqLoad(boqId) {
                     }
                 }, 100);
             });
-            showAlert(`Successfully loaded ${data.items.length} items from BOQ`, 'success');
+            showToast(`Successfully loaded ${data.items.length} items from BOQ`, 'success');
         } else {
-            showAlert(data.message, 'error');
+            showToast(data.message, 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showAlert(error.message || 'Error loading BOQ details', 'error');
+        showToast(error.message || 'Error loading BOQ details', 'error');
     })
     .finally(() => {
         selector.disabled = false;
@@ -484,11 +677,42 @@ document.getElementById('materialRequestForm').addEventListener('submit', functi
     
     const container = document.getElementById('materialItemsContainer');
     if (container.children.length === 0) {
-        alert('Please add at least one material item before submitting.');
+        showToast('Please add at least one material item before submitting.', 'error');
         return;
     }
     
-    const formData = new FormData(this);
+    <?php if (!empty($existingRequests)): ?>
+    // Show confirmation for duplicate request
+    window.showConfirmToast('You are creating a new request while existing requests are present. Are you sure you want to proceed?', {
+        confirmText: 'Yes, Create New Request',
+        cancelText: 'Cancel',
+        onConfirm: () => {
+            submitMaterialRequest();
+        },
+        onCancel: () => {
+            showToast('Request creation cancelled', 'info');
+        }
+    });
+    <?php else: ?>
+    submitMaterialRequest();
+    <?php endif; ?>
+});
+
+function submitMaterialRequest() {
+    const form = document.getElementById('materialRequestForm');
+    const formData = new FormData(form);
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Submitting...
+    `;
     
     fetch('process-material-request.php', {
         method: 'POST',
@@ -497,17 +721,24 @@ document.getElementById('materialRequestForm').addEventListener('submit', functi
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Material request submitted successfully!');
-            window.location.href = 'sites/index.php';
+            showToast('Material request submitted successfully!', 'success');
+            setTimeout(() => {
+                window.location.href = 'sites/index.php';
+            }, 2000);
         } else {
-            alert('Error submitting request: ' + data.message);
+            showToast('Error submitting request: ' + data.message, 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while submitting the request.');
+        showToast('An error occurred while submitting the request.', 'error');
+    })
+    .finally(() => {
+        // Restore button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     });
-});
+}
 
 // Add initial item
 addMaterialItem();

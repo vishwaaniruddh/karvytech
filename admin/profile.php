@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ob_start();
 ?>
 
-<div class="max-w-4xl mx-auto">
+<div class="w-full">
     <!-- Profile Header -->
     <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg mb-6 overflow-hidden">
         <div class="px-6 py-8">

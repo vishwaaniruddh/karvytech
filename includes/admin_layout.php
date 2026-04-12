@@ -342,15 +342,19 @@ $currentUser = Auth::getCurrentUser();
             width: 80px;
         }
         
-        .admin-sidebar.collapsed .sidebar-text {
+        .admin-sidebar.collapsed .sidebar-item span,
+        .admin-sidebar.collapsed .menu-section-header span,
+        .admin-sidebar.collapsed .karvy-brand-container {
             opacity: 0;
             visibility: hidden;
             width: 0;
+            height: 0;
             overflow: hidden;
+            display: none;
             transition: all 0.3s ease;
         }
         
-        .sidebar-text {
+        .sidebar-item span, .menu-section-header span {
             transition: all 0.3s ease;
         }
         
@@ -488,71 +492,109 @@ $currentUser = Auth::getCurrentUser();
         .sidebar-item {
             display: flex;
             align-items: center;
-            padding: 8px 16px;
-            margin: 1px 8px;
+            padding: 10px 16px;
+            margin: 2px 8px;
             border-radius: 8px;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
-            min-height: 40px;
-            color: #e5e7eb !important;
+            min-height: 44px;
+            color: #d1d5db !important;
             font-weight: 500;
             font-size: 0.9rem;
+            position: relative;
         }
         
         .sidebar-item:hover {
             background-color: #374151;
-            color: #f9fafb !important;
-            transform: translateX(2px);
+            color: #ffffff !important;
+            transform: translateX(4px);
         }
         
         .sidebar-item.active {
-            background-color: transparent;
+            background-color: #374151;
             color: #6366f1 !important;
             font-weight: 600;
-            border-left: 3px solid #6366f1;
-            padding-left: 13px;
+        }
+
+        .sidebar-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 20%;
+            height: 60%;
+            width: 4px;
+            background: #6366f1;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
         }
         
         .sidebar-item svg {
             flex-shrink: 0;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             margin-right: 12px;
             color: inherit;
+            opacity: 0.8;
         }
         
         .sidebar-subitem {
             display: flex;
             align-items: center;
-            padding: 6px 10px;
-            margin: 1px 12px;
+            padding: 8px 12px;
+            margin: 1px 8px;
             text-decoration: none;
             border-radius: 6px;
-            font-size: 0.8rem;
-            transition: all 0.2s;
-            min-height: 32px;
-            color: #d1d5db !important;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+            min-height: 36px;
+            color: #9ca3af !important;
             font-weight: 400;
         }
         
         .sidebar-subitem:hover {
-            background-color: #4b5563;
+            background-color: #374151;
             color: #e5e7eb !important;
-            transform: translateX(2px);
+            transform: translateX(4px);
         }
         
         .sidebar-subitem.active {
-            background-color: transparent;
             color: #6366f1 !important;
             font-weight: 600;
         }
         
         .sidebar-subitem svg {
             flex-shrink: 0;
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             margin-right: 10px;
             color: inherit;
+            opacity: 0.6;
+        }
+
+        /* Hierarchy Indentation & Lines */
+        .submenu-wrapper {
+            position: relative;
+            margin-left: 20px !important;
+            padding-left: 0;
+            border-left: 1px solid rgba(75, 85, 99, 0.4);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .submenu-wrapper[data-level="2"] {
+            margin-left: 24px !important;
+        }
+
+        .sidebar-subitem[data-level="1"] { padding-left: 16px; }
+        .sidebar-subitem[data-level="2"] { padding-left: 20px; }
+        .sidebar-subitem[data-level="3"] { padding-left: 24px; }
+
+        .submenu-arrow {
+            color: #6b7280;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-item:hover .submenu-arrow {
+            color: #9ca3af;
         }
         
         /* Override any conflicting text colors */
@@ -682,13 +724,13 @@ $currentUser = Auth::getCurrentUser();
         @media (max-width: 768px) {
             .modal-content {
                 width: 95%;
-                top: 2rem;
-                padding: 1rem;
+                margin: 1rem auto;
+                max-height: 95vh;
             }
             
             .modal-content-large {
                 width: 98%;
-                top: 1rem;
+                margin: 1rem auto;
                 max-height: 95vh;
             }
             
@@ -800,30 +842,33 @@ $currentUser = Auth::getCurrentUser();
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 50;
             display: none;
+            align-items: center;
+            justify-content: center;
         }
         .modal.show {
-            display: block;
+            display: flex;
         }
         .modal-content {
             position: relative;
-            /* top: 5rem; */
-            margin: 0 auto;
+            margin: 2rem auto;
             padding: 1.25rem;
             border: 1px solid #e5e7eb;
             width: 91.666667%;
             max-width: 42rem;
+            max-height: 90vh;
+            overflow-y: auto;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             border-radius: 0.375rem;
             background-color: white;
         }
         .modal-content-large {
             position: relative;
-            top: 2rem;
-            margin: 0 auto;
+            margin: 2rem auto;
             border: 1px solid #e5e7eb;
             width: 95%;
             max-width: 900px;
             max-height: 90vh;
+            overflow-y: auto;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             border-radius: 0.375rem;
             background-color: white;
@@ -977,11 +1022,8 @@ $currentUser = Auth::getCurrentUser();
         
         /* Submenu container styling */
         [id$="-submenu"] {
-            background: #374151;
-            border-radius: 8px;
-            margin: 4px 8px;
-            padding: 4px 0;
-            border-left: 3px solid #6366f1;
+            /* Now handled by .submenu-wrapper */
+            max-height: 1000px;
         }
         
         [id$="-submenu"] .sidebar-subitem {
@@ -1179,9 +1221,9 @@ $currentUser = Auth::getCurrentUser();
             <!-- Logo -->
             <div class="flex items-center justify-between px-6 py-4 border-b border-gray-600">
                 <a href="<?php echo url('/admin/dashboard.php'); ?>" class="flex items-center hover:opacity-80 transition-opacity">
-                    <div class="sidebar-text">
+                    <div class="karvy-brand-container">
                         <h1 class="text-lg font-bold text-white karvy-brand">Karvy Technologies</h1>
-                        <p class="text-xs text-gray-300 karvy-subtitle">Pvt Ltd</p>
+                        <!-- <p class="text-xs text-gray-300 karvy-subtitle">Pvt Ltd</p> -->
                     </div>
                 </a>
                 <!-- Hamburger menu for large devices -->
@@ -1258,6 +1300,14 @@ $currentUser = Auth::getCurrentUser();
                         </span>
                         
                         <div class="relative" id="user-menu">
+                            <!-- Session Timer Display -->
+                            <div id="session-timer" class="hidden lg:flex items-center mr-4 px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600">
+                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span id="session-time">--:--</span>
+                            </div>
+                            
                             <button id="user-menu-button" onclick="toggleUserDropdown()" class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors">
                                 <div class="admin-badge w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs">
                                     <?php echo strtoupper(substr($currentUser['username'], 0, 1)); ?>
@@ -1297,6 +1347,12 @@ $currentUser = Auth::getCurrentUser();
                                     Help & Documentation
                                 </a>
                                 <div class="border-t border-gray-100 mt-2 pt-2">
+                                    <button onclick="extendSession()" class="flex items-center w-full px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 transition-colors">
+                                        <svg class="w-4 h-4 mr-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        Extend Session
+                                    </button>
                                     <a href="<?php echo url('/auth/logout.php'); ?>" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
                                         <svg class="w-4 h-4 mr-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"></path>
@@ -1848,6 +1904,170 @@ $currentUser = Auth::getCurrentUser();
 
         setInterval(updateClock, 1000);
         updateClock();
+
+        // Session Management System
+        class SessionManager {
+            constructor() {
+                this.sessionTimeout = <?php echo SESSION_TIMEOUT; ?> * 1000; // Convert to milliseconds
+                this.warningTime = 5 * 60 * 1000; // 5 minutes warning
+                this.renewalInterval = 10 * 60 * 1000; // Renew every 10 minutes
+                this.lastActivity = Date.now();
+                this.sessionStart = Date.now();
+                this.warningShown = false;
+                this.timerElement = document.getElementById('session-time');
+                this.timerContainer = document.getElementById('session-timer');
+                
+                this.init();
+            }
+            
+            init() {
+                // Show timer
+                if (this.timerContainer) {
+                    this.timerContainer.classList.remove('hidden');
+                }
+                
+                // Track user activity
+                this.trackActivity();
+                
+                // Start timer update
+                this.updateTimer();
+                setInterval(() => this.updateTimer(), 1000);
+                
+                // Auto-renewal for active users
+                setInterval(() => this.autoRenew(), this.renewalInterval);
+                
+                // Check session status periodically
+                setInterval(() => this.checkSession(), 30000); // Every 30 seconds
+            }
+            
+            trackActivity() {
+                const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+                
+                events.forEach(event => {
+                    document.addEventListener(event, () => {
+                        this.lastActivity = Date.now();
+                        this.warningShown = false;
+                    }, true);
+                });
+            }
+            
+            updateTimer() {
+                const now = Date.now();
+                const elapsed = now - this.sessionStart;
+                const remaining = this.sessionTimeout - elapsed;
+                
+                if (remaining <= 0) {
+                    this.handleExpiration();
+                    return;
+                }
+                
+                // Show warning if less than warning time remaining
+                if (remaining <= this.warningTime && !this.warningShown) {
+                    this.showWarning(remaining);
+                }
+                
+                // Update timer display
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                
+                if (this.timerElement) {
+                    this.timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    // Change color based on time remaining
+                    const container = this.timerContainer;
+                    if (remaining <= this.warningTime) {
+                        container.className = container.className.replace(/bg-\w+-\d+/, 'bg-red-100');
+                        container.className = container.className.replace(/text-\w+-\d+/, 'text-red-600');
+                    } else if (remaining <= this.warningTime * 2) {
+                        container.className = container.className.replace(/bg-\w+-\d+/, 'bg-yellow-100');
+                        container.className = container.className.replace(/text-\w+-\d+/, 'text-yellow-600');
+                    } else {
+                        container.className = container.className.replace(/bg-\w+-\d+/, 'bg-gray-100');
+                        container.className = container.className.replace(/text-\w+-\d+/, 'text-gray-600');
+                    }
+                }
+            }
+            
+            showWarning(remaining) {
+                this.warningShown = true;
+                const minutes = Math.floor(remaining / 60000);
+                
+                showToast(
+                    `Your session will expire in ${minutes} minute(s). Click anywhere to extend your session.`,
+                    'warning',
+                    10000
+                );
+            }
+            
+            autoRenew() {
+                const timeSinceActivity = Date.now() - this.lastActivity;
+                
+                // Only renew if user has been active in the last 10 minutes
+                if (timeSinceActivity < this.renewalInterval) {
+                    this.renewSession();
+                }
+            }
+            
+            renewSession() {
+                fetch('<?php echo url("/api/renew-session.php"); ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        this.sessionStart = Date.now();
+                        this.warningShown = false;
+                        console.log('Session renewed successfully');
+                    } else {
+                        console.warn('Session renewal failed:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Session renewal error:', error);
+                });
+            }
+            
+            checkSession() {
+                fetch('<?php echo url("/api/check-session.php"); ?>', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.valid) {
+                        this.handleExpiration();
+                    }
+                })
+                .catch(error => {
+                    console.error('Session check error:', error);
+                });
+            }
+            
+            handleExpiration() {
+                showToast('Your session has expired. You will be redirected to login.', 'error', 5000);
+                
+                setTimeout(() => {
+                    window.location.href = '<?php echo url("/auth/login.php"); ?>';
+                }, 2000);
+            }
+        }
+        
+        // Initialize session manager
+        const sessionManager = new SessionManager();
+        
+        // Manual session extension button (optional)
+        function extendSession() {
+            sessionManager.renewSession();
+            showToast('Session extended successfully!', 'success');
+        }
     </script>
     
 </body>

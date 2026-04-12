@@ -33,413 +33,239 @@ $vendors = $vendorModel->getAllVendors();
 // Get statistics
 $stats = $materialRequestModel->getStats();
 
-$title = 'Material Requests';
+$title = 'Material Requests Hub';
 ob_start();
 ?>
 
-<div class="flex justify-between items-center mb-6">
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
     <div>
-        <h1 class="text-2xl font-semibold text-gray-900">Material Requests</h1>
-        <p class="mt-2 text-sm text-gray-700">Manage material requests from vendors</p>
+        <h1 class="text-2xl font-bold text-gray-900">Material Requests Hub</h1>
+        <p class="text-sm font-medium text-gray-500 mt-1">Operational oversight of vendor requisitions and site deployments</p>
     </div>
-    <div class="relative inline-block">
-
-        <a href="bulk_material_requests_upload.php" class="btn btn-secondary">
-            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-            </svg> Upload Material Requests In Bulk
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="bulk_material_requests_upload.php" class="btn bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold text-xs py-2.5 shadow-sm inline-flex items-center">
+            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            Bulk Upload
         </a>
-
-
-
-
-        <div id="bulkUploadMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-            <div class="py-1">
-            </div>
-        </div>
-    </div>
-    <div class="flex space-x-2">
-        <button onclick="exportRequests()" class="btn btn-secondary">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-            </svg>
-            Export
+        <button onclick="exportRequests()" class="btn bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold text-xs py-2.5 shadow-sm inline-flex items-center">
+            <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export Logs
         </button>
     </div>
 </div>
 
 <!-- Statistics Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Total Requests</dt>
-                        <dd class="text-lg font-medium text-gray-900"><?php echo number_format($stats['total']); ?></dd>
-                    </dl>
-                </div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <?php
+    $statItems = [
+        ['label' => 'Total Volume', 'value' => $stats['total'], 'color' => 'blue', 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'],
+        ['label' => 'Awaiting Review', 'value' => $stats['pending'], 'color' => 'amber', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
+        ['label' => 'Approved Requests', 'value' => $stats['approved'], 'color' => 'emerald', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+        ['label' => 'Active Dispatches', 'value' => $stats['dispatched'], 'color' => 'indigo', 'icon' => 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4']
+    ];
+    foreach ($statItems as $item): ?>
+    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 bg-<?php echo $item['color']; ?>-50 rounded-lg flex items-center justify-center text-<?php echo $item['color']; ?>-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?php echo $item['icon']; ?>"/></svg>
             </div>
+            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider"><?php echo $item['label']; ?></span>
         </div>
+        <div class="text-3xl font-bold text-gray-900"><?php echo number_format($item['value']); ?></div>
     </div>
-
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Pending</dt>
-                        <dd class="text-lg font-medium text-gray-900"><?php echo number_format($stats['pending']); ?></dd>
-                    </dl>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Approved</dt>
-                        <dd class="text-lg font-medium text-gray-900"><?php echo number_format($stats['approved']); ?></dd>
-                    </dl>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                    <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Dispatched</dt>
-                        <dd class="text-lg font-medium text-gray-900"><?php echo number_format($stats['dispatched']); ?></dd>
-                    </dl>
-                </div>
-            </div>
-        </div>
-    </div>
+    <?php endforeach; ?>
 </div>
 
 <!-- Search and Filters -->
-<div class="card mb-6">
-    <div class="card-body">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <select id="statusFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    <option value="">All Status</option>
-                    <option value="draft" <?php echo $filters['status'] === 'draft' ? 'selected' : ''; ?>>Draft</option>
-                    <option value="pending" <?php echo $filters['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
-                    <option value="approved" <?php echo $filters['status'] === 'approved' ? 'selected' : ''; ?>>Approved</option>
-                    <option value="dispatched" <?php echo $filters['status'] === 'dispatched' ? 'selected' : ''; ?>>Dispatched</option>
-                    <option value="completed" <?php echo $filters['status'] === 'completed' ? 'selected' : ''; ?>>Completed</option>
-                    <option value="rejected" <?php echo $filters['status'] === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
-                </select>
-            </div>
-            <div>
-                <select id="vendorFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    <option value="">All Vendors</option>
-                    <?php foreach ($vendors as $vendor): ?>
-                        <option value="<?php echo $vendor['id']; ?>" <?php echo $filters['vendor_id'] == $vendor['id'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($vendor['name']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div>
-                <select id="siteFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    <option value="">All Sites</option>
-                    <?php foreach ($sites as $site): ?>
-                        <option value="<?php echo $site['id']; ?>" <?php echo $filters['site_id'] == $site['id'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($site['site_id']); ?> - <?php echo htmlspecialchars($site['site_name']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div>
-                <button onclick="applyFilters()" class="btn btn-primary w-full">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 10.414V17a1 1 0 01-.293.707l-2 2A1 1 0 018 19v-8.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path>
-                    </svg>
-                    Apply Filters
-                </button>
-            </div>
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lifecycle Status</label>
+            <select id="statusFilter" class="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-blue-500 focus:bg-white outline-none">
+                <option value="">All Status</option>
+                <option value="draft" <?php echo $filters['status'] === 'draft' ? 'selected' : ''; ?>>Draft</option>
+                <option value="pending" <?php echo $filters['status'] === 'pending' ? 'selected' : ''; ?>>Pending Review</option>
+                <option value="approved" <?php echo $filters['status'] === 'approved' ? 'selected' : ''; ?>>Approved</option>
+                <option value="dispatched" <?php echo $filters['status'] === 'dispatched' ? 'selected' : ''; ?>>Dispatched</option>
+                <option value="completed" <?php echo $filters['status'] === 'completed' ? 'selected' : ''; ?>>Completed</option>
+                <option value="rejected" <?php echo $filters['status'] === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
+            </select>
+        </div>
+        <div>
+            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Assigned Vendor</label>
+            <select id="vendorFilter" class="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-blue-500 focus:bg-white outline-none">
+                <option value="">All Vendors</option>
+                <?php foreach ($vendors as $vendor): ?>
+                    <option value="<?php echo $vendor['id']; ?>" <?php echo $filters['vendor_id'] == $vendor['id'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($vendor['name']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div>
+            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Site Location</label>
+            <select id="siteFilter" class="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-blue-500 focus:bg-white outline-none">
+                <option value="">All Sites</option>
+                <?php foreach ($sites as $site): ?>
+                    <option value="<?php echo $site['id']; ?>" <?php echo $filters['site_id'] == $site['id'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($site['site_id']); ?> - <?php echo htmlspecialchars($site['site_name']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="flex items-end">
+            <button onclick="applyFilters()" class="w-full py-2 bg-gray-900 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg shadow-gray-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 10.414V17a1 1 0 01-.293.707l-2 2A1 1 0 018 19v-8.586L3.293 6.707A1 1 0 013 6V3z"/></svg>
+                Apply Analysis
+            </button>
         </div>
     </div>
 </div>
 
 <!-- Material Requests Table -->
-<div class="card">
-    <div class="card-body">
-        <div class="overflow-x-auto">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Actions</th>
-                        <th>Request Details</th>
-                        <th>Site</th>
-                        <th>Vendor</th>
-                        <th>Dates</th>
-                        <th>Items</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($requests)): ?>
-                    <tr>
-                        <td colspan="7" class="text-center py-8 text-gray-500">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-2.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 009.586 13H7"></path>
-                            </svg>
-                            <p class="mt-2">No material requests found</p>
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-100">
+            <thead class="bg-gray-50/50">
+                <tr>
+                    <th class="px-6 py-4 text-left w-10">
+                        <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    </th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left w-12">#</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Actions</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Requisition ID</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Site Reconcilation</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Vendor Details</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                <?php if (empty($requests)): ?>
+                <tr>
+                    <td colspan="7" class="text-center py-20 text-gray-400 font-bold italic">No requisitions match the current criteria</td>
+                </tr>
+                <?php else: ?>
+                    <?php 
+                    $sno = ($page - 1) * $limit + 1;
+                    foreach ($requests as $request): 
+                    ?>
+                    <tr class="hover:bg-gray-50/50 transition-colors group">
+                        <td class="px-6 py-4">
+                            <input type="checkbox" class="request-cb w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" value="<?php echo $request['id']; ?>" onchange="updateBulkActionState()">
+                        </td>
+                        <td class="px-6 py-4 text-xs font-bold text-gray-400"><?php echo $sno++; ?></td>
+                         <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <button onclick="viewRequest(<?php echo $request['id']; ?>)" class="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="View Details">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </button>
+                                <?php if ($request['status'] === 'pending'): ?>
+                                    <button onclick="approveRequest(<?php echo $request['id']; ?>)" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Approve">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    </button>
+                                    <button onclick="rejectRequest(<?php echo $request['id']; ?>)" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all shadow-sm" title="Reject">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                <?php endif; ?>
+                                <?php if ($request['status'] === 'approved'): ?>
+                                    <button onclick="createDispatch(<?php echo $request['id']; ?>)" class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all shadow-sm" title="Dispatch">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div>
+                                <div class="text-sm font-bold text-gray-900">REQ#<?php echo $request['id']; ?></div>
+                                <div class="text-[11px] font-medium text-gray-400 uppercase mt-0.5">REQ DT: <?php echo date('d M Y', strtotime($request['request_date'])); ?></div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="max-w-[180px]">
+                                <div class="text-sm font-bold text-gray-900 truncate"><?php echo htmlspecialchars($request['site_code']); ?></div>
+                                <div class="text-[11px] font-medium text-gray-400 truncate mt-0.5"><?php echo htmlspecialchars($request['location']); ?></div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-bold text-gray-900"><?php echo htmlspecialchars($request['vendor_company_name'] ?? $request['vendor_name']); ?></div>
+                            <div class="text-[11px] font-medium text-gray-400 uppercase mt-0.5">Required: <?php echo $request['required_date'] ? date('d M Y', strtotime($request['required_date'])) : 'ASAP'; ?></div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <?php
+                            $statusMap = [
+                                'draft' => ['color' => 'gray', 'label' => 'Draft Plan'],
+                                'pending' => ['color' => 'amber', 'label' => 'Pending Review'],
+                                'approved' => ['color' => 'emerald', 'label' => 'Ready for Dispatch'],
+                                'dispatched' => ['color' => 'indigo', 'label' => 'In Transit'],
+                                'completed' => ['color' => 'purple', 'label' => 'Delivery Finalized'],
+                                'rejected' => ['color' => 'rose', 'label' => 'Denied']
+                            ];
+                            $st = $statusMap[$request['status']] ?? ['color' => 'gray', 'label' => $request['status']];
+                            ?>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-<?php echo $st['color']; ?>-50 text-<?php echo $st['color']; ?>-700 border border-<?php echo $st['color']; ?>-100">
+                                <?php echo $st['label']; ?>
+                            </span>
                         </td>
                     </tr>
-                    <?php else: ?>
-                        <?php foreach ($requests as $request): ?>
-                        <tr>
-                            
-                            
-                             <td>
-                                <div class="flex items-center space-x-2">
-                                    <button onclick="viewRequest(<?php echo $request['id']; ?>)" class="btn btn-sm btn-secondary" title="View Details">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
-                                        </svg>
-                                    </button>
-                                    <?php if ($request['status'] === 'pending'): ?>
-                                        <button onclick="approveRequest(<?php echo $request['id']; ?>)" class="btn btn-sm btn-success" title="Approve Request">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </button>
-                                        <button onclick="rejectRequest(<?php echo $request['id']; ?>)" class="btn btn-sm btn-danger" title="Reject Request">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </button>
-                                    <?php endif; ?>
-                                    <?php if ($request['status'] === 'approved'): ?>
-                                        <button onclick="createDispatch(<?php echo $request['id']; ?>)" class="btn btn-sm btn-primary" title="Create Dispatch">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </button>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            
-                            
-                            
-                            <td>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900">Request #<?php echo $request['id']; ?></div>
-                                    <?php if ($request['request_notes']): ?>
-                                        <div class="text-sm text-gray-500"><?php echo htmlspecialchars(substr($request['request_notes'], 0, 50)); ?>...</div>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="max-w-[150px]">
-                                    <div class="text-sm font-medium text-gray-900 truncate"><?php echo htmlspecialchars($request['site_code']); ?></div>
-                                    <div class="text-xs text-gray-500 truncate"><?php echo htmlspecialchars($request['location']); ?></div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="text-sm text-gray-900"><?php echo htmlspecialchars($request['vendor_company_name'] ?? $request['vendor_name']); ?></div>
-                                <?php if (!empty($request['vendor_name']) && $request['vendor_name'] !== $request['vendor_company_name']): ?>
-                                    <div class="text-xs text-gray-500"><?php echo htmlspecialchars($request['vendor_name']); ?></div>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <div>
-                                    <div class="text-sm text-gray-900">Requested: <?php echo date('d M Y', strtotime($request['request_date'])); ?></div>
-                                    <?php if ($request['required_date']): ?>
-                                        <div class="text-sm text-gray-500">Required: <?php echo date('d M Y', strtotime($request['required_date'])); ?></div>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td>
-                                <?php 
-                                $items = json_decode($request['items'], true);
-                                $itemCount = is_array($items) ? count($items) : 0;
-                                
-                                // Get priority from first item or request notes
-                                $priority = null;
-                                if (is_array($items) && !empty($items)) {
-                                    $priority = $items[0]['priority'] ?? null;
-                                }
-                                
-                                $priorityClasses = [
-                                    'urgent' => 'bg-red-100 text-red-800',
-                                    'high' => 'bg-orange-100 text-orange-800',
-                                    'medium' => 'bg-yellow-100 text-yellow-800',
-                                    'low' => 'bg-green-100 text-green-800'
-                                ];
-                                ?>
-                                <div>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        <?php echo $itemCount; ?> item<?php echo $itemCount != 1 ? 's' : ''; ?>
-                                    </span>
-                                    <?php if ($priority): ?>
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ml-1 <?php echo $priorityClasses[$priority] ?? 'bg-gray-100 text-gray-800'; ?>">
-                                            <?php echo ucfirst($priority); ?>
-                                        </span>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td>
-                                <?php
-                                $statusClasses = [
-                                    'draft' => 'bg-gray-100 text-gray-800',
-                                    'pending' => 'bg-yellow-100 text-yellow-800',
-                                    'approved' => 'bg-green-100 text-green-800',
-                                    'dispatched' => 'bg-blue-100 text-blue-800',
-                                    'completed' => 'bg-purple-100 text-purple-800',
-                                    'rejected' => 'bg-red-100 text-red-800'
-                                ];
-                                $statusClass = $statusClasses[$request['status']] ?? 'bg-gray-100 text-gray-800';
-                                ?>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $statusClass; ?>">
-                                    <?php echo ucfirst($request['status']); ?>
-                                </span>
-                            </td>
-                           
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-        
-        <?php if ($totalPages > 1): ?>
-        <!-- Pagination -->
-        <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4">
-            <div class="flex flex-1 justify-between sm:hidden">
-                <?php if ($page > 1): ?>
-                    <a href="?page=<?php echo $page - 1; ?>&status=<?php echo urlencode($filters['status']); ?>&vendor_id=<?php echo urlencode($filters['vendor_id']); ?>&site_id=<?php echo urlencode($filters['site_id']); ?>" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</a>
+                    <?php endforeach; ?>
                 <?php endif; ?>
-                <?php if ($page < $totalPages): ?>
-                    <a href="?page=<?php echo $page + 1; ?>&status=<?php echo urlencode($filters['status']); ?>&vendor_id=<?php echo urlencode($filters['vendor_id']); ?>&site_id=<?php echo urlencode($filters['site_id']); ?>" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</a>
-                <?php endif; ?>
-            </div>
-            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-sm text-gray-700">
-                        Showing <span class="font-medium"><?php echo (($page - 1) * $limit) + 1; ?></span> to 
-                        <span class="font-medium"><?php echo min($page * $limit, $requestsData['total']); ?></span> of 
-                        <span class="font-medium"><?php echo $requestsData['total']; ?></span> results
-                    </p>
-                </div>
-                <div>
-                    <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                            <a href="?page=<?php echo $i; ?>&status=<?php echo urlencode($filters['status']); ?>&vendor_id=<?php echo urlencode($filters['vendor_id']); ?>&site_id=<?php echo urlencode($filters['site_id']); ?>" 
-                               class="relative inline-flex items-center px-4 py-2 text-sm font-semibold <?php echo $i === $page ? 'bg-blue-600 text-white' : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'; ?> focus:z-20 focus:outline-offset-0">
-                                <?php echo $i; ?>
-                            </a>
-                        <?php endfor; ?>
-                    </nav>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
+            </tbody>
+        </table>
     </div>
+    
+    <?php if ($totalPages > 1): ?>
+    <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+        <div class="text-[11px] font-bold text-gray-400 uppercase">Page <?php echo $page; ?> of <?php echo $totalPages; ?></div>
+        <div class="flex gap-1">
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                <a href="?page=<?php echo $i; ?>&status=<?php echo urlencode($filters['status']); ?>&vendor_id=<?php echo urlencode($filters['vendor_id']); ?>&site_id=<?php echo urlencode($filters['site_id']); ?>" 
+                   class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all <?php echo $i === $page ? 'bg-gray-900 text-white shadow-lg' : 'bg-white border border-gray-200 text-gray-500 hover:border-gray-900 hover:text-gray-900'; ?>">
+                    <?php echo $i; ?>
+                </a>
+            <?php endfor; ?>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// Filter functionality
 function applyFilters() {
     const status = document.getElementById('statusFilter').value;
     const vendorId = document.getElementById('vendorFilter').value;
     const siteId = document.getElementById('siteFilter').value;
-    
     const url = new URL(window.location);
-    
-    if (status) url.searchParams.set('status', status);
-    else url.searchParams.delete('status');
-    
-    if (vendorId) url.searchParams.set('vendor_id', vendorId);
-    else url.searchParams.delete('vendor_id');
-    
-    if (siteId) url.searchParams.set('site_id', siteId);
-    else url.searchParams.delete('site_id');
-    
-    url.searchParams.delete('page'); // Reset to first page
-    
+    if (status) url.searchParams.set('status', status); else url.searchParams.delete('status');
+    if (vendorId) url.searchParams.set('vendor_id', vendorId); else url.searchParams.delete('vendor_id');
+    if (siteId) url.searchParams.set('site_id', siteId); else url.searchParams.delete('site_id');
+    url.searchParams.delete('page');
     window.location.href = url.toString();
 }
 
-// Request management functions
-function viewRequest(requestId) {
-    window.open(`view-request.php?id=${requestId}`, '_blank');
+function viewRequest(id) { window.open(`view-request.php?id=${id}`, '_blank'); }
+
+function approveRequest(id) {
+    Swal.fire({ title: 'Confirm Approval', text: "Authorize this material requisition?", icon: 'question', showCancelButton: true, confirmButtonColor: '#10b981' }).then((r) => {
+        if (r.isConfirmed) updateRequestStatus(id, 'approved');
+    });
 }
 
-function approveRequest(requestId) {
-    if (confirm('Are you sure you want to approve this material request?')) {
-        updateRequestStatus(requestId, 'approved');
-    }
+function rejectRequest(id) {
+    Swal.fire({ title: 'Deny Request', text: "Provide a reason for rejection", input: 'textarea', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444' }).then((r) => {
+        if (r.isConfirmed) updateRequestStatus(id, 'rejected', r.value);
+    });
 }
 
-function rejectRequest(requestId) {
-    if (confirm('Are you sure you want to reject this material request?')) {
-        updateRequestStatus(requestId, 'rejected');
-    }
-}
-
-function updateRequestStatus(requestId, status) {
+function updateRequestStatus(id, status, reason = '') {
     fetch('update-request-status.php', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            request_id: requestId,
-            status: status
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id: id, status: status, reason: reason })
+    }).then(res => res.json()).then(data => {
         if (data.success) {
-            showAlert(`Request ${status} successfully!`, 'success');
+            Swal.fire({ icon: 'success', title: 'Task Executed', timer: 1500, showConfirmButton: false });
             setTimeout(() => location.reload(), 1500);
-        } else {
-            showAlert('Error: ' + data.message, 'error');
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('An error occurred while updating the request.', 'error');
     });
 }
 
@@ -452,57 +278,72 @@ function exportRequests() {
     window.open(`export-requests.php?${params.toString()}`, '_blank');
 }
 
-// Auto-apply filters when dropdowns change
-document.getElementById('statusFilter').addEventListener('change', applyFilters);
-document.getElementById('vendorFilter').addEventListener('change', applyFilters);
-document.getElementById('siteFilter').addEventListener('change', applyFilters);
-
-// Show all materials modal
-function showAllMaterials(requestId, materials) {
-    const modal = document.getElementById('materialsModal');
-    const list = document.getElementById('materialsList');
-    
-    // Clear previous content
-    list.innerHTML = '';
-    
-    // Add all materials to the list
-    materials.forEach((material, index) => {
-        const li = document.createElement('li');
-        li.className = 'py-2 px-3 hover:bg-gray-50 rounded';
-        li.innerHTML = `<span class="text-sm text-gray-700">${index + 1}. ${material}</span>`;
-        list.appendChild(li);
-    });
-    
-    // Show modal
-    modal.classList.remove('hidden');
+function toggleSelectAll(checked) {
+    document.querySelectorAll('.request-cb').forEach(cb => cb.checked = checked);
+    updateBulkActionState();
 }
 
-function closeMaterialsModal() {
-    document.getElementById('materialsModal').classList.add('hidden');
+function updateBulkActionState() {
+    const checkedCount = document.querySelectorAll('.request-cb:checked').length;
+    const bulkBar = document.getElementById('bulkActionBar');
+    const selectAll = document.getElementById('selectAll');
+    const totalCount = document.querySelectorAll('.request-cb').length;
+    
+    if (checkedCount > 0) { bulkBar.classList.remove('hidden'); bulkBar.classList.add('flex'); document.getElementById('selectedCount').textContent = `${checkedCount} Items Selected`; }
+    else { bulkBar.classList.add('hidden'); bulkBar.classList.remove('flex'); }
+    
+    if (selectAll) { 
+        selectAll.checked = checkedCount > 0 && checkedCount === totalCount;
+        selectAll.indeterminate = checkedCount > 0 && checkedCount < totalCount;
+    }
+}
+
+function bulkUpdateStatus(status) {
+    const selectedIds = Array.from(document.querySelectorAll('.request-cb:checked')).map(cb => cb.value);
+    if (selectedIds.length === 0) return;
+    
+    Swal.fire({ title: 'Batch Execution', text: `Apply ${status} to ${selectedIds.length} requisitions?`, icon: 'warning', showCancelButton: true }).then((r) => {
+        if (r.isConfirmed) {
+            fetch('bulk-update-status.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ request_ids: selectedIds, status: status })
+            }).then(res => res.json()).then(data => {
+                if (data.success) { Swal.fire('Complete', data.message, 'success'); setTimeout(() => location.reload(), 1500); }
+            });
+        }
+    });
 }
 </script>
 
-<!-- Materials Modal -->
-<div id="materialsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-medium text-gray-900">All Materials</h3>
-            <button onclick="closeMaterialsModal()" class="text-gray-400 hover:text-gray-600">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                </svg>
-            </button>
+<!-- Bulk Action Bar -->
+<div id="bulkActionBar" class="fixed bottom-12 left-1/2 -translate-x-1/2 hidden bg-gray-900 text-white px-8 py-4 rounded-2xl shadow-2xl items-center gap-8 z-50 border border-gray-800 animate-bounce-short">
+    <div class="flex items-center gap-3">
+        <div class="p-2 bg-blue-600 rounded-lg">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
         </div>
-        <div class="max-h-96 overflow-y-auto">
-            <ul id="materialsList" class="divide-y divide-gray-200">
-                <!-- Materials will be inserted here -->
-            </ul>
-        </div>
-        <div class="mt-4 flex justify-end">
-            <button onclick="closeMaterialsModal()" class="btn btn-secondary">Close</button>
+        <div>
+            <div id="selectedCount" class="text-xs font-black uppercase tracking-widest">0 Items Selected</div>
+            <div class="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Batch Requisition Control</div>
         </div>
     </div>
+    
+    <div class="h-8 w-px bg-gray-800"></div>
+    
+    <div class="flex gap-2">
+        <button onclick="bulkUpdateStatus('approved')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">Authorize Batch</button>
+        <button onclick="bulkUpdateStatus('rejected')" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">Deny Batch</button>
+    </div>
+    
+    <button onclick="toggleSelectAll(false)" class="p-2 hover:bg-white/10 rounded-lg transition-colors ml-4">
+        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
 </div>
+
+<style>
+@keyframes bounce-short { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -8px); } }
+.animate-bounce-short { animation: bounce-short 3s infinite ease-in-out; }
+</style>
 
 <?php
 $content = ob_get_clean();

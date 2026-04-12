@@ -163,6 +163,7 @@ ob_start();
             <table class="data-table" id="mastersTable">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th><?php echo $masterType === 'boq' ? 'BOQ Name' : 'Name'; ?></th>
                         <?php if ($masterType === 'boq'): ?>
                             <th>Serial Required</th>
@@ -181,8 +182,13 @@ ob_start();
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($data['records'] as $record): ?>
+                    <?php 
+                    $serial_number = (($data['pagination']['current_page'] - 1) * $data['pagination']['limit']) + 1;
+                    foreach ($data['records'] as $record): ?>
                         <tr>
+                            <td class="text-sm font-medium text-gray-500">
+                                <?php echo $serial_number++; ?>
+                            </td>
                             <td>
                                 <div class="text-sm font-medium text-gray-900">
                                     <?php echo htmlspecialchars($masterType === 'boq' ? $record['boq_name'] : $record['name']); ?>
@@ -265,21 +271,124 @@ ob_start();
 
         <!-- Pagination -->
         <?php if ($data['pagination']['total_pages'] > 1): ?>
-            <div class="pagination">
-                <div class="pagination-info">
-                    Showing <?php echo (($data['pagination']['current_page'] - 1) * $data['pagination']['limit']) + 1; ?> to
-                    <?php echo min($data['pagination']['current_page'] * $data['pagination']['limit'], $data['pagination']['total_records']); ?> of
-                    <?php echo $data['pagination']['total_records']; ?> results
+            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-b-lg">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    <!-- Mobile Pagination -->
+                    <?php if ($data['pagination']['current_page'] > 1): ?>
+                        <a href="?type=<?php echo $masterType; ?>&page=<?php echo $data['pagination']['current_page'] - 1; ?><?php echo !empty($data['search']) ? '&search=' . urlencode($data['search']) : ''; ?><?php echo !empty($data['status_filter']) ? '&status=' . urlencode($data['status_filter']) : ''; ?>"
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Previous
+                        </a>
+                    <?php endif; ?>
+                    <?php if ($data['pagination']['current_page'] < $data['pagination']['total_pages']): ?>
+                        <a href="?type=<?php echo $masterType; ?>&page=<?php echo $data['pagination']['current_page'] + 1; ?><?php echo !empty($data['search']) ? '&search=' . urlencode($data['search']) : ''; ?><?php echo !empty($data['status_filter']) ? '&status=' . urlencode($data['status_filter']) : ''; ?>"
+                            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Next
+                        </a>
+                    <?php endif; ?>
                 </div>
-                <div class="pagination-nav-desktop">
-                    <nav class="flex space-x-2">
-                        <?php for ($i = 1; $i <= $data['pagination']['total_pages']; $i++): ?>
-                            <a href="?type=<?php echo $masterType; ?>&page=<?php echo $i; ?><?php echo !empty($data['search']) ? '&search=' . urlencode($data['search']) : ''; ?>"
-                                class="pagination-btn <?php echo $i === $data['pagination']['current_page'] ? 'active' : ''; ?>">
-                                <?php echo $i; ?>
-                            </a>
-                        <?php endfor; ?>
-                    </nav>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Showing
+                            <span class="font-medium"><?php echo (($data['pagination']['current_page'] - 1) * $data['pagination']['limit']) + 1; ?></span>
+                            to
+                            <span class="font-medium"><?php echo min($data['pagination']['current_page'] * $data['pagination']['limit'], $data['pagination']['total_records']); ?></span>
+                            of
+                            <span class="font-medium"><?php echo $data['pagination']['total_records']; ?></span>
+                            results
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <?php
+                            $current = $data['pagination']['current_page'];
+                            $total = $data['pagination']['total_pages'];
+                            $search_param = !empty($data['search']) ? '&search=' . urlencode($data['search']) : '';
+                            $status_param = !empty($data['status_filter']) ? '&status=' . urlencode($data['status_filter']) : '';
+                            $base_url = "?type={$masterType}";
+                            
+                            // Previous button
+                            if ($current > 1): ?>
+                                <a href="<?php echo $base_url; ?>&page=<?php echo $current - 1; ?><?php echo $search_param . $status_param; ?>"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Previous</span>
+                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            <?php else: ?>
+                                <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
+                                    <span class="sr-only">Previous</span>
+                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </span>
+                            <?php endif;
+
+                            // Page numbers
+                            $start = max(1, $current - 2);
+                            $end = min($total, $current + 2);
+
+                            // Show first page if not in range
+                            if ($start > 1): ?>
+                                <a href="<?php echo $base_url; ?>&page=1<?php echo $search_param . $status_param; ?>"
+                                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    1
+                                </a>
+                                <?php if ($start > 2): ?>
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                        ...
+                                    </span>
+                                <?php endif;
+                            endif;
+
+                            // Show page numbers in range
+                            for ($i = $start; $i <= $end; $i++): ?>
+                                <?php if ($i == $current): ?>
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                                        <?php echo $i; ?>
+                                    </span>
+                                <?php else: ?>
+                                    <a href="<?php echo $base_url; ?>&page=<?php echo $i; ?><?php echo $search_param . $status_param; ?>"
+                                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        <?php echo $i; ?>
+                                    </a>
+                                <?php endif; ?>
+                            <?php endfor;
+
+                            // Show last page if not in range
+                            if ($end < $total): ?>
+                                <?php if ($end < $total - 1): ?>
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                        ...
+                                    </span>
+                                <?php endif; ?>
+                                <a href="<?php echo $base_url; ?>&page=<?php echo $total; ?><?php echo $search_param . $status_param; ?>"
+                                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    <?php echo $total; ?>
+                                </a>
+                            <?php endif;
+
+                            // Next button
+                            if ($current < $total): ?>
+                                <a href="<?php echo $base_url; ?>&page=<?php echo $current + 1; ?><?php echo $search_param . $status_param; ?>"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">Next</span>
+                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            <?php else: ?>
+                                <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
+                                    <span class="sr-only">Next</span>
+                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </span>
+                            <?php endif; ?>
+                        </nav>
+                    </div>
                 </div>
             </div>
         <?php endif; ?>

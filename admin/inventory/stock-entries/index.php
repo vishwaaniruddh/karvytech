@@ -9,536 +9,372 @@ Auth::requireRole(ADMIN_ROLE);
 $inventoryModel = new Inventory();
 $boqModel = new BoqItem();
 
-// Handle filters
-$search = $_GET['search'] ?? '';
-$boqItemId = $_GET['boq_item_id'] ?? null;
-$location = $_GET['location'] ?? '';
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = 50;
-
-// Get individual stock entries with pagination
-$stockData = $inventoryModel->getIndividualStockEntries($boqItemId, $search, $location, $page, $limit);
-$stockEntries = $stockData['entries'];
-$totalPages = $stockData['pages'];
-$totalEntries = $stockData['total'];
-
-// Get BOQ items for filter
+// Get active BOQ items for the filter
 $boqItems = $boqModel->getActive();
 
-$title = 'Individual Stock Entries';
+$title = 'Individual Stock Registry';
 ob_start();
 ?>
 
-<div class="flex justify-between items-center mb-6">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
     <div>
-        <h1 class="text-2xl font-semibold text-gray-900">Individual Stock Entries</h1>
-        <p class="mt-2 text-sm text-gray-700">Manage individual inventory items with batch and serial tracking</p>
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Individual Stock Registry</h1>
+        <p class="text-[13px] font-medium text-gray-500 uppercase tracking-wide">Granular Material Tracking & Audit Logs</p>
     </div>
-    <div class="flex space-x-2">
-        <a href="../" class="btn btn-secondary">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-            </svg>
-            Back to Inventory
+    <div class="flex items-center gap-3">
+        <a href="../" class="p-2.5 bg-white border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-900 rounded-xl transition-all shadow-sm" title="Back to Hub">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
         </a>
-        <button onclick="openModal('addStockEntryModal')" class="btn btn-primary">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-            </svg>
-            Add Stock Entry
+        <button onclick="exportStockEntries()" class="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export Logs
+        </button>
+        <button onclick="openModal('addStockEntryModal')" class="px-5 py-2.5 bg-gray-900 text-white hover:bg-black rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Ingest Entry
         </button>
     </div>
 </div>
 
-<!-- Search and Filters -->
-<div class="card mb-6">
-    <div class="card-body">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
-                    <input type="text" id="searchInput" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search items, batch, serial..." value="<?php echo htmlspecialchars($search); ?>">
+<!-- Registry Insights (Skeleton) -->
+<div id="entriesStats" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <?php for($i=0; $i<4; $i++): ?>
+    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm animate-pulse h-[100px]"></div>
+    <?php endfor; ?>
+</div>
+
+<!-- Refine Registry Parameters -->
+<div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Search Batch / Serial</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
+                <input type="text" id="searchInput" class="w-full bg-gray-50 border-none rounded-xl pl-10 pr-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-gray-900 transition-all placeholder:text-gray-400" placeholder="Search item, batch, serial...">
+            </div>
+        </div>
+        <div>
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Material Ledger</label>
+            <select id="boqItemFilter" class="w-full bg-gray-50 border-none rounded-xl px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-gray-900 transition-all cursor-pointer">
+                <option value="">Full Registry</option>
+                <?php foreach ($boqItems as $item): ?>
+                    <option value="<?php echo $item['id']; ?>">
+                        <?php echo htmlspecialchars($item['item_name']); ?> (<?php echo htmlspecialchars($item['item_code']); ?>)
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div>
+            <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Current Placement</label>
+            <select id="locationFilter" class="w-full bg-gray-50 border-none rounded-xl px-4 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-gray-900 transition-all cursor-pointer">
+                <option value="">Global Network</option>
+                <option value="warehouse">Warehouse Node</option>
+                <option value="site">Project Site</option>
+                <option value="vendor">Vendor Base</option>
+                <option value="in_transit">In Transit / Logistics</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Registry Data Table -->
+<div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-8">
+    <div class="overflow-x-auto relative">
+        <div id="tableLoading" class="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10 transition-opacity">
+            <div class="flex flex-col items-center">
+                <div class="w-10 h-10 border-4 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        </div>
+
+        <table class="min-w-full divide-y divide-gray-100">
+            <thead class="bg-gray-50/50 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                <tr>
+                    <th class="px-6 py-4 text-left">Item Analysis</th>
+                    <th class="px-6 py-4 text-left">Batch/Serial Identity</th>
+                    <th class="px-6 py-4 text-left">Placement & Quality</th>
+                    <th class="px-6 py-4 text-left">Timeline</th>
+                    <th class="px-6 py-4 text-left">Valuation</th>
+                    <th class="px-6 py-4 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="stockEntriesTableBody" class="divide-y divide-gray-50">
+                <!-- Data will be dynamically injected -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Unified Pagination Footer -->
+    <div class="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+        <div class="flex-1 flex justify-between sm:hidden" id="paginationMobile"></div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-[11px] text-gray-700" id="paginationSummary">
+                    Showing <span class="font-bold">0</span> to <span class="font-bold">0</span> of <span class="font-bold">0</span> results
+                </p>
             </div>
             <div>
-                <select id="boqItemFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    <option value="">All Items</option>
-                    <?php foreach ($boqItems as $item): ?>
-                        <option value="<?php echo $item['id']; ?>" <?php echo $boqItemId == $item['id'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($item['item_name']); ?> (<?php echo htmlspecialchars($item['item_code']); ?>)
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div>
-                <select id="locationFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    <option value="">All Locations</option>
-                    <option value="warehouse" <?php echo $location === 'warehouse' ? 'selected' : ''; ?>>Warehouse</option>
-                    <option value="site" <?php echo $location === 'site' ? 'selected' : ''; ?>>Site</option>
-                    <option value="vendor" <?php echo $location === 'vendor' ? 'selected' : ''; ?>>Vendor</option>
-                    <option value="in_transit" <?php echo $location === 'in_transit' ? 'selected' : ''; ?>>In Transit</option>
-                </select>
-            </div>
-            <div>
-                <button onclick="exportStockEntries()" class="btn btn-secondary w-full">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                    </svg>
-                    Export
-                </button>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination" id="paginationDesktop"></nav>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Stock Entries Table -->
-<div class="card">
-    <div class="card-body">
-        <div class="overflow-x-auto">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Item Details</th>
-                        <th>Batch/Serial</th>
-                        <th>Stock</th>
-                        <th>Location</th>
-                        <th>Supplier</th>
-                        <th>Quality</th>
-                        <th>Dates</th>
-                        <th>Value</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($stockEntries)): ?>
-                    <tr>
-                        <td colspan="9" class="text-center py-8 text-gray-500">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-2.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 009.586 13H7"></path>
-                            </svg>
-                            <p class="mt-2">No stock entries found</p>
-                            <button onclick="openModal('addStockEntryModal')" class="mt-2 btn btn-primary btn-sm">Add First Entry</button>
-                        </td>
-                    </tr>
-                    <?php else: ?>
-                        <?php foreach ($stockEntries as $entry): ?>
-                        <tr>
-                            <td>
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10">
-                                        <div class="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                                            <i class="<?php echo $entry['icon_class'] ?: 'fas fa-cube'; ?> text-blue-600"></i>
-                                        </div>
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($entry['item_name']); ?></div>
-                                        <div class="text-sm text-gray-500"><?php echo htmlspecialchars($entry['item_code']); ?></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <?php if ($entry['batch_number']): ?>
-                                        <div class="text-sm font-medium text-gray-900">Batch: <?php echo htmlspecialchars($entry['batch_number']); ?></div>
-                                    <?php endif; ?>
-                                    <?php if ($entry['serial_number']): ?>
-                                        <div class="text-sm text-gray-500">Serial: <?php echo htmlspecialchars($entry['serial_number']); ?></div>
-                                    <?php endif; ?>
-                                    <?php if (!$entry['batch_number'] && !$entry['serial_number']): ?>
-                                        <span class="text-sm text-gray-400">No batch/serial</span>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900">1.00 <?php echo htmlspecialchars($entry['unit']); ?></div>
-                                    <div class="text-sm text-gray-500">
-                                        Status: 
-                                        <?php
-                                        $statusClasses = [
-                                            'available' => 'text-green-600',
-                                            'dispatched' => 'text-blue-600',
-                                            'delivered' => 'text-purple-600',
-                                            'damaged' => 'text-red-600'
-                                        ];
-                                        $statusClass = $statusClasses[$entry['item_status']] ?? 'text-gray-600';
-                                        ?>
-                                        <span class="<?php echo $statusClass; ?>"><?php echo ucfirst($entry['item_status']); ?></span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        <?php echo ucfirst($entry['location_type']); ?>
-                                    </span>
-                                    <?php if ($entry['location_name']): ?>
-                                        <div class="text-sm text-gray-500 mt-1"><?php echo htmlspecialchars($entry['location_name']); ?></div>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="text-sm text-gray-900"><?php echo htmlspecialchars($entry['supplier_name'] ?: 'N/A'); ?></div>
-                                <?php if ($entry['purchase_date']): ?>
-                                    <div class="text-sm text-gray-500">Purchased: <?php echo date('d M Y', strtotime($entry['purchase_date'])); ?></div>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php
-                                $qualityClasses = [
-                                    'good' => 'bg-green-100 text-green-800',
-                                    'damaged' => 'bg-red-100 text-red-800',
-                                    'rejected' => 'bg-gray-100 text-gray-800'
-                                ];
-                                $qualityClass = $qualityClasses[$entry['quality_status']] ?? 'bg-gray-100 text-gray-800';
-                                ?>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $qualityClass; ?>">
-                                    <?php echo ucfirst($entry['quality_status']); ?>
-                                </span>
-                            </td>
-                            <td>
-                                <div>
-                                    <?php if ($entry['purchase_date']): ?>
-                                        <div class="text-sm text-gray-900">Purchased: <?php echo date('d M Y', strtotime($entry['purchase_date'])); ?></div>
-                                    <?php endif; ?>
-                                    <?php if ($entry['expiry_date']): ?>
-                                        <div class="text-sm text-gray-500">Expires: <?php echo date('d M Y', strtotime($entry['expiry_date'])); ?></div>
-                                    <?php endif; ?>
-                                    <?php if (!$entry['purchase_date'] && !$entry['expiry_date']): ?>
-                                        <span class="text-sm text-gray-400">No dates</span>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900">₹<?php echo number_format($entry['unit_cost'], 2); ?></div>
-                                    <div class="text-sm text-gray-500">Total: ₹<?php echo number_format($entry['unit_cost'], 2); ?></div>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="flex items-center space-x-2">
-                                    <button onclick="editStockEntry(<?php echo $entry['id']; ?>)" class="btn btn-sm btn-secondary" title="Edit Entry">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
-                                        </svg>
-                                    </button>
-                                    <button onclick="moveStockEntry(<?php echo $entry['id']; ?>)" class="btn btn-sm btn-primary" title="Move Location">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                                        </svg>
-                                    </button>
-                                    <?php if ($entry['quality_status'] === 'good'): ?>
-                                        <button onclick="markDamaged(<?php echo $entry['id']; ?>)" class="btn btn-sm btn-danger" title="Mark as Damaged">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </button>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-        
-        <?php if ($totalPages > 1): ?>
-        <!-- Pagination -->
-        <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4">
-            <div class="flex flex-1 justify-between sm:hidden">
-                <?php if ($page > 1): ?>
-                    <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&boq_item_id=<?php echo urlencode($boqItemId); ?>&location=<?php echo urlencode($location); ?>" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</a>
-                <?php endif; ?>
-                <?php if ($page < $totalPages): ?>
-                    <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&boq_item_id=<?php echo urlencode($boqItemId); ?>&location=<?php echo urlencode($location); ?>" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</a>
-                <?php endif; ?>
+<!-- Modal Framework -->
+<div id="addStockEntryModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeModal('addStockEntryModal')"></div>
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+        <div class="px-8 py-6 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+            <div>
+                <h3 class="text-xl font-bold text-gray-900">Ingest Individual Material</h3>
+                <p class="text-xs font-medium text-gray-500 mt-0.5">Define metadata for a single item entry</p>
             </div>
-            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-sm text-gray-700">
-                        Showing <span class="font-medium"><?php echo (($page - 1) * $limit) + 1; ?></span> to 
-                        <span class="font-medium"><?php echo min($page * $limit, $totalEntries); ?></span> of 
-                        <span class="font-medium"><?php echo number_format($totalEntries); ?></span> stock entries
-                    </p>
-                </div>
-                <div>
-                    <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                        <?php if ($page > 1): ?>
-                            <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&boq_item_id=<?php echo urlencode($boqItemId); ?>&location=<?php echo urlencode($location); ?>" 
-                               class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                                <span class="sr-only">Previous</span>
-                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
-                                </svg>
-                            </a>
-                        <?php endif; ?>
-                        
-                        <?php
-                        $startPage = max(1, $page - 2);
-                        $endPage = min($totalPages, $page + 2);
-                        
-                        for ($i = $startPage; $i <= $endPage; $i++): ?>
-                            <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&boq_item_id=<?php echo urlencode($boqItemId); ?>&location=<?php echo urlencode($location); ?>" 
-                               class="relative inline-flex items-center px-4 py-2 text-sm font-semibold <?php echo $i === $page ? 'bg-blue-600 text-white' : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'; ?> focus:z-20">
-                                <?php echo $i; ?>
-                            </a>
-                        <?php endfor; ?>
-                        
-                        <?php if ($page < $totalPages): ?>
-                            <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&boq_item_id=<?php echo urlencode($boqItemId); ?>&location=<?php echo urlencode($location); ?>" 
-                               class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                                <span class="sr-only">Next</span>
-                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
-                                </svg>
-                            </a>
-                        <?php endif; ?>
-                    </nav>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<!-- Add Stock Entry Modal -->
-<div id="addStockEntryModal" class="modal">
-    <div class="modal-content max-w-4xl">
-        <div class="modal-header">
-            <h3 class="modal-title">Add Individual Stock Entry</h3>
-            <button type="button" class="modal-close" onclick="closeModal('addStockEntryModal')">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                </svg>
+            <button onclick="closeModal('addStockEntryModal')" class="w-10 h-10 rounded-xl hover:bg-white hover:shadow-sm text-gray-400 hover:text-gray-900 transition-all flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <form id="addStockEntryForm">
-            <div class="modal-body">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="form-group">
-                        <label for="boq_item_id" class="form-label">BOQ Item *</label>
-                        <select id="boq_item_id" name="boq_item_id" class="form-select" required>
-                            <option value="">Select Item</option>
-                            <?php foreach ($boqItems as $item): ?>
-                                <option value="<?php echo $item['id']; ?>">
-                                    <?php echo htmlspecialchars($item['item_name']); ?> (<?php echo htmlspecialchars($item['item_code']); ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="quantity" class="form-label">Quantity *</label>
-                        <input type="number" id="quantity" name="quantity" step="0.01" class="form-input" required value="1">
-                        <div class="text-xs text-gray-500 mt-1">Note: Each entry represents individual items. For bulk entries, use the bulk stock entry feature.</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="unit_cost" class="form-label">Unit Cost *</label>
-                        <input type="number" id="unit_cost" name="unit_cost" step="0.01" class="form-input" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="batch_number" class="form-label">Batch Number</label>
-                        <input type="text" id="batch_number" name="batch_number" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="serial_number" class="form-label">Serial Number</label>
-                        <input type="text" id="serial_number" name="serial_number" class="form-input" placeholder="Optional - leave empty for auto-generation">
-                        <div class="text-xs text-gray-500 mt-1">
-                            For multiple items: Use as base (e.g., "DEVICE123" becomes "DEVICE123-001", "DEVICE123-002", etc.)
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="location_type" class="form-label">Location Type *</label>
-                        <select id="location_type" name="location_type" class="form-select" required>
-                            <option value="warehouse">Warehouse</option>
-                            <option value="site">Site</option>
-                            <option value="vendor">Vendor</option>
-                            <option value="in_transit">In Transit</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="location_name" class="form-label">Location Name</label>
-                        <input type="text" id="location_name" name="location_name" class="form-input" placeholder="e.g., Main Warehouse, Site A">
-                    </div>
-                    <div class="form-group">
-                        <label for="supplier_name" class="form-label">Supplier Name</label>
-                        <input type="text" id="supplier_name" name="supplier_name" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="purchase_date" class="form-label">Purchase Date</label>
-                        <input type="date" id="purchase_date" name="purchase_date" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="expiry_date" class="form-label">Expiry Date</label>
-                        <input type="date" id="expiry_date" name="expiry_date" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="quality_status" class="form-label">Quality Status</label>
-                        <select id="quality_status" name="quality_status" class="form-select">
-                            <option value="good">Good</option>
-                            <option value="damaged">Damaged</option>
-                            <option value="rejected">Rejected</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="warranty_period" class="form-label">Warranty Period</label>
-                        <input type="text" id="warranty_period" name="warranty_period" class="form-input" placeholder="e.g., 1 year, 6 months">
-                    </div>
-                    <div class="form-group md:col-span-2">
-                        <label for="notes" class="form-label">Notes</label>
-                        <textarea id="notes" name="notes" rows="3" class="form-input" placeholder="Additional notes about this stock entry..."></textarea>
-                    </div>
+        <form id="addStockEntryForm" class="p-8">
+            <div class="grid grid-cols-2 gap-6 mb-8">
+                <div class="col-span-2">
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Asset Selection</label>
+                    <select name="boq_item_id" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-gray-900 transition-all" required>
+                        <option value="">Select Material From Ledger</option>
+                        <?php foreach ($boqItems as $item): ?>
+                            <option value="<?php echo $item['id']; ?>"><?php echo htmlspecialchars($item['item_name']); ?> (<?php echo htmlspecialchars($item['item_code']); ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Unit Cost (₹)</label>
+                    <input type="number" name="unit_cost" step="0.01" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-gray-900 transition-all" placeholder="0.00" required>
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Batch / LOT Number</label>
+                    <input type="text" name="batch_number" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-gray-900 transition-all" placeholder="Enter batch ID...">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Serial Physical UID</label>
+                    <input type="text" name="serial_number" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-gray-900 transition-all" placeholder="Unique serial number...">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 block">Operational Placement</label>
+                    <select name="location_type" class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-gray-900 transition-all" required>
+                        <option value="warehouse">Warehouse Node</option>
+                        <option value="site">Project Site</option>
+                        <option value="vendor">Vendor Base</option>
+                        <option value="in_transit">In Transit</option>
+                    </select>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" onclick="closeModal('addStockEntryModal')" class="btn btn-secondary">Cancel</button>
-                <button type="submit" class="btn btn-primary">Add Stock Entry</button>
+            <div class="flex gap-3 pt-4 border-t border-gray-100">
+                <button type="button" onclick="closeModal('addStockEntryModal')" class="flex-1 py-3 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-widest">Cancel</button>
+                <button type="submit" class="flex-[2] py-3 bg-gray-900 text-white rounded-xl text-sm font-bold uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-gray-200">Finalize Entry</button>
             </div>
         </form>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-// Search functionality
-document.getElementById('searchInput').addEventListener('keyup', debounce(function() {
-    applyFilters();
-}, 500));
+let currentPage = 1;
 
-document.getElementById('boqItemFilter').addEventListener('change', applyFilters);
-document.getElementById('locationFilter').addEventListener('change', applyFilters);
+document.addEventListener('DOMContentLoaded', () => {
+    loadStats();
+    loadEntries();
+});
 
-function applyFilters() {
-    const searchTerm = document.getElementById('searchInput').value;
+async function loadStats() {
+    try {
+        const response = await fetch('../../../api/inventory.php?action=get_stats');
+        const res = await response.json();
+        if (res.success) {
+            const stats = res.data;
+            document.getElementById('entriesStats').innerHTML = `
+                <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Material volume</div>
+                    <div class="text-2xl font-bold text-gray-900">${new Intl.NumberFormat().format(stats.total_entries)}</div>
+                    <div class="text-[10px] font-medium text-gray-400 mt-1 uppercase">Total serial logs</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Live Valuation</div>
+                    <div class="text-2xl font-bold text-emerald-600">₹${(stats.total_value / 100000).toFixed(2)}L</div>
+                    <div class="text-[10px] font-medium text-gray-400 mt-1 uppercase">Book Asset Value</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Quality Index</div>
+                    <div class="text-2xl font-bold text-blue-600">${new Intl.NumberFormat().format(stats.available_quantity)}</div>
+                    <div class="text-[10px] font-medium text-gray-400 mt-1 uppercase">A-Grade Operational</div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Recent Flux</div>
+                    <div class="text-2xl font-bold text-indigo-600">+${new Intl.NumberFormat().format(stats.recent_additions)}</div>
+                    <div class="text-[10px] font-medium text-gray-400 mt-1 uppercase">Additions (7D)</div>
+                </div>
+            `;
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function loadEntries(page = 1) {
+    currentPage = page;
+    const loading = document.getElementById('tableLoading');
+    if (loading) {
+        loading.style.opacity = '1';
+        loading.classList.remove('hidden');
+    }
+
+    const search = document.getElementById('searchInput').value;
     const boqItemId = document.getElementById('boqItemFilter').value;
     const location = document.getElementById('locationFilter').value;
-    
-    const url = new URL(window.location);
-    
-    if (searchTerm) url.searchParams.set('search', searchTerm);
-    else url.searchParams.delete('search');
-    
-    if (boqItemId) url.searchParams.set('boq_item_id', boqItemId);
-    else url.searchParams.delete('boq_item_id');
-    
-    if (location) url.searchParams.set('location', location);
-    else url.searchParams.delete('location');
-    
-    window.location.href = url.toString();
-}
 
-// Stock entry management functions
-function editStockEntry(entryId) {
-    // Implementation for editing stock entry
-    console.log('Edit stock entry:', entryId);
-}
-
-function moveStockEntry(entryId) {
-    // Implementation for moving stock entry location
-    console.log('Move stock entry:', entryId);
-}
-
-function markDamaged(entryId) {
-    if (confirm('Mark this stock entry as damaged?')) {
-        fetch('update-stock-entry.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                entry_id: entryId,
-                quality_status: 'damaged'
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showAlert('Stock entry marked as damaged', 'success');
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                showAlert('Error: ' + data.message, 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('An error occurred while updating the entry.', 'error');
+    try {
+        const query = new URLSearchParams({
+            action: 'get_stock_entries',
+            page,
+            search,
+            boq_item_id: boqItemId,
+            location
         });
+
+        const res = await fetch(`../../../api/inventory.php?${query.toString()}`);
+        const result = await res.json();
+        
+        if (result.success) {
+            renderTable(result.data.entries);
+            renderPagination(result.data);
+        }
+    } catch (e) { console.error(e); }
+    finally {
+        if (loading) {
+            loading.style.opacity = '0';
+            setTimeout(() => loading.classList.add('hidden'), 300);
+        }
     }
 }
 
-function exportStockEntries() {
-    const params = new URLSearchParams(window.location.search);
-    window.open(`export-stock-entries.php?${params.toString()}`, '_blank');
-}
+function renderTable(entries) {
+    const tbody = document.getElementById('stockEntriesTableBody');
+    if (!tbody) return;
 
-// Quantity change handler to show serial number preview
-document.getElementById('quantity').addEventListener('input', function() {
-    updateSerialNumberPreview();
-});
-
-document.getElementById('serial_number').addEventListener('input', function() {
-    updateSerialNumberPreview();
-});
-
-function updateSerialNumberPreview() {
-    const quantity = parseInt(document.getElementById('quantity').value) || 1;
-    const serialNumber = document.getElementById('serial_number').value.trim();
-    const serialHelp = document.querySelector('#serial_number + .text-xs');
-    
-    if (quantity > 1) {
-        if (serialNumber) {
-            serialHelp.innerHTML = `For ${quantity} items: "${serialNumber}-001", "${serialNumber}-002", ... "${serialNumber}-${String(quantity).padStart(3, '0')}"`;
-            serialHelp.className = 'text-xs text-blue-600 mt-1';
-        } else {
-            serialHelp.innerHTML = `For ${quantity} items: Auto-generated serials will be created (e.g., "ITM12_20241203123456-001", "ITM12_20241203123456-002", etc.)`;
-            serialHelp.className = 'text-xs text-gray-500 mt-1';
-        }
-    } else {
-        serialHelp.innerHTML = 'For single item: Use exact serial number or leave empty';
-        serialHelp.className = 'text-xs text-gray-500 mt-1';
+    if (!entries || entries.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-20 text-gray-400 font-bold italic">No log items found in registry</td></tr>';
+        return;
     }
+
+    tbody.innerHTML = entries.map(entry => `
+        <tr class="hover:bg-gray-50/50 transition-colors group">
+            <td class="px-6 py-5">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 border border-transparent group-hover:border-gray-200 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold text-gray-900">${entry.item_name}</div>
+                        <div class="text-[10px] font-bold text-indigo-600 uppercase tracking-tighter mt-0.5">${entry.item_code}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-6 py-5">
+                <div class="text-xs font-bold text-gray-700">${entry.batch_number ? 'BATCH: ' + entry.batch_number : '--'}</div>
+                <div class="text-[10px] font-medium text-gray-400 uppercase tracking-tighter mt-1">SERIAL: ${entry.serial_number || 'GENERIC LOG'}</div>
+            </td>
+            <td class="px-6 py-5">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="w-1.5 h-1.5 rounded-full ${entry.location_type === 'warehouse' ? 'bg-emerald-500' : 'bg-amber-500'}"></span>
+                    <span class="text-xs font-bold text-gray-700 uppercase">${entry.location_type}</span>
+                </div>
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${entry.quality_status === 'good' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}">
+                    ${entry.quality_status} condition
+                </span>
+            </td>
+            <td class="px-6 py-5 text-sm">
+                <div class="text-xs font-bold text-gray-900">${entry.purchase_date ? new Date(entry.purchase_date).toLocaleDateString() : '--'}</div>
+                <div class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Entry Timestamp</div>
+            </td>
+            <td class="px-6 py-5">
+                <div class="text-sm font-bold text-gray-900">₹${new Intl.NumberFormat('en-IN').format(parseFloat(entry.unit_cost || 0).toFixed(2))}</div>
+                <div class="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mt-1">Acquisition Cost</div>
+            </td>
+            <td class="px-6 py-5 text-center">
+                <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    </button>
+                    <button onclick="markDamaged(${entry.id})" class="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-rose-600 transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
 }
 
-// Form submission
-document.getElementById('addStockEntryForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    
-    fetch('add-stock-entry.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('Stock entry added successfully!', 'success');
-            closeModal('addStockEntryModal');
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            showAlert('Error: ' + data.message, 'error');
+function renderPagination(pg) {
+    try {
+        const summary = document.getElementById('paginationSummary');
+        if (summary) {
+            summary.innerHTML = `Showing <span class="font-bold">${((pg.page - 1) * pg.limit) + 1}</span> to <span class="font-bold">${Math.min(pg.page * pg.limit, pg.total)}</span> of <span class="font-bold">${pg.total}</span> results`;
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('An error occurred while adding the stock entry.', 'error');
-    });
-});
+        
+        const nav = document.getElementById('paginationDesktop');
+        if (!nav) return;
+        
+        let html = '';
+        html += `<button onclick="loadEntries(1)" ${pg.page === 1 ? 'disabled' : ''} class="px-2 py-2 rounded-l-md border border-gray-300 bg-white text-[11px] font-bold uppercase text-gray-500 hover:bg-gray-50 disabled:opacity-50">First</button>`;
+        
+        for (let i = Math.max(1, pg.page - 2); i <= Math.min(pg.pages, pg.page + 2); i++) {
+            html += `<button onclick="loadEntries(${i})" class="px-4 py-2 border text-xs font-bold ${i === pg.page ? 'bg-gray-900 border-gray-900 text-white shadow-md z-10' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}">${i}</button>`;
+        }
 
-// Utility function for debouncing
+        html += `<button onclick="loadEntries(${pg.pages})" ${pg.page === pg.pages ? 'disabled' : ''} class="px-2 py-2 rounded-r-md border border-gray-300 bg-white text-[11px] font-bold uppercase text-gray-500 hover:bg-gray-50 disabled:opacity-50">Last</button>`;
+        nav.innerHTML = html;
+        
+        const mobile = document.getElementById('paginationMobile');
+        if (mobile) {
+            mobile.innerHTML = `
+                <button onclick="loadEntries(${pg.page - 1})" ${pg.page === 1 ? 'disabled' : ''} class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">Previous</button>
+                <button onclick="loadEntries(${pg.page + 1})" ${pg.page === pg.pages ? 'disabled' : ''} class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">Next</button>
+            `;
+        }
+    } catch (e) { console.error('Error in renderPagination:', e); }
+}
+
+// Modal Control
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// Filters with debounce
 function debounce(func, wait) {
     let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
+    return (...args) => {
         clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
+        timeout = setTimeout(() => func.apply(this, args), wait);
     };
+}
+
+document.getElementById('searchInput').addEventListener('keyup', debounce(() => loadEntries(1), 500));
+document.getElementById('boqItemFilter').addEventListener('change', () => loadEntries(1));
+document.getElementById('locationFilter').addEventListener('change', () => loadEntries(1));
+
+function exportStockEntries() {
+    window.open('export-stock-entries.php', '_blank');
+}
+
+function markDamaged(id) {
+    Swal.fire({
+        title: 'Report Damage',
+        text: 'Confirm material degradation entry?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        confirmButtonText: 'Confirm'
+    }).then(res => {
+        if (res.isConfirmed) {
+            // API call logic
+            console.log('Reporting damage for ' + id);
+        }
+    });
 }
 </script>
 

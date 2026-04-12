@@ -18,6 +18,17 @@ $search = $_GET['search'] ?? '';
 $status = $_GET['status'] ?? '';
 $siteId = $_GET['site_id'] ?? null;
 
+// Handle material request pre-fills
+$requestId = $_GET['request_id'] ?? null;
+$materialRequest = null;
+$requestItems = [];
+
+if ($requestId) {
+    // Assuming you have a way to get material request details
+    // For now, initialize them to avoid errors
+    // If you have a method like $inventoryModel->getMaterialRequest($requestId), call it here
+}
+
 // Get dispatches
 $dispatchesData = $inventoryModel->getDispatches($page, $limit, $search, $status, $siteId);
 $dispatches = $dispatchesData['dispatches'];
@@ -31,61 +42,89 @@ $title = 'Material Dispatches';
 ob_start();
 ?>
 
-<div class="flex justify-between items-center mb-6">
+<?php
+// Get dispatch stats for the header
+$dispatchStats = [
+    ['label' => 'Total Dispatches', 'count' => $dispatchesData['total'], 'color' => 'blue', 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'],
+    ['label' => 'In Transit', 'count' => count(array_filter($dispatches, fn($d) => in_array($d['dispatch_status'], ['dispatched', 'in_transit']))), 'color' => 'indigo', 'icon' => 'M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0'],
+    ['label' => 'Delivered', 'count' => count(array_filter($dispatches, fn($d) => $d['dispatch_status'] === 'delivered')), 'color' => 'emerald', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+    ['label' => 'Pending Action', 'count' => count(array_filter($dispatches, fn($d) => $d['dispatch_status'] === 'prepared')), 'color' => 'amber', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z']
+];
+?>
+
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
     <div>
-        <h1 class="text-2xl font-semibold text-gray-900">Material Dispatches</h1>
-        <p class="mt-2 text-sm text-gray-700">Manage material dispatches to sites and vendors</p>
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Material Dispatches</h1>
+        <p class="text-[13px] font-medium text-gray-500 mt-1 uppercase tracking-wide">Logistics & Supply Chain Manifest</p>
     </div>
-    <div class="flex space-x-2">
-        <a href="../" class="btn btn-secondary">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-            </svg>
-            Back to Inventory
-        </a>
-        <button onclick="openModal('createDispatchModal')" class="btn btn-primary">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-            </svg>
-            New Dispatch
+    <div class="flex items-center gap-3">
+        <button onclick="exportDispatches()" class="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export
         </button>
+        <button onclick="openModal('createDispatchModal')" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-blue-200 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Create Dispatch
+        </button>
+        <a href="../" class="p-2.5 bg-white border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-900 rounded-xl transition-all shadow-sm" title="Back to Inventory">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+        </a>
     </div>
 </div>
 
-<!-- Search and Filters -->
-<div class="card mb-6">
-    <div class="card-body">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="md:col-span-2">
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
-                    <input type="text" id="searchInput" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Search dispatches..." value="<?php echo htmlspecialchars($search); ?>">
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <?php foreach ($dispatchStats as $stat): ?>
+    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow group">
+        <div class="flex items-center justify-between mb-4">
+            <div class="w-10 h-10 bg-<?php echo $stat['color']; ?>-50 rounded-xl flex items-center justify-center text-<?php echo $stat['color']; ?>-600 group-hover:scale-110 transition-transform">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?php echo $stat['icon']; ?>"/></svg>
+            </div>
+            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider"><?php echo $stat['label']; ?></span>
+        </div>
+        <div class="text-3xl font-bold text-gray-900"><?php echo number_format($stat['count']); ?></div>
+    </div>
+    <?php endforeach; ?>
+</div>
+
+<!-- Refined Filters -->
+<div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+        <div class="md:col-span-5 relative">
+            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Search Dispatch / Courier</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
+                <input type="text" id="searchInput" class="block w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-transparent rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all" placeholder="Enter dispatch number, contact or tracking..." value="<?php echo htmlspecialchars($search); ?>">
             </div>
-            <div>
-                <select id="statusFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    <option value="">All Status</option>
-                    <option value="prepared" <?php echo $status === 'prepared' ? 'selected' : ''; ?>>Prepared</option>
-                    <option value="dispatched" <?php echo $status === 'dispatched' ? 'selected' : ''; ?>>Dispatched</option>
-                    <option value="in_transit" <?php echo $status === 'in_transit' ? 'selected' : ''; ?>>In Transit</option>
-                    <option value="delivered" <?php echo $status === 'delivered' ? 'selected' : ''; ?>>Delivered</option>
-                    <option value="returned" <?php echo $status === 'returned' ? 'selected' : ''; ?>>Returned</option>
-                </select>
-            </div>
-            <div>
-                <select id="siteFilter" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                    <option value="">All Sites</option>
-                    <?php foreach ($sites as $site): ?>
-                        <option value="<?php echo $site['id']; ?>" <?php echo $siteId == $site['id'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($site['site_id']); ?> - <?php echo htmlspecialchars($site['site_name']); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+        </div>
+        <div class="md:col-span-3">
+            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Transit Status</label>
+            <select id="statusFilter" class="block w-full px-4 py-2.5 bg-gray-50 border border-transparent rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all appearance-none cursor-pointer">
+                <option value="">All Lifecycle Stages</option>
+                <option value="prepared" <?php echo $status === 'prepared' ? 'selected' : ''; ?>>Prepared</option>
+                <option value="dispatched" <?php echo $status === 'dispatched' ? 'selected' : ''; ?>>Dispatched</option>
+                <option value="in_transit" <?php echo $status === 'in_transit' ? 'selected' : ''; ?>>In Transit</option>
+                <option value="delivered" <?php echo $status === 'delivered' ? 'selected' : ''; ?>>Delivered</option>
+                <option value="returned" <?php echo $status === 'returned' ? 'selected' : ''; ?>>Returned</option>
+            </select>
+        </div>
+        <div class="md:col-span-3">
+            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Destination Site</label>
+            <select id="siteFilter" class="block w-full px-4 py-2.5 bg-gray-50 border border-transparent rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all appearance-none cursor-pointer">
+                <option value="">All Operational Sites</option>
+                <?php foreach ($sites as $site): ?>
+                    <option value="<?php echo $site['id']; ?>" <?php echo $siteId == $site['id'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($site['site_id']); ?> - <?php echo htmlspecialchars($site['site_name']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="md:col-span-1 flex items-end">
+            <button onclick="applyFilters()" class="w-full py-2.5 bg-gray-900 text-white rounded-xl flex items-center justify-center hover:bg-black transition-all shadow-md shadow-gray-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
+            </button>
         </div>
     </div>
 </div>
@@ -120,162 +159,122 @@ console.log('Dispatch functions loaded:', {
 </script>
 
 <!-- Dispatches Table -->
-<div class="card">
-    <div class="card-body">
-        <div class="overflow-x-auto">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Actions</th>
-                        <th>Dispatch Details</th>
-                        <th>Destination</th>
-                        <th>Contact Person</th>
-                        <th>Date</th>
-                        <th>Items/Value</th>
-                        <th>Status</th>
-                        <th>Tracking</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($dispatches)): ?>
-                    <tr>
-                        <td colspan="8" class="text-center py-8 text-gray-500">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-2.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 009.586 13H7"></path>
-                            </svg>
-                            <p class="mt-2">No dispatches found</p>
-                            <button onclick="openModal('createDispatchModal')" class="mt-2 btn btn-primary btn-sm">Create First Dispatch</button>
+<div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-100">
+            <thead class="bg-gray-50/50">
+                <tr>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left w-12">#</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Actions</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Dispatch Profile</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Destination Context</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Logistics Contact</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Timeline</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Manifest Value</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                <?php if (empty($dispatches)): ?>
+                <tr>
+                    <td colspan="8" class="text-center py-20 text-gray-400 font-bold italic">No active dispatch manifests found</td>
+                </tr>
+                <?php else: ?>
+                    <?php 
+                    $sno = ($page - 1) * $limit + 1;
+                    foreach ($dispatches as $dispatch): 
+                    ?>
+                    <tr class="hover:bg-gray-50/50 transition-colors group">
+                         <td class="px-6 py-4 text-xs font-bold text-gray-400"><?php echo $sno++; ?></td>
+                         <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <button onclick="viewDispatch(<?php echo $dispatch['id']; ?>)" class="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="View Details">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </button>
+                                <?php if ($dispatch['dispatch_status'] !== 'delivered'): ?>
+                                    <button onclick="updateDispatchStatus(<?php echo $dispatch['id']; ?>)" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Update Status">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    </button>
+                                <?php endif; ?>
+                                <button onclick="printDispatch(<?php echo $dispatch['id']; ?>)" class="w-8 h-8 rounded-lg bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-900 hover:text-white transition-all shadow-sm" title="Print Labels">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                        
+                        <td class="px-6 py-4">
+                            <div>
+                                <div class="text-sm font-bold text-gray-900"><?php echo htmlspecialchars($dispatch['dispatch_number']); ?></div>
+                                <div class="text-[11px] font-medium text-gray-400 uppercase mt-0.5"><?php echo $dispatch['courier_name'] ?: 'Internal Transit'; ?></div>
+                                <?php if ($dispatch['tracking_number']): ?>
+                                    <div class="mt-1 flex items-center gap-1.5">
+                                        <span class="w-1 h-1 rounded-full bg-blue-500"></span>
+                                        <span class="text-[10px] font-bold text-blue-600 tracking-tight font-mono uppercase"><?php echo htmlspecialchars($dispatch['tracking_number']); ?></span>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="max-w-[200px]">
+                                <?php if ($dispatch['site_code']): ?>
+                                    <div class="text-sm font-bold text-gray-900"><?php echo htmlspecialchars($dispatch['site_code']); ?></div>
+                                <?php endif; ?>
+                                <?php if ($dispatch['vendor_company_name']): ?>
+                                    <div class="text-[11px] font-bold text-indigo-600 uppercase mb-0.5">VENDOR: <?php echo htmlspecialchars($dispatch['vendor_company_name']); ?></div>
+                                <?php endif; ?>
+                                <div class="text-[11px] leading-relaxed text-gray-500 font-medium line-clamp-1 italic"><?php echo htmlspecialchars($dispatch['delivery_address']); ?></div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-bold text-gray-900"><?php echo htmlspecialchars($dispatch['contact_person_name']); ?></div>
+                            <div class="text-[11px] font-medium text-gray-400 mt-0.5"><?php echo htmlspecialchars($dispatch['contact_person_phone'] ?: '--'); ?></div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-bold text-gray-900"><?php echo date('d M Y', strtotime($dispatch['dispatch_date'])); ?></div>
+                            <div class="text-[10px] font-medium text-gray-400"><?php echo date('h:i A', strtotime($dispatch['dispatch_date'])); ?></div>
+                            <?php if ($dispatch['expected_delivery_date']): ?>
+                                <div class="text-[10px] font-bold text-rose-500 mt-1 uppercase tracking-tight">ETA: <?php echo date('d M Y', strtotime($dispatch['expected_delivery_date'])); ?></div>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-bold text-gray-900"><?php echo $dispatch['total_items']; ?> <span class="text-gray-400 font-medium">Items</span></div>
+                            <div class="text-[11px] font-bold text-emerald-600 mt-0.5">₹<?php echo number_format($dispatch['total_value'], 2); ?></div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <?php
+                            $statusMap = [
+                                'prepared' => ['color' => 'blue', 'label' => 'Awaiting Pickup'],
+                                'dispatched' => ['color' => 'amber', 'label' => 'Sent to Courier'],
+                                'in_transit' => ['color' => 'indigo', 'label' => 'On the Way'],
+                                'delivered' => ['color' => 'emerald', 'label' => 'Delivery Success'],
+                                'returned' => ['color' => 'rose', 'label' => 'Return Inbound']
+                            ];
+                            $st = $statusMap[$dispatch['dispatch_status']] ?? ['color' => 'gray', 'label' => $dispatch['dispatch_status']];
+                            ?>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-<?php echo $st['color']; ?>-50 text-<?php echo $st['color']; ?>-700 border border-<?php echo $st['color']; ?>-100 whitespace-nowrap">
+                                <?php echo $st['label']; ?>
+                            </span>
                         </td>
                     </tr>
-                    <?php else: ?>
-                        <?php foreach ($dispatches as $dispatch): ?>
-                        <tr>
-                            
-                             <td>
-                                <div class="flex items-center space-x-2">
-                                    <button onclick="viewDispatch(<?php echo $dispatch['id']; ?>)" class="btn btn-sm btn-secondary" title="View Details">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
-                                        </svg>
-                                    </button>
-                                    <?php if ($dispatch['dispatch_status'] !== 'delivered'): ?>
-                                        <button onclick="updateDispatchStatus(<?php echo $dispatch['id']; ?>)" class="btn btn-sm btn-primary" title="Update Status">
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
-                                            </svg>
-                                        </button>
-                                    <?php endif; ?>
-                                    <button onclick="printDispatch(<?php echo $dispatch['id']; ?>)" class="btn btn-sm btn-secondary" title="Print Dispatch">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                            
-                            <td>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($dispatch['dispatch_number']); ?></div>
-                                    <?php if ($dispatch['courier_name']): ?>
-                                        <div class="text-sm text-gray-500">Courier: <?php echo htmlspecialchars($dispatch['courier_name']); ?></div>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <?php if ($dispatch['site_code']): ?>
-                                        <div class="text-sm font-medium text-gray-900">Site: <?php echo htmlspecialchars($dispatch['site_code']); ?></div>
-                                    <?php endif; ?>
-                                    <?php if ($dispatch['vendor_company_name']): ?>
-                                        <div class="text-xs font-medium text-gray-900">Vendor: <?php echo htmlspecialchars($dispatch['vendor_company_name']); ?></div>
-                                    <?php endif; ?>
-                                    <div class="text-sm text-gray-500"><?php echo htmlspecialchars(substr($dispatch['delivery_address'], 0, 50)); ?>...</div>
-                                </div>
-                            </td>
-                            <td>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($dispatch['contact_person_name']); ?></div>
-                                    <?php if ($dispatch['contact_person_phone']): ?>
-                                        <div class="text-sm text-gray-500"><?php echo htmlspecialchars($dispatch['contact_person_phone']); ?></div>
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="text-sm text-gray-900"><?php echo date('d M Y', strtotime($dispatch['dispatch_date'])); ?></div>
-                                <?php if ($dispatch['expected_delivery_date']): ?>
-                                    <div class="text-sm text-gray-500">Expected: <?php echo date('d M Y', strtotime($dispatch['expected_delivery_date'])); ?></div>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900"><?php echo $dispatch['total_items']; ?> items</div>
-                                    <div class="text-sm text-gray-500">₹<?php echo number_format($dispatch['total_value'], 2); ?></div>
-                                </div>
-                            </td>
-                            <td>
-                                <?php
-                                $statusClasses = [
-                                    'prepared' => 'bg-blue-100 text-blue-800',
-                                    'dispatched' => 'bg-yellow-100 text-yellow-800',
-                                    'in_transit' => 'bg-purple-100 text-purple-800',
-                                    'delivered' => 'bg-green-100 text-green-800',
-                                    'returned' => 'bg-red-100 text-red-800'
-                                ];
-                                $statusClass = $statusClasses[$dispatch['dispatch_status']] ?? 'bg-gray-100 text-gray-800';
-                                ?>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $statusClass; ?>">
-                                    <?php echo ucfirst(str_replace('_', ' ', $dispatch['dispatch_status'])); ?>
-                                </span>
-                            </td>
-                            <td>
-                                <?php if ($dispatch['tracking_number']): ?>
-                                    <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($dispatch['tracking_number']); ?></div>
-                                <?php else: ?>
-                                    <span class="text-sm text-gray-500">No tracking</span>
-                                <?php endif; ?>
-                            </td>
-                           
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                    <?php endforeach; ?>
+                <?php endif; ?>
                 </tbody>
             </table>
         </div>
         
-        <?php if ($totalPages > 1): ?>
-        <!-- Pagination -->
-        <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4">
-            <div class="flex flex-1 justify-between sm:hidden">
-                <?php if ($page > 1): ?>
-                    <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status); ?>&site_id=<?php echo urlencode($siteId); ?>" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</a>
-                <?php endif; ?>
-                <?php if ($page < $totalPages): ?>
-                    <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status); ?>&site_id=<?php echo urlencode($siteId); ?>" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</a>
-                <?php endif; ?>
-            </div>
-            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-sm text-gray-700">
-                        Showing <span class="font-medium"><?php echo (($page - 1) * $limit) + 1; ?></span> to 
-                        <span class="font-medium"><?php echo min($page * $limit, $dispatchesData['total']); ?></span> of 
-                        <span class="font-medium"><?php echo $dispatchesData['total']; ?></span> results
-                    </p>
-                </div>
-                <div>
-                    <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                            <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status); ?>&site_id=<?php echo urlencode($siteId); ?>" 
-                               class="relative inline-flex items-center px-4 py-2 text-sm font-semibold <?php echo $i === $page ? 'bg-blue-600 text-white' : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'; ?> focus:z-20 focus:outline-offset-0">
-                                <?php echo $i; ?>
-                            </a>
-                        <?php endfor; ?>
-                    </nav>
-                </div>
-            </div>
+    <?php if ($totalPages > 1): ?>
+    <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+        <div class="text-[11px] font-bold text-gray-400 uppercase">Page <?php echo $page; ?> of <?php echo $totalPages; ?></div>
+        <div class="flex gap-1">
+            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status); ?>&site_id=<?php echo urlencode($siteId); ?>" 
+                   class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all <?php echo $i === $page ? 'bg-gray-900 text-white shadow-lg' : 'bg-white border border-gray-200 text-gray-500 hover:border-gray-900 hover:text-gray-900'; ?>">
+                    <?php echo $i; ?>
+                </a>
+            <?php endfor; ?>
         </div>
-        <?php endif; ?>
     </div>
+    <?php endif; ?>
 </div>
 
 <!-- Create Dispatch Modal -->
@@ -532,6 +531,11 @@ function applyFilters() {
     url.searchParams.delete('page'); // Reset to first page
     
     window.location.href = url.toString();
+}
+
+function exportDispatches() {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = `export-dispatches.php?${params.toString()}`;
 }
 
 // Initialize page functionality

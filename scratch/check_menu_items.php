@@ -1,5 +1,5 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
 $db = Database::getInstance()->getConnection();
-$stmt = $db->query('SHOW TABLES');
-print_r($stmt->fetchAll(PDO::FETCH_COLUMN));
+$s = $db->query('SELECT * FROM menu_items');
+print_r($s->fetchAll(PDO::FETCH_ASSOC));

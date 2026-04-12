@@ -16,8 +16,18 @@ class UsersController extends BaseController {
         $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
         $roleFilter = isset($_GET['role']) ? trim($_GET['role']) : '';
+        $statusFilter = isset($_GET['status']) ? trim($_GET['status']) : '';
         
-        $result = $this->userModel->getAllWithPagination($page, 20, $search, $roleFilter);
+        $result = $this->userModel->getAllWithPagination($page, 20, $search, $roleFilter, $statusFilter);
+        
+        // Fetch dashboard stats
+        $stats = [
+            'total' => $this->db->query("SELECT COUNT(*) FROM users")->fetchColumn(),
+            'active' => $this->db->query("SELECT COUNT(*) FROM users WHERE status = 'active'")->fetchColumn(),
+            'admins' => $this->db->query("SELECT COUNT(u.id) FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.role IN ('admin', 'superadmin') OR r.name IN ('admin', 'superadmin')")->fetchColumn(),
+            'vendors' => $this->db->query("SELECT COUNT(u.id) FROM users u LEFT JOIN roles r ON u.role_id = r.id WHERE u.role IN ('vendor', 'contractor') OR r.name IN ('vendor', 'contractor')")->fetchColumn(),
+            'disabled' => $this->db->query("SELECT COUNT(*) FROM users WHERE status = 'disabled'")->fetchColumn()
+        ];
         
         return [
             'users' => $result['users'],
@@ -27,8 +37,10 @@ class UsersController extends BaseController {
                 'total_records' => $result['total'],
                 'limit' => $result['limit']
             ],
+            'stats' => $stats,
             'search' => $search,
-            'role_filter' => $roleFilter
+            'role_filter' => $roleFilter,
+            'status_filter' => $statusFilter
         ];
     }
     
@@ -284,7 +296,7 @@ class UsersController extends BaseController {
                 ], 400);
             }
             
-            $newStatus = $user['status'] === 'active' ? 'inactive' : 'active';
+            $newStatus = $user['status'] === 'active' ? 'disabled' : 'active';
             
             $success = $this->userModel->update($id, ['status' => $newStatus]);
             

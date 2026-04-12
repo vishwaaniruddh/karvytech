@@ -7,22 +7,117 @@ $title = 'Dynamic Survey Responses';
 ob_start();
 ?>
 
-<!-- Header Section -->
+<?php
+require_once __DIR__ . '/../../config/auth.php';
+// Auth check could be here if needed, but layout might handle it
+$selectedCustomer = $_GET['customer_id'] ?? '';
+
+$title = 'Survey Responses';
+ob_start();
+?>
+
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="statsGrid">
+    <div class="stats-card bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-all duration-300 cursor-pointer hover:shadow-lg hover:border-gray-300 hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-2">Survey Submitted</div>
+                <div class="text-4xl font-bold text-gray-900 mb-2" id="stat-submitted">0</div>
+                <div class="text-sm text-gray-600 font-medium">Total Submissions</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"></path></svg>
+            </div>
+        </div>
+    </div>
+    <div class="stats-card bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-all duration-300 cursor-pointer hover:shadow-lg hover:border-gray-300 hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-2">Approved</div>
+                <div class="text-4xl font-bold text-gray-900 mb-2" id="stat-approved">0</div>
+                <div class="text-sm text-gray-600 font-medium">Survey Approved</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <svg class="w-6 h-6 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+            </div>
+        </div>
+    </div>
+    <div class="stats-card bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-all duration-300 cursor-pointer hover:shadow-lg hover:border-gray-300 hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-2">Rejected</div>
+                <div class="text-4xl font-bold text-gray-900 mb-2" id="stat-rejected">0</div>
+                <div class="text-sm text-gray-600 font-medium">Survey Rejected</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-50 to-rose-100 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <svg class="w-6 h-6 text-rose-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+            </div>
+        </div>
+    </div>
+    <div class="stats-card bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-all duration-300 cursor-pointer hover:shadow-lg hover:border-gray-300 hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-2">Pending</div>
+                <div class="text-4xl font-bold text-gray-900 mb-2" id="stat-pending">0</div>
+                <div class="text-sm text-gray-600 font-medium">Awaiting Review</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <svg class="w-6 h-6 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer-wise Survey Records -->
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
         <div class="flex-1">
-            <h1 class="text-3xl font-bold text-gray-900">Dynamic Survey Responses</h1>
-            <p class="mt-2 text-lg text-gray-600">View submitted survey responses by customer</p>
-            <p class="text-sm text-gray-500 mt-1">Select a customer to view their survey responses</p>
+            <h2 class="text-xl font-semibold text-gray-900">Customer-wise Survey Records</h2>
+            <p class="text-sm text-gray-500 mt-1">View survey responses by customer with status filters</p>
         </div>
-        <div class="mt-6 lg:mt-0 lg:ml-6">
-            <a href="index.php" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50">
-                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-                </svg>
-                Back to Surveys
-            </a>
+        <div class="mt-4 lg:mt-0 flex items-center gap-3">
+            <select id="statusFilter" class="form-select text-sm" onchange="applyFilters()">
+                <option value="">All Status</option>
+                <option value="submitted">Submitted</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="pending">Pending</option>
+            </select>
+            <input type="text" id="searchCustomer" placeholder="Search customers..." class="form-input text-sm" onkeyup="debounceSearch()">
         </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200" id="customerSurveyTable">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-10">#</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Surveys</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Approved</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Rejected</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pending</th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="customerTableBody" class="bg-white divide-y divide-gray-200">
+                <!-- Data will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+    
+    <div id="customerTableLoading" class="text-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <p class="text-gray-500 mt-2">Loading customer survey data...</p>
+    </div>
+    
+    <div id="customerTableEmpty" class="text-center py-8" style="display: none;">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No survey data found</h3>
+        <p class="mt-1 text-sm text-gray-500">No customer survey records match your current filters.</p>
     </div>
 </div>
 
@@ -163,13 +258,153 @@ ob_start();
 
 <script>
     let currentCustomerId = "<?php echo $selectedCustomer; ?>";
+    let searchTimer;
+    let customerData = [];
 
     document.addEventListener('DOMContentLoaded', () => {
+        loadStats();
+        loadCustomerSurveyData();
         loadCustomers();
         if (currentCustomerId) {
             handleCustomerChange(currentCustomerId);
         }
     });
+
+    async function loadStats() {
+        try {
+            const response = await fetch('../../api/survey_responses.php?action=get_stats');
+            const data = await response.json();
+            
+            if (data.success) {
+                document.getElementById('stat-submitted').textContent = data.stats.submitted || 0;
+                document.getElementById('stat-approved').textContent = data.stats.approved || 0;
+                document.getElementById('stat-rejected').textContent = data.stats.rejected || 0;
+                document.getElementById('stat-pending').textContent = data.stats.pending || 0;
+            }
+        } catch (error) {
+            console.error('Error loading stats:', error);
+        }
+    }
+
+    async function loadCustomerSurveyData() {
+        try {
+            const response = await fetch('../../api/survey_responses.php?action=get_customer_stats');
+            const data = await response.json();
+            
+            if (data.success) {
+                customerData = data.customers;
+                renderCustomerTable(customerData);
+            } else {
+                showEmptyCustomerTable();
+            }
+        } catch (error) {
+            console.error('Error loading customer data:', error);
+            showEmptyCustomerTable();
+        } finally {
+            document.getElementById('customerTableLoading').style.display = 'none';
+        }
+    }
+
+    function renderCustomerTable(customers) {
+        const tbody = document.getElementById('customerTableBody');
+        
+        if (!customers || customers.length === 0) {
+            showEmptyCustomerTable();
+            return;
+        }
+
+        tbody.innerHTML = customers.map((customer, idx) => `
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-xs font-medium text-gray-500 text-center border-r border-gray-100">${idx + 1}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-sm mr-3">
+                            ${customer.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">${customer.name}</div>
+                            <div class="text-sm text-gray-500">ID: ${customer.id}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">
+                    ${customer.total_surveys || 0}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        ${customer.submitted || 0}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        ${customer.approved || 0}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        ${customer.rejected || 0}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        ${customer.pending || 0}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                    <button onclick="viewCustomerSurveys(${customer.id})" class="text-blue-600 hover:text-blue-900 mr-3">
+                        Analyze
+                    </button>
+                    ${customer.total_surveys > 0 ? `<button onclick="exportCustomerSurveys(${customer.id})" class="text-green-600 hover:text-green-900">Export</button>` : ''}
+                </td>
+            </tr>
+        `).join('');
+        
+        document.getElementById('customerTableEmpty').style.display = 'none';
+    }
+
+    function showEmptyCustomerTable() {
+        document.getElementById('customerTableBody').innerHTML = '';
+        document.getElementById('customerTableEmpty').style.display = 'block';
+    }
+
+    function debounceSearch() {
+        if (searchTimer) clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => applyFilters(), 500);
+    }
+
+    function applyFilters() {
+        const statusFilter = document.getElementById('statusFilter').value;
+        const searchTerm = document.getElementById('searchCustomer').value.toLowerCase();
+        
+        let filteredData = customerData;
+        
+        if (searchTerm) {
+            filteredData = filteredData.filter(customer => 
+                customer.name.toLowerCase().includes(searchTerm)
+            );
+        }
+        
+        if (statusFilter) {
+            filteredData = filteredData.filter(customer => 
+                customer[statusFilter] > 0
+            );
+        }
+        
+        renderCustomerTable(filteredData);
+    }
+
+    function viewCustomerSurveys(customerId) {
+        // Scroll to the customer selection section and select the customer
+        document.getElementById('customer_id').value = customerId;
+        handleCustomerChange(customerId);
+        
+        // Scroll to the customer filter section
+        document.querySelector('#content_area').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function exportCustomerSurveys(customerId) {
+        window.open(`export-responses.php?customer_id=${customerId}`, '_blank');
+    }
 
     async function loadCustomers() {
         try {
@@ -290,16 +525,20 @@ ob_start();
         // 2. Build Headers
         let headerHtml = `
             <tr class="bg-blue-600 text-white text-center">
-                <th colspan="4" class="px-4 py-3 text-xs font-bold uppercase tracking-wider border-r border-blue-500">Response Information</th>
+                <th colspan="1" class="px-4 py-3 text-xs font-bold uppercase tracking-wider border-r border-blue-500">No</th>
+                <th colspan="4" class="px-4 py-3 text-xs font-bold uppercase tracking-wider border-r border-blue-500">Response Identification</th>
+                <th colspan="1" class="px-4 py-3 text-xs font-bold uppercase tracking-wider border-r border-blue-500">Action</th>
                 ${sectionGroups.map(g => `
                     <th colspan="${g.count}" class="px-4 py-3 text-xs font-bold uppercase tracking-wider border-r border-blue-500">${g.full_path}</th>
                 `).join('')}
             </tr>
             <tr class="bg-blue-100">
+                <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-r border-gray-300 w-10">#</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-300">ID</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-300">Site</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-300">Surveyor</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-300">Date</th>
+                <th class="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-300">View</th>
                 ${fields.map(f => `
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-300" style="min-width: 150px;">${f.field_label}</th>
                 `).join('')}
@@ -309,7 +548,7 @@ ob_start();
 
         // 3. Build Body
         let bodyHtml = '';
-        data.responses.forEach(response => {
+        data.responses.forEach((response, idx) => {
             let formData = {};
             try {
                 formData = JSON.parse(response.form_data || '{}');
@@ -323,6 +562,7 @@ ob_start();
 
             bodyHtml += `
                 <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3 whitespace-nowrap text-center text-xs font-black text-gray-400 border-r border-gray-200 bg-gray-50/50">${idx + 1}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">#${response.id}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
                         <div class="font-medium">${response.site_code || 'N/A'}</div>
@@ -332,6 +572,11 @@ ob_start();
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 border-r border-gray-200">
                         <div>${formattedDate}</div>
                         <div class="text-xs text-gray-500">${formattedTime}</div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-center text-sm font-medium border-r border-gray-200">
+                        <a href="view-response.php?id=${response.id}" class="text-indigo-600 hover:text-indigo-900 p-2 bg-indigo-50 rounded-lg inline-flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </a>
                     </td>
                     ${fields.map(f => {
                         const val = formData[f.field_id] || '';

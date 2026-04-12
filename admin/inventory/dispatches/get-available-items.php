@@ -11,11 +11,12 @@ try {
     $inventoryModel = new Inventory();
     
     // Get items with available stock
-    $items = $inventoryModel->getStockOverview('', '', false);
+    $itemsData = $inventoryModel->getStockOverview('', '', false, '', 1, 1000); // Higher limit to get all for filtering
+    $items = $itemsData['items'] ?? [];
     
     // Filter items with available stock > 0
     $availableItems = array_filter($items, function($item) {
-        return $item['available_stock'] > 0;
+        return (isset($item['available_stock']) ? (float)$item['available_stock'] : 0) > 0;
     });
     
     echo json_encode([

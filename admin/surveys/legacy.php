@@ -21,45 +21,72 @@ $allSurveys = $surveyModel->getAllSurveys();
 $totalSurveys = count($allSurveys);
 $totalPages = ceil($totalSurveys / $perPage);
 
+// Calculate stats
+$stats = [
+    'total' => $totalSurveys,
+    'submitted' => count(array_filter($allSurveys, fn($s) => !empty($s['created_at']))),
+    'approved' => count(array_filter($allSurveys, fn($s) => $s['survey_status'] === 'approved')),
+    'rejected' => count(array_filter($allSurveys, fn($s) => $s['survey_status'] === 'rejected')),
+    'pending' => count(array_filter($allSurveys, fn($s) => $s['survey_status'] === 'pending')),
+    'delegated' => count(array_filter($allSurveys, fn($s) => ($s['installation_status'] ?? 'not_delegated') === 'delegated'))
+];
+
 // Paginate surveys
 $surveys = array_slice($allSurveys, $offset, $perPage);
 
 $activeVendors = $vendorModel->getActiveVendors();
 
-$title = 'Site Surveys Management';
+$title = 'Legacy Survey';
 ob_start();
 ?>
 
-<!-- Header Section -->
-<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        <div class="flex-1">
-            <h1 class="text-3xl font-bold text-gray-900">Site Surveys Management</h1>
-            <p class="mt-2 text-lg text-gray-600">Review and approve vendor site feasibility surveys</p>
-            <p class="text-sm text-gray-500 mt-1">Manage all submitted site surveys from vendors</p>
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="statsGrid">
+    <div class="stats-card bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-all duration-300 cursor-pointer hover:shadow-lg hover:border-gray-300 hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-2">Survey Submitted</div>
+                <div class="text-4xl font-bold text-gray-900 mb-2"><?php echo $stats['submitted']; ?></div>
+                <div class="text-sm text-gray-600 font-medium">Total Submissions</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"></path></svg>
+            </div>
         </div>
-        <div class="mt-6 lg:mt-0 lg:ml-6">
-            <div class="flex flex-col items-end gap-3">
-                <div class="flex space-x-2">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                        <?php echo count(array_filter($allSurveys, fn($s) => $s['survey_status'] === 'pending')); ?> Pending
-                    </span>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                        <?php echo count(array_filter($allSurveys, fn($s) => $s['survey_status'] === 'approved')); ?> Approved
-                    </span>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                        <?php echo count(array_filter($allSurveys, fn($s) => $s['survey_status'] === 'rejected')); ?> Rejected
-                    </span>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                        <?php echo count(array_filter($allSurveys, fn($s) => ($s['installation_status'] ?? 'not_delegated') === 'delegated')); ?> Delegated
-                    </span>
-                </div>
-                <button onclick="exportSurveys()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                    </svg>
-                    Export to Excel
-                </button>
+    </div>
+    <div class="stats-card bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-all duration-300 cursor-pointer hover:shadow-lg hover:border-gray-300 hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-2">Approved</div>
+                <div class="text-4xl font-bold text-gray-900 mb-2"><?php echo $stats['approved']; ?></div>
+                <div class="text-sm text-gray-600 font-medium">Survey Approved</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <svg class="w-6 h-6 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+            </div>
+        </div>
+    </div>
+    <div class="stats-card bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-all duration-300 cursor-pointer hover:shadow-lg hover:border-gray-300 hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-2">Rejected</div>
+                <div class="text-4xl font-bold text-gray-900 mb-2"><?php echo $stats['rejected']; ?></div>
+                <div class="text-sm text-gray-600 font-medium">Survey Rejected</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-50 to-rose-100 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <svg class="w-6 h-6 text-rose-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+            </div>
+        </div>
+    </div>
+    <div class="stats-card bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-all duration-300 cursor-pointer hover:shadow-lg hover:border-gray-300 hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <div class="text-xs text-gray-500 uppercase font-semibold tracking-wide mb-2">Pending</div>
+                <div class="text-4xl font-bold text-gray-900 mb-2"><?php echo $stats['pending']; ?></div>
+                <div class="text-sm text-gray-600 font-medium">Awaiting Review</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-50 to-amber-100 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <svg class="w-6 h-6 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path></svg>
             </div>
         </div>
     </div>

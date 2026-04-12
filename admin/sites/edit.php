@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../controllers/SitesController.php';
 
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$id = isset($_POST['id']) ? (int)$_POST['id'] : (isset($_GET['id']) ? (int)$_GET['id'] : 0);
 
 if (!$id) {
     http_response_code(400);

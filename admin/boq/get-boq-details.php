@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../models/BoqMaster.php';
 require_once __DIR__ . '/../../models/BoqMasterItem.php';
 
 // Require admin/vendor authentication (vendors might need this too if they create requests)
-Auth::requirePermission('material_requests', 'create');
+Auth::requirePermission('materials', 'create');
 
 header('Content-Type: application/json');
 

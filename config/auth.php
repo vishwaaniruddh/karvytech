@@ -4,7 +4,7 @@ session_start();
 
 // Define auth-specific constants first (before including constants.php)
 if (!defined('SESSION_TIMEOUT')) {
-    define('SESSION_TIMEOUT', 3600); // 1 hour in seconds
+    define('SESSION_TIMEOUT', 7200); // 2 hours in seconds (increased from 1 hour)
 }
 if (!defined('ADMIN_ROLE')) {
     define('ADMIN_ROLE', 'admin');
@@ -49,9 +49,16 @@ class Auth {
             return false;
         }
         
-        if (time() - $_SESSION['login_time'] > SESSION_TIMEOUT) {
+        $timeElapsed = time() - $_SESSION['login_time'];
+        
+        if ($timeElapsed > SESSION_TIMEOUT) {
             self::clearSession();
             return false;
+        }
+        
+        // Auto-extend session if user has been active (less than half timeout)
+        if ($timeElapsed > SESSION_TIMEOUT / 2) {
+            $_SESSION['login_time'] = time();
         }
         
         return true;
