@@ -28,6 +28,9 @@ try {
     $status = ($action === 'approve') ? 'approved' : 'rejected';
     $message = ($action === 'approve') ? 'Survey response approved successfully' : 'Survey response rejected successfully';
     
+    // Begin transaction for safety
+    $db->beginTransaction();
+
     $sql = "UPDATE dynamic_survey_responses SET 
             survey_status = ?,
             approved_by = ?,
@@ -44,12 +47,30 @@ try {
     ]);
     
     if ($result) {
+        // If approved, sync with sites table
+        if ($action === 'approve') {
+            // Get site_id from the response
+            $stmt = $db->prepare("SELECT site_id FROM dynamic_survey_responses WHERE id = ?");
+            $stmt->execute([$responseId]);
+            $siteData = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($siteData && $siteData['site_id']) {
+                $stmt = $db->prepare("UPDATE sites SET survey_status = 1 WHERE id = ?");
+                $stmt->execute([$siteData['site_id']]);
+            }
+        }
+        
+        $db->commit();
         echo json_encode(['success' => true, 'message' => $message]);
     } else {
+        $db->rollBack();
         echo json_encode(['success' => false, 'message' => 'Failed to update survey status']);
     }
     
 } catch (Exception $e) {
+    if (isset($db) && $db->inTransaction()) {
+        $db->rollBack();
+    }
     echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
 }
 ?>

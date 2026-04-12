@@ -30,37 +30,71 @@ try {
     
     if (!$surveyId) {
         // If no survey_id provided, find the survey for this site and vendor
-        $survey = $surveyModel->findBySiteAndVendor($siteId, $vendorId);
-        if ($survey) {
-            $surveyId = $survey['id'];
+        // Check dynamic surveys first
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT id FROM dynamic_survey_responses WHERE site_id = ? ORDER BY submitted_date DESC LIMIT 1");
+        $stmt->execute([$siteId]);
+        $dynamicSurvey = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($dynamicSurvey) {
+            $surveyId = $dynamicSurvey['id'];
+            $surveyType = 'dynamic';
         } else {
-            echo json_encode([
-                'success' => false, 
-                'message' => 'No survey found for this site. Please complete the site survey first.',
-                'debug' => "No survey found for site_id: $siteId, vendor_id: $vendorId"
-            ]);
-            exit;
+            // Fallback to legacy surveys
+            $survey = $surveyModel->findBySiteAndVendor($siteId, $vendorId);
+            if ($survey) {
+                $surveyId = $survey['id'];
+                $surveyType = 'legacy';
+            } else {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'No survey found for this site. Please complete the site survey first.',
+                    'debug' => "No survey found for site_id: $siteId, vendor_id: $vendorId"
+                ]);
+                exit;
+            }
         }
     } else {
-        // Validate the provided survey_id exists and belongs to this site/vendor
-        $survey = $surveyModel->find($surveyId);
-        if (!$survey) {
-            echo json_encode([
-                'success' => false, 
-                'message' => 'Invalid survey reference. Please refresh the page and try again.',
-                'debug' => "Survey ID $surveyId not found"
-            ]);
-            exit;
-        }
+        // Validate the provided survey_id
+        // Check dynamic surveys first
+        $db = Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT site_id FROM dynamic_survey_responses WHERE id = ?");
+        $stmt->execute([$surveyId]);
+        $dynamicSurvey = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        // Verify the survey belongs to this site
-        if ($survey['site_id'] != $siteId) {
-            echo json_encode([
-                'success' => false, 
-                'message' => 'Survey does not match the selected site. Please refresh the page and try again.',
-                'debug' => "Survey site_id: {$survey['site_id']}, provided site_id: $siteId"
-            ]);
-            exit;
+        if ($dynamicSurvey) {
+            // Verify the dynamic survey belongs to this site
+            if ($dynamicSurvey['site_id'] != $siteId) {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Survey does not match the selected site. Please refresh the page and try again.',
+                    'debug' => "Dynamic Survey site_id: {$dynamicSurvey['site_id']}, provided site_id: $siteId"
+                ]);
+                exit;
+            }
+            $surveyType = 'dynamic';
+        } else {
+            // Fallback to legacy surveys
+            $survey = $surveyModel->find($surveyId);
+            if (!$survey) {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Invalid survey reference. Please refresh the page and try again.',
+                    'debug' => "Survey ID $surveyId not found in either dynamic or legacy systems"
+                ]);
+                exit;
+            }
+            
+            // Verify the legacy survey belongs to this site
+            if ($survey['site_id'] != $siteId) {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Survey does not match the selected site. Please refresh the page and try again.',
+                    'debug' => "Legacy Survey site_id: {$survey['site_id']}, provided site_id: $siteId"
+                ]);
+                exit;
+            }
+            $surveyType = 'legacy';
         }
     }
     

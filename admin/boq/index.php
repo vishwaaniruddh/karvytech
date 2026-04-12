@@ -96,33 +96,28 @@ ob_start();
                         $serialNo = (($result['page'] - 1) * $result['limit']) + 1;
                         foreach ($result['records'] as $record): 
                         ?>
-                        <tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
                             <td class="text-center text-gray-400 font-mono text-xs"><?php echo $serialNo++; ?></td>
                             <td>
                                 <div class="flex items-center space-x-2">
-                                    <button onclick="viewBoqSet(<?php echo $record['id']; ?>)" class="btn btn-sm btn-secondary" title="View Details">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
-                                        </svg>
+                                    <button onclick="viewBoqSet(<?php echo $record['id']; ?>)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Details">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                     </button>
-                                    <button onclick="editBoq(<?php echo $record['id']; ?>)" class="btn btn-sm btn-primary" title="Edit">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
-                                        </svg>
+                                    <button onclick="editBoq(<?php echo $record['id']; ?>)" class="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     </button>
-                                    <button onclick="deleteBoq(<?php echo $record['id']; ?>)" class="btn btn-sm btn-danger" title="Delete">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd"></path>
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V7a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                        </svg>
+                                    <button onclick="deleteBoq(<?php echo $record['id']; ?>)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                 </div>
                             </td>
                             <td class="font-medium text-gray-900"><?php echo htmlspecialchars($record['boq_name']); ?></td>
                             <td><?php echo htmlspecialchars($record['customer_name']); ?></td>
                             <td class="text-center">
-                                <span class="badge badge-info"><?php echo $record['item_count']; ?> Items</span>
+                                <button onclick="toggleRowPreview(<?php echo $record['id']; ?>, this)" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors cursor-pointer border-none">
+                                    <span class="mr-1"><?php echo $record['item_count']; ?> Items</span>
+                                    <svg class="w-3 h-3 transition-transform transform row-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </button>
                             </td>
                             <td>
                                 <span class="badge <?php echo $record['status'] === 'active' ? 'badge-success' : 'badge-secondary'; ?>">
@@ -133,6 +128,18 @@ ob_start();
                                 <div class="flex flex-col">
                                     <span class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars(ucfirst($record['created_by_name'] ?: 'System')); ?></span>
                                     <span class="text-[10px] text-gray-500"><?php echo date('M d, Y h:i A', strtotime($record['created_at'])); ?></span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr id="preview_<?php echo $record['id']; ?>" class="hidden bg-gray-50">
+                            <td colspan="7" class="p-0 border-b border-gray-100">
+                                <div class="p-4 pl-12">
+                                    <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden material-preview-container" data-id="<?php echo $record['id']; ?>">
+                                        <div class="flex items-center justify-center p-8 text-gray-400">
+                                            <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            Loading details...
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -201,26 +208,54 @@ ob_start();
                 </div>
 
                 <div class="border-t border-gray-100 pt-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wide">Select Materials / Items</h4>
-                        <div class="text-xs text-gray-500">
-                            Check the materials to include in this BOQ
+                    <div class="flex items-center justify-between mb-4 sticky top-0 bg-white z-10 py-2">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wide">Select Materials / Items</h4>
+                            <div class="text-[10px] text-gray-500" id="selectionSummary">0 items selected</div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="relative">
+                                <input type="text" id="materialSearch" class="form-input text-xs py-1.5 pl-8 w-48" placeholder="Search materials...">
+                                <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="showSelectedOnly" class="sr-only peer" onchange="filterMaterials()">
+                                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                <span class="ml-2 text-[10px] font-medium text-gray-600">Show Selected</span>
+                            </label>
                         </div>
                     </div>
                     
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-2" id="materialsGrid">
+                    <div class="bg-gray-50 rounded-lg p-2 border border-gray-100">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-96 overflow-y-auto pr-2" id="materialsGrid">
                             <?php foreach ($allMaterials as $item): ?>
-                            <label class="flex items-start p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer group">
-                                <div class="flex items-center h-5">
-                                    <input type="checkbox" name="materials[]" value="<?php echo $item['id']; ?>" class="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                             <div class="boq-item-card flex flex-col p-2 bg-white border border-gray-200 rounded-lg hover:border-blue-300 transition-all cursor-pointer group" data-name="<?php echo strtolower($item['item_name']); ?>" data-code="<?php echo strtolower($item['item_code']); ?>">
+                                <label class="flex items-start cursor-pointer">
+                                    <div class="flex items-center h-5 mt-1">
+                                        <input type="checkbox" name="materials[]" value="<?php echo $item['id']; ?>" class="form-checkbox h-3.5 w-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 material-checkbox" onchange="handleItemSelection(<?php echo $item['id']; ?>, this.checked)">
+                                    </div>
+                                    <div class="ml-2 text-sm flex-1">
+                                        <span class="font-medium text-gray-800 text-xs block group-hover:text-blue-600 leading-tight"><?php echo htmlspecialchars($item['item_name']); ?></span>
+                                        <div class="flex items-center justify-between mt-0.5">
+                                            <span class="text-[10px] text-gray-400 font-mono"><?php echo htmlspecialchars($item['item_code']); ?></span>
+                                            <span class="text-[9px] bg-gray-50 text-gray-500 px-1 py-0 rounded"><?php echo htmlspecialchars($item['unit']); ?></span>
+                                        </div>
+                                    </div>
+                                </label>
+                                
+                                <div id="details_<?php echo $item['id']; ?>" class="item-details hidden mt-1.5 pt-1.5 border-t border-dotted border-gray-100 space-y-1.5">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="flex-1 flex items-center">
+                                            <label class="text-[9px] font-bold text-gray-400 uppercase w-8">Qty</label>
+                                            <input type="number" name="quantities[<?php echo $item['id']; ?>]" value="1" min="1" class="form-input text-xs py-0.5 h-6 w-16 text-center" onchange="updateSelectionSummary()">
+                                        </div>
+                                        <div class="flex-[2] flex items-center">
+                                            <label class="text-[9px] font-bold text-gray-400 uppercase w-10">Notes</label>
+                                            <input type="text" name="item_notes[<?php echo $item['id']; ?>]" placeholder="Internal note..." class="form-input text-[10px] py-0.5 h-6 flex-1">
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="ml-3 text-sm">
-                                    <span class="font-medium text-gray-900 block group-hover:text-blue-700"><?php echo htmlspecialchars($item['item_name']); ?></span>
-                                    <span class="text-xs text-gray-500 font-mono"><?php echo htmlspecialchars($item['item_code']); ?></span>
-                                    <span class="text-[10px] text-blue-600 block mt-0.5"><?php echo htmlspecialchars($item['category'] ?: 'Uncategorized'); ?></span>
-                                </div>
-                            </label>
+                            </div>
                             <?php endforeach; ?>
                         </div>
                     </div>
@@ -280,6 +315,109 @@ ob_start();
 </div>
 
 <script>
+function handleItemSelection(id, checked) {
+    const card = document.querySelector(`.boq-item-card input[value="${id}"]`).closest('.boq-item-card');
+    const details = document.getElementById('details_' + id);
+    
+    if (checked) {
+        card.classList.add('border-blue-500', 'bg-blue-50/30');
+        details.classList.remove('hidden');
+    } else {
+        card.classList.remove('border-blue-500', 'bg-blue-50/30');
+        details.classList.add('hidden');
+    }
+    updateSelectionSummary();
+}
+
+function updateSelectionSummary() {
+    const selected = document.querySelectorAll('.material-checkbox:checked');
+    const summary = document.getElementById('selectionSummary');
+    let totalQty = 0;
+    selected.forEach(cb => {
+        const qtyInput = document.querySelector(`input[name="quantities[${cb.value}]"]`);
+        totalQty += parseInt(qtyInput.value || 0);
+    });
+    summary.innerHTML = `<span class="font-bold text-blue-600">${selected.length}</span> items selected | <span class="font-bold text-blue-600">${totalQty}</span> total units`;
+}
+
+function filterMaterials() {
+    const searchTerm = document.getElementById('materialSearch').value.toLowerCase();
+    const showOnlySelected = document.getElementById('showSelectedOnly').checked;
+    const cards = document.querySelectorAll('.boq-item-card');
+    
+    cards.forEach(card => {
+        const name = card.getAttribute('data-name');
+        const code = card.getAttribute('data-code');
+        const isSelected = card.querySelector('.material-checkbox').checked;
+        
+        const matchesSearch = name.includes(searchTerm) || code.includes(searchTerm);
+        const matchesType = !showOnlySelected || isSelected;
+        
+        if (matchesSearch && matchesType) {
+            card.classList.remove('hidden');
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+}
+
+document.getElementById('materialSearch')?.addEventListener('input', debounce(filterMaterials, 200));
+
+function toggleRowPreview(id, btn) {
+    const previewRow = document.getElementById('preview_' + id);
+    const chevron = btn.querySelector('.row-chevron');
+    const container = previewRow.querySelector('.material-preview-container');
+    
+    if (previewRow.classList.contains('hidden')) {
+        previewRow.classList.remove('hidden');
+        chevron.style.transform = 'rotate(180deg)';
+        btn.classList.add('bg-blue-200');
+        
+        // Fetch details if not already loaded or if container has loading state
+        if (container.querySelector('.animate-spin')) {
+            loadRowPreview(id, container);
+        }
+    } else {
+        previewRow.classList.add('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+        btn.classList.remove('bg-blue-200');
+    }
+}
+
+function loadRowPreview(id, container) {
+    fetch(`get-master.php?id=${id}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.item_details && data.item_details.length > 0) {
+            let html = `
+                <table class="w-full text-[11px]">
+                    <thead class="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-gray-500 font-bold uppercase tracking-wider">Item Name</th>
+                            <th class="px-3 py-2 text-center text-gray-500 font-bold uppercase tracking-wider">Qty</th>
+                            <th class="px-3 py-2 text-right text-gray-500 font-bold uppercase tracking-wider">Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        ${data.item_details.map(item => `
+                            <tr>
+                                <td class="px-3 py-1.5 font-medium text-gray-700">${item.item_name}</td>
+                                <td class="px-3 py-1.5 text-center text-blue-600 font-bold">${item.quantity}</td>
+                                <td class="px-3 py-1.5 text-right text-gray-400 capitalize">${item.unit}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<div class="p-4 text-center text-gray-500 italic">No materials found in this BOQ.</div>';
+        }
+    })
+    .catch(err => {
+        container.innerHTML = '<div class="p-4 text-center text-red-500">Error loading details.</div>';
+    });
+}
+
 // Search/Filter Logic
 document.getElementById('searchInput').addEventListener('keyup', debounce(function() {
     applyFilters();
@@ -348,17 +486,33 @@ function viewBoqSet(id) {
             const badge = document.getElementById('view_status_badge');
             badge.innerHTML = `<span class="badge ${boq.status === 'active' ? 'badge-success' : 'badge-secondary'}">${boq.status.charAt(0).toUpperCase() + boq.status.slice(1)}</span>`;
             
-            // Render materials list
             const list = document.getElementById('view_materials_list');
             if (data.item_details && data.item_details.length > 0) {
-                list.innerHTML = `<ul class="divide-y divide-gray-100 border border-gray-100 rounded-lg">
-                    ${data.item_details.map(item => `
-                        <li class="p-2 flex justify-between items-center text-xs">
-                            <span class="font-medium text-gray-800">${item.item_name}</span>
-                            <span class="text-gray-400 font-mono">${item.item_code}</span>
-                        </li>
-                    `).join('')}
-                </ul>`;
+                list.innerHTML = `<div class="border border-gray-100 rounded-lg overflow-hidden">
+                    <table class="w-full text-xs">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-gray-600 font-bold uppercase tracking-wider">Item Name</th>
+                                <th class="px-3 py-2 text-center text-gray-600 font-bold uppercase tracking-wider">Qty</th>
+                                <th class="px-3 py-2 text-right text-gray-600 font-bold uppercase tracking-wider">Code</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            ${data.item_details.map(item => `
+                                <tr>
+                                    <td class="px-3 py-2">
+                                        <div class="font-medium text-gray-800">${item.item_name}</div>
+                                        ${item.notes ? `<div class="text-[10px] text-gray-500 italic mt-0.5">Note: ${item.notes}</div>` : ''}
+                                    </td>
+                                    <td class="px-3 py-2 text-center">
+                                        <span class="badge badge-info">${item.quantity} ${item.unit}</span>
+                                    </td>
+                                    <td class="px-3 py-2 text-right text-gray-400 font-mono">${item.item_code}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
             } else {
                 list.innerHTML = '<p class="text-xs text-center py-4 text-gray-500">No materials included.</p>';
             }
@@ -393,11 +547,24 @@ function editBoq(id) {
             document.getElementById('customer_id').value = boq.customer_id;
             document.getElementById('status_field').value = boq.status;
             
-            // Check materials
-            const materialCheckboxes = document.querySelectorAll('input[name="materials[]"]');
+            // Check materials and set quantities
+            const materialCheckboxes = document.querySelectorAll('.material-checkbox');
             materialCheckboxes.forEach(cb => {
-                cb.checked = data.item_ids.includes(parseInt(cb.value));
+                const itemDetail = data.item_details.find(d => d.boq_item_id == cb.value);
+                if (itemDetail) {
+                    cb.checked = true;
+                    handleItemSelection(cb.value, true);
+                    const qtyInput = document.querySelector(`input[name="quantities[${cb.value}]"]`);
+                    const noteInput = document.querySelector(`input[name="item_notes[${cb.value}]"]`);
+                    if (qtyInput) qtyInput.value = itemDetail.quantity;
+                    if (noteInput) noteInput.value = itemDetail.notes || '';
+                } else {
+                    cb.checked = false;
+                    handleItemSelection(cb.value, false);
+                }
             });
+            updateSelectionSummary();
+            filterMaterials(); // Reset filter view
             
             openModal('createBoqModal');
         } else {

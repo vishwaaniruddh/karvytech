@@ -23,14 +23,17 @@ class BoqMasterItem extends BaseModel {
         return $stmt->execute([$masterId]);
     }
     
-    public function addItems($masterId, $itemIds) {
-        if (empty($itemIds)) return true;
+    public function addItems($masterId, $items) {
+        if (empty($items)) return true;
         
-        $sql = "INSERT INTO {$this->table} (boq_master_id, boq_item_id) VALUES (?, ?)";
+        $sql = "INSERT INTO {$this->table} (boq_master_id, boq_item_id, quantity, notes) VALUES (?, ?, ?, ?)";
         $stmt = $this->db->prepare($sql);
         
-        foreach ($itemIds as $itemId) {
-            $stmt->execute([$masterId, $itemId]);
+        foreach ($items as $item) {
+            $itemId = is_array($item) ? $item['id'] : $item;
+            $quantity = is_array($item) ? ($item['quantity'] ?? 1) : 1;
+            $notes = is_array($item) ? ($item['notes'] ?? null) : null;
+            $stmt->execute([$masterId, $itemId, $quantity, $notes]);
         }
         return true;
     }

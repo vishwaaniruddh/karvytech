@@ -3,6 +3,7 @@ require_once __DIR__ . '/../config/auth.php';
 require_once __DIR__ . '/../models/Site.php';
 require_once __DIR__ . '/../models/SiteSurvey.php';
 require_once __DIR__ . '/../models/BoqItem.php';
+require_once __DIR__ . '/../models/BoqMaster.php';
 require_once __DIR__ . '/../models/SiteDelegation.php';
 
 // Require vendor authentication
@@ -119,6 +120,10 @@ if ($surveyId && $survey && $survey['id'] != $surveyId) {
 $boqModel = new BoqItem();
 $boqItems = $boqModel->getActive();
 
+// Get BOQ Masters for this customer
+$boqMasterModel = new BoqMaster();
+$availableBoqs = $boqMasterModel->getActiveByCustomerId($site['customer_id']);
+
 $title = 'Material Request - ' . ($site['site_id'] ?? 'Site #' . $siteId);
 ob_start();
 ?>
@@ -198,12 +203,22 @@ ob_start();
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
         <div class="flex justify-between items-center mb-4">
             <h3 class="text-lg font-semibold text-gray-900">Material Items</h3>
-            <button type="button" onclick="addMaterialItem()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-                </svg>
-                Add Item
-            </button>
+            <div class="flex space-x-2">
+                <div class="relative inline-block text-left">
+                    <select id="boqSelector" onchange="loadBoqItems(this.value)" class="inline-flex justify-center w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <option value="">Load from BOQ Master...</option>
+                        <?php foreach ($availableBoqs as $b): ?>
+                            <option value="<?php echo $b['id']; ?>"><?php echo htmlspecialchars($b['boq_name']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <button type="button" onclick="addMaterialItem()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    Add Item
+                </button>
+            </div>
         </div>
         
         <div id="materialItemsContainer">
@@ -319,6 +334,77 @@ function addMaterialItem() {
     
     container.insertAdjacentHTML('beforeend', itemHtml);
     noItemsMessage.style.display = 'none';
+    return itemCounter;
+}
+
+function loadBoqItems(boqId) {
+    if (!boqId) return;
+    
+    window.showConfirmToast('Do you want to clear current items before loading BOQ items?', {
+        confirmText: 'Clear & Load',
+        cancelText: 'Keep & Append',
+        onConfirm: () => {
+            document.getElementById('materialItemsContainer').innerHTML = '';
+            document.getElementById('noItemsMessage').style.display = 'block';
+            executeBoqLoad(boqId);
+        },
+        onCancel: () => {
+            executeBoqLoad(boqId);
+        }
+    });
+}
+
+function executeBoqLoad(boqId) {
+    const selector = document.getElementById('boqSelector');
+    selector.disabled = true;
+    
+    fetch(`boq/get-boq-details.php?id=${boqId}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => { throw err; });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            data.items.forEach(item => {
+                const id = addMaterialItem();
+                const itemDiv = document.getElementById(`item_${id}`);
+                const select = itemDiv.querySelector(`select[name*="[boq_item_id]"]`);
+                select.value = item.boq_item_id;
+                
+                // Trigger detail update
+                updateItemDetails(id, item.boq_item_id);
+                
+                // Set quantity and other fields
+                setTimeout(() => {
+                    const qtyInput = itemDiv.querySelector(`input[name*="[quantity]"]`);
+                    if (qtyInput) qtyInput.value = item.quantity;
+                    
+                    if (item.notes) {
+                        const noteInput = itemDiv.querySelector(`input[name*="[notes]"]`);
+                        if (noteInput) noteInput.value = item.notes;
+                    }
+                }, 100);
+            });
+            showAlert(`Successfully loaded ${data.items.length} items from BOQ`, 'success');
+        } else {
+            showAlert(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert(error.message || 'Error loading BOQ details', 'error');
+    })
+    .finally(() => {
+        selector.disabled = false;
+        selector.value = '';
+    });
 }
 
 function removeMaterialItem(itemId) {

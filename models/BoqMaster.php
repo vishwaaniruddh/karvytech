@@ -169,6 +169,13 @@ class BoqMaster extends BaseMaster {
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
+    public function getActiveByCustomerId($customerId) {
+        if (!$customerId) return $this->getActive();
+        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE status = 'active' AND customer_id = ? ORDER BY boq_name");
+        $stmt->execute([$customerId]);
+        return $stmt->fetchAll();
+    }
     
     public function getAll() {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} ORDER BY boq_name");

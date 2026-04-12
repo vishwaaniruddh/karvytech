@@ -257,6 +257,11 @@ class Auth {
             return false;
         }
         
+        // Superadmin bypasses all permission checks
+        if (self::isSuperAdmin()) {
+            return true;
+        }
+        
         // Check cached permissions
         if (isset($_SESSION['permissions'])) {
             foreach ($_SESSION['permissions'] as $perm) {
@@ -338,11 +343,18 @@ class Auth {
         self::requireAuth();
         
         if (!self::hasPermission($moduleName, $permissionName)) {
-            // If it's an AJAX request, return JSON
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
-                strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            // If it's an AJAX request (Check X-Requested-With OR Accept header)
+            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || 
+                      (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false);
+
+            if ($isAjax) {
                 header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'Permission denied', 'redirect' => false]);
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Permission denied: ' . $moduleName . '.' . $permissionName, 
+                    'redirect' => false
+                ]);
                 exit();
             }
             

@@ -243,11 +243,83 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     };
     
-    // Confirmation dialog
-    window.confirmAction = function(message, callback) {
-        if (confirm(message)) {
-            callback();
+    // Confirmation toast (Premium Toast-style)
+    window.showConfirmToast = function(message, options = {}) {
+        const { onConfirm, onCancel, confirmText = 'Yes', cancelText = 'No', type = 'info' } = options;
+        
+        // Remove existing confirmation toast
+        const existing = document.getElementById('confirm-toast');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.id = 'confirm-toast';
+        toast.className = `fixed top-24 right-4 z-[9999] max-w-sm bg-white border border-gray-100 shadow-2xl rounded-2xl p-5 transform transition-all duration-300 backdrop-blur-md bg-white/90 border-l-4 border-l-blue-500`;
+        
+        // Inject animation style if not already present
+        if (!document.getElementById('toast-styles')) {
+            const style = document.createElement('style');
+            style.id = 'toast-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from { transform: translateX(100%) scale(0.9); opacity: 0; }
+                    to { transform: translateX(0) scale(1); opacity: 1; }
+                }
+                .animate-toast-in { animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+            `;
+            document.head.appendChild(style);
         }
+        
+        toast.classList.add('animate-toast-in');
+        
+        toast.innerHTML = `
+            <div class="flex flex-col space-y-4">
+                <div class="flex items-start">
+                    <div class="bg-blue-50 p-2 rounded-lg mr-3">
+                        <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-gray-900 leading-tight">${message}</p>
+                    </div>
+                </div>
+                <div class="flex justify-end items-center space-x-3 pt-1">
+                    <button id="confirm-no" class="text-xs font-semibold text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                        ${cancelText}
+                    </button>
+                    <button id="confirm-yes" class="text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-xl shadow-lg shadow-blue-200 transform transition-transform active:scale-95">
+                        ${confirmText}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+
+        toast.querySelector('#confirm-yes').onclick = () => {
+            toast.style.transform = 'scale(0.9) translateX(20px)';
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                toast.remove();
+                if (onConfirm) onConfirm();
+            }, 200);
+        };
+        
+        toast.querySelector('#confirm-no').onclick = () => {
+            toast.style.transform = 'scale(0.9) translateX(20px)';
+            toast.style.opacity = '0';
+            setTimeout(() => {
+                toast.remove();
+                if (onCancel) onCancel();
+            }, 200);
+        };
+    };
+
+    // Confirmation dialog (legacy wrapper)
+    window.confirmAction = function(message, callback) {
+        window.showConfirmToast(message, {
+            onConfirm: callback
+        });
     };
     
     // Data table search functionality

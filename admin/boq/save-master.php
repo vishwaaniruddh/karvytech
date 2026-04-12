@@ -25,6 +25,8 @@ try {
     $customer_id = !empty($_POST['customer_id']) ? (int)$_POST['customer_id'] : null;
     $status = $_POST['status'] ?? 'active';
     $materials = $_POST['materials'] ?? []; // Array of material IDs
+    $quantities = $_POST['quantities'] ?? []; // Array of quantities indexed by material ID
+    $item_notes = $_POST['item_notes'] ?? []; // Array of notes indexed by material ID
     
     if (empty($boq_name) || empty($customer_id)) {
         echo json_encode(['success' => false, 'message' => 'BOQ Name and Customer are required']);
@@ -53,9 +55,17 @@ try {
     }
     
     if ($masterId) {
-        // Add materials
+        // Add materials with quantities and notes
         if (!empty($materials)) {
-            $boqItemLink->addItems($masterId, $materials);
+            $formattedItems = [];
+            foreach ($materials as $itemId) {
+                $formattedItems[] = [
+                    'id' => $itemId,
+                    'quantity' => $quantities[$itemId] ?? 1,
+                    'notes' => $item_notes[$itemId] ?? null
+                ];
+            }
+            $boqItemLink->addItems($masterId, $formattedItems);
         }
         
         // Log activity
