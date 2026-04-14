@@ -126,7 +126,7 @@ $type = $_GET['type'] ?? 'survey';
                                 <input v-model="section.title" class="w-full text-xl font-bold text-gray-800 border-none focus:ring-0 p-0 mb-1 bg-transparent" placeholder="Section Title">
                                 <input v-model="section.description" class="w-full text-sm text-gray-500 border-none focus:ring-0 p-0 bg-transparent" placeholder="Section Description">
                             </div>
-                            <button @click.stop="removeSection(sIndex)" class="p-2 opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-500 transition-all">
+                            <button v-if="!section.is_permanent" @click.stop="removeSection(sIndex)" class="p-2 opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-500 transition-all">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </div>
@@ -155,7 +155,7 @@ $type = $_GET['type'] ?? 'survey';
                                                     </div>
                                                     <input v-model="field.label" class="w-full text-sm font-semibold text-gray-700 bg-transparent border-none focus:ring-0 p-0" placeholder="Question Text">
                                                 </div>
-                                                <button @click.stop="removeField(sIndex, fIndex, subIndex)" class="p-1 opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-500">
+                                                <button v-if="!field.is_permanent" @click.stop="removeField(sIndex, fIndex, subIndex)" class="p-1 opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-500">
                                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                                 </button>
                                             </div>
@@ -190,7 +190,7 @@ $type = $_GET['type'] ?? 'survey';
                                         <button @click.stop="moveField(sIndex, fIndex, 1)" class="p-1 text-gray-400 hover:text-gray-600">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                         </button>
-                                        <button @click.stop="removeField(sIndex, fIndex)" class="p-1 text-red-300 hover:text-red-500">
+                                        <button v-if="!field.is_permanent" @click.stop="removeField(sIndex, fIndex)" class="p-1 text-red-300 hover:text-red-500">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                         </button>
                                     </div>
@@ -269,12 +269,24 @@ $type = $_GET['type'] ?? 'survey';
                         <input v-model="selectedElement.placeholder" type="text" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500" placeholder="Helpful hint...">
                     </div>
 
-                    <div class="space-y-2" v-if="selectedElement.field_type === 'number'">
-                        <label class="flex items-center gap-3 cursor-pointer p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
-                            <input type="checkbox" v-model="selectedElement.allow_negative" class="w-4 h-4 text-blue-600 rounded">
-                            <span class="text-sm font-semibold text-gray-700">Allow negative numbers</span>
-                        </label>
-                        <p class="text-xs text-gray-400">When unchecked, only positive numbers (0 and above) are allowed</p>
+                    <div class="space-y-4" v-if="selectedElement.field_type === 'number'">
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-3 cursor-pointer p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
+                                <input type="checkbox" v-model="selectedElement.allow_negative" class="w-4 h-4 text-blue-600 rounded">
+                                <span class="text-sm font-semibold text-gray-700">Allow negative numbers</span>
+                            </label>
+                            <p class="text-xs text-gray-400">When unchecked, only positive numbers (0 and above) are allowed</p>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Minimum Value</label>
+                            <input v-model.number="selectedElement.min_value" type="number" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500" placeholder="e.g. 1">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-3 cursor-pointer p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
+                                <input type="checkbox" v-model="selectedElement.is_integer" class="w-4 h-4 text-blue-600 rounded">
+                                <span class="text-sm font-semibold text-gray-700">Whole Numbers Only (Integer)</span>
+                            </label>
+                        </div>
                     </div>
 
                     <!-- File Upload Configuration -->
@@ -356,9 +368,33 @@ $type = $_GET['type'] ?? 'survey';
                 <!-- Section Specific Config -->
                 <div v-if="selectedType === 'section'" class="space-y-6">
                     <p class="text-sm text-gray-500 italic">Editing section properties in-place in the builder.</p>
-                    <button @click="removeSection(selectedIndex)" class="w-full py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors">
+                    <button v-if="!selectedElement.is_permanent" @click="removeSection(selectedIndex)" class="w-full py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors">
                         Delete Section
                     </button>
+                    <div v-else class="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                        <p class="text-xs text-blue-700 font-bold">Mandatory Section</p>
+                        <p class="text-[10px] text-blue-600">This section is required for all forms of this type and cannot be deleted.</p>
+                    </div>
+
+                    <div class="pt-6 border-t border-gray-100 space-y-4">
+                        <label class="flex items-center gap-3 cursor-pointer p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
+                            <input type="checkbox" v-model="selectedElement.is_repeatable" class="w-4 h-4 text-blue-600 rounded">
+                            <span class="text-sm font-semibold text-gray-700">Make this section repeatable</span>
+                        </label>
+                        
+                        <div v-if="selectedElement.is_repeatable" class="space-y-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-widest">Repeat base on field</label>
+                            <select v-model="selectedElement.repeat_source_field_id" class="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-all">
+                                <option value="">-- Select Field --</option>
+                                <template v-for="section in form.sections">
+                                    <option v-for="field in section.fields" v-if="field.field_type === 'number'" :value="field.id">
+                                        {{ section.title }} > {{ field.label }}
+                                    </option>
+                                </template>
+                            </select>
+                            <p class="text-[10px] text-gray-400 mt-1">Select a numeric field that will determine how many times this section repeats (e.g., No of Floors).</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Subsection Specific Config -->
@@ -448,6 +484,98 @@ createApp({
             sections: []
         });
 
+        const initializeDefaultSurvey = () => {
+            if (!form.value.id && form.value.form_type === 'survey') {
+                form.value.title = 'New Survey Form';
+            const floorsFieldId = Date.now();
+            form.value.sections = [
+                {
+                    title: 'General Information',
+                    description: 'Basic site details',
+                    is_permanent: true,
+                    is_repeatable: false,
+                    repeat_source_field_id: null,
+                    fields: [
+                        {
+                            id: floorsFieldId,
+                            label: 'No of Floors',
+                            placeholder: 'Enter total number of floors',
+                            field_width: 'half',
+                            default_value: '',
+                            help_text: 'This will determine how many floor detail sections appear below.',
+                            field_type: 'number',
+                            is_required: true,
+                            allow_negative: false,
+                            min_value: 1,
+                            is_integer: true,
+                            is_permanent: true,
+                            allow_multiple: false,
+                            max_files: 5,
+                            file_type_restriction: '',
+                            custom_file_types: '',
+                            max_file_size: 5,
+                            show_preview: true,
+                            options: '',
+                            field_config: {},
+                            validation_rules: {},
+                            conditional_logic: []
+                        }
+                    ],
+                    subsections: []
+                },
+                {
+                    title: 'Floor Wise Camera Details',
+                    description: 'Capture camera distribution per floor',
+                    is_permanent: false,
+                    is_repeatable: true,
+                    repeat_source_field_id: floorsFieldId,
+                    fields: [
+                        {
+                            id: floorsFieldId + 1,
+                            label: 'SLP Camera',
+                            field_type: 'number',
+                            field_width: 'third',
+                            is_required: true,
+                            min_value: 0,
+                            is_integer: true,
+                            allow_negative: false,
+                            field_config: {},
+                            validation_rules: {},
+                            conditional_logic: []
+                        },
+                        {
+                            id: floorsFieldId + 2,
+                            label: 'Analytical Camera',
+                            field_type: 'number',
+                            field_width: 'third',
+                            is_required: true,
+                            min_value: 0,
+                            is_integer: true,
+                            allow_negative: false,
+                            field_config: {},
+                            validation_rules: {},
+                            conditional_logic: []
+                        },
+                        {
+                            id: floorsFieldId + 3,
+                            label: 'Blind Spot',
+                            field_type: 'number',
+                            field_width: 'third',
+                            is_required: true,
+                            min_value: 0,
+                            is_integer: true,
+                            allow_negative: false,
+                            field_config: {},
+                            validation_rules: {},
+                            conditional_logic: []
+                        }
+                    ],
+                    subsections: []
+                }
+            ];
+            }
+        };
+
         const selectedType = ref(null); // 'section' or 'field'
         const selectedIndex = ref(null);
         const selectedSectionIndex = ref(null);
@@ -477,6 +605,9 @@ createApp({
             form.value.sections.push({
                 title: 'New Section',
                 description: '',
+                is_permanent: false,
+                is_repeatable: false,
+                repeat_source_field_id: null,
                 fields: [],
                 subsections: []
             });
@@ -499,6 +630,10 @@ createApp({
         };
 
         const removeSection = (index) => {
+            if (form.value.sections[index].is_permanent) {
+                alert('This section is mandatory and cannot be removed.');
+                return;
+            }
             if (confirm('Delete this section and all its fields?')) {
                 form.value.sections.splice(index, 1);
                 selectedType.value = null;
@@ -517,6 +652,9 @@ createApp({
                 validation_rules: {},
                 conditional_logic: {},
                 allow_negative: true,
+                min_value: null,
+                is_integer: false,
+                is_permanent: false,
                 allow_multiple: false,
                 max_files: 5,
                 file_type_restriction: '',
@@ -535,6 +673,15 @@ createApp({
         };
 
         const removeField = (sectionIndex, fieldIndex, subsectionIndex = null) => {
+            const field = subsectionIndex !== null 
+                ? form.value.sections[sectionIndex].subsections[subsectionIndex].fields[fieldIndex]
+                : form.value.sections[sectionIndex].fields[fieldIndex];
+
+            if (field.is_permanent) {
+                alert('This field is mandatory and cannot be removed.');
+                return;
+            }
+
             if (subsectionIndex !== null) {
                 form.value.sections[sectionIndex].subsections[subsectionIndex].fields.splice(fieldIndex, 1);
             } else {
@@ -605,6 +752,15 @@ createApp({
                 }
             } catch (err) {
                 console.error('Failed to load form', err);
+            }
+        };
+
+        const setupForm = async () => {
+            await loadCustomers();
+            if (form.value.id) {
+                await loadForm();
+            } else {
+                initializeDefaultSurvey();
             }
         };
 
@@ -683,8 +839,7 @@ createApp({
         };
 
         onMounted(async () => {
-            await loadCustomers();
-            loadForm();
+            setupForm();
         });
 
         return {

@@ -52,9 +52,17 @@ if (!$id) die("Survey ID required");
                 <div class="bg-gray-50 px-8 py-6 border-b border-gray-100">
                     <h2 class="text-xl font-bold text-gray-800">{{ section.title }}</h2>
                     <p v-if="section.description" class="text-sm text-gray-500 mt-1">{{ section.description }}</p>
+                    <div v-if="section.is_repeatable" class="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        Repeating ({{ getRepeatCount(section) }} entries)
+                    </div>
                 </div>
                 
-                <div class="p-8 space-y-8">
+                <div v-for="rIndex in getRepeatCount(section)" :key="'repeat-' + section.id + '-' + rIndex" class="p-8 space-y-8 border-b border-gray-100 last:border-b-0">
+                    <h3 v-if="section.is_repeatable" class="text-lg font-bold text-blue-600 flex items-center gap-2">
+                        <span class="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">{{ rIndex }}</span>
+                        {{ section.title }} - Entry {{ rIndex }}
+                    </h3>
+                    
                     <!-- Main Section Fields -->
                     <div v-if="section.fields && section.fields.length > 0" class="flex flex-wrap gap-6">
                         <div v-for="field in section.fields" :key="field.id" 
@@ -75,16 +83,17 @@ if (!$id) die("Survey ID required");
                             <input 
                                 v-if="['text', 'email', 'password', 'number'].includes(field.field_type)"
                                 :type="field.field_type"
-                                v-model="formData[field.id]"
+                                v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                 :placeholder="field.placeholder"
                                 :required="field.is_required"
-                                :min="field.field_type === 'number' && !field.allow_negative ? '0' : null"
+                                :min="field.field_type === 'number' ? (field.min_value !== null ? field.min_value : (!field.allow_negative ? '0' : null)) : null"
+                                :step="field.field_type === 'number' && field.is_integer ? '1' : 'any'"
                                 class="input-field">
 
                             <!-- Textarea -->
                             <textarea 
                                 v-if="field.field_type === 'textarea'"
-                                v-model="formData[field.id]"
+                                v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                 :placeholder="field.placeholder"
                                 :required="field.is_required"
                                 class="input-field min-h-[120px]"></textarea>
@@ -93,7 +102,7 @@ if (!$id) die("Survey ID required");
                             <input 
                                 v-if="['date', 'time'].includes(field.field_type)"
                                 :type="field.field_type"
-                                v-model="formData[field.id]"
+                                v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                 :required="field.is_required"
                                 class="input-field">
 
@@ -101,14 +110,14 @@ if (!$id) die("Survey ID required");
                             <input 
                                 v-if="['datetime', 'datetime-local'].includes(field.field_type)"
                                 type="datetime-local"
-                                v-model="formData[field.id]"
+                                v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                 :required="field.is_required"
                                 class="input-field">
 
                             <!-- Select Dropdown -->
                             <select 
                                 v-if="field.field_type === 'select'"
-                                v-model="formData[field.id]"
+                                v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                 :required="field.is_required"
                                 class="input-field">
                                 <option value="">Select an option...</option>
@@ -118,7 +127,7 @@ if (!$id) die("Survey ID required");
                             <!-- Customer Dropdown -->
                             <select 
                                 v-if="field.field_type === 'customer'"
-                                v-model="formData[field.id]"
+                                v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                 :required="field.is_required"
                                 class="input-field">
                                 <option value="">Select customer...</option>
@@ -130,9 +139,9 @@ if (!$id) die("Survey ID required");
                                 <label v-for="opt in getOptions(field.options)" :key="opt" class="flex items-center gap-3 cursor-pointer group">
                                     <input 
                                         type="radio" 
-                                        :name="'field_' + field.id"
+                                        :name="'field_' + field.id + '_' + rIndex"
                                         :value="opt"
-                                        v-model="formData[field.id]"
+                                        v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                         :required="field.is_required"
                                         class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
                                     <span class="text-sm text-gray-600 group-hover:text-gray-900">{{ opt }}</span>
@@ -145,7 +154,7 @@ if (!$id) die("Survey ID required");
                                     <input 
                                         type="checkbox" 
                                         :value="opt"
-                                        @change="updateCheckbox(field.id, opt, $event)"
+                                        @change="updateCheckbox(getFieldKey(field.id, rIndex), opt, $event)"
                                         class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
                                     <span class="text-sm text-gray-600 group-hover:text-gray-900">{{ opt }}</span>
                                 </label>
@@ -157,13 +166,13 @@ if (!$id) die("Survey ID required");
                                 type="file"
                                 :multiple="field.allow_multiple"
                                 :accept="getFileAccept(field)"
-                                @change="handleFileUpload(field.id, $event, field)"
+                                @change="handleFileUpload(getFieldKey(field.id, rIndex), $event, field)"
                                 :required="field.is_required"
                                 class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                             
                             <!-- File Preview -->
-                            <div v-if="field.field_type === 'file' && field.show_preview && filePreviews[field.id] && filePreviews[field.id].length > 0" class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
-                                <div v-for="(preview, index) in filePreviews[field.id]" :key="index" class="relative group">
+                            <div v-if="field.field_type === 'file' && field.show_preview && filePreviews[getFieldKey(field.id, rIndex)] && filePreviews[getFieldKey(field.id, rIndex)].length > 0" class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div v-for="(preview, index) in filePreviews[getFieldKey(field.id, rIndex)]" :key="index" class="relative group">
                                     <div class="border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                                         <!-- Image Preview -->
                                         <img v-if="preview.type === 'image'" :src="preview.url" class="w-full h-32 object-cover">
@@ -176,7 +185,7 @@ if (!$id) die("Survey ID required");
                                             <p class="text-xs text-gray-600 font-medium text-center truncate w-full">{{ preview.name }}</p>
                                         </div>
                                     </div>
-                                    <button @click="removeFile(field.id, index)" type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <button @click="removeFile(getFieldKey(field.id, rIndex), index)" type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                     </button>
                                     <p class="text-xs text-gray-500 mt-1 truncate">{{ formatFileSize(preview.size) }}</p>
@@ -222,16 +231,17 @@ if (!$id) die("Survey ID required");
                                         <input 
                                             v-if="['text', 'email', 'password', 'number'].includes(field.field_type)"
                                             :type="field.field_type"
-                                            v-model="formData[field.id]"
+                                            v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                             :placeholder="field.placeholder"
                                             :required="field.is_required"
-                                            :min="field.field_type === 'number' && !field.allow_negative ? '0' : null"
+                                            :min="field.field_type === 'number' ? (field.min_value !== null ? field.min_value : (!field.allow_negative ? '0' : null)) : null"
+                                            :step="field.field_type === 'number' && field.is_integer ? '1' : 'any'"
                                             class="input-field">
 
                                         <!-- Textarea -->
                                         <textarea 
                                             v-if="field.field_type === 'textarea'"
-                                            v-model="formData[field.id]"
+                                            v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                             :placeholder="field.placeholder"
                                             :required="field.is_required"
                                             class="input-field min-h-[120px]"></textarea>
@@ -240,7 +250,7 @@ if (!$id) die("Survey ID required");
                                         <input 
                                             v-if="['date', 'time'].includes(field.field_type)"
                                             :type="field.field_type"
-                                            v-model="formData[field.id]"
+                                            v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                             :required="field.is_required"
                                             class="input-field">
 
@@ -248,14 +258,14 @@ if (!$id) die("Survey ID required");
                                         <input 
                                             v-if="['datetime', 'datetime-local'].includes(field.field_type)"
                                             type="datetime-local"
-                                            v-model="formData[field.id]"
+                                            v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                             :required="field.is_required"
                                             class="input-field">
 
                                         <!-- Select Dropdown -->
                                         <select 
                                             v-if="field.field_type === 'select'"
-                                            v-model="formData[field.id]"
+                                            v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                             :required="field.is_required"
                                             class="input-field">
                                             <option value="">Select an option...</option>
@@ -265,7 +275,7 @@ if (!$id) die("Survey ID required");
                                         <!-- Customer Dropdown -->
                                         <select 
                                             v-if="field.field_type === 'customer'"
-                                            v-model="formData[field.id]"
+                                            v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                             :required="field.is_required"
                                             class="input-field">
                                             <option value="">Select customer...</option>
@@ -277,9 +287,9 @@ if (!$id) die("Survey ID required");
                                             <label v-for="opt in getOptions(field.options)" :key="opt" class="flex items-center gap-3 cursor-pointer group">
                                                 <input 
                                                     type="radio" 
-                                                    :name="'field_' + field.id"
+                                                    :name="'field_' + field.id + '_' + rIndex"
                                                     :value="opt"
-                                                    v-model="formData[field.id]"
+                                                    v-model="formData[getFieldKey(field.id, rIndex, section)]"
                                                     :required="field.is_required"
                                                     class="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300">
                                                 <span class="text-sm text-gray-600 group-hover:text-gray-900">{{ opt }}</span>
@@ -292,7 +302,7 @@ if (!$id) die("Survey ID required");
                                                 <input 
                                                     type="checkbox" 
                                                     :value="opt"
-                                                    @change="updateCheckbox(field.id, opt, $event)"
+                                                    @change="updateCheckbox(getFieldKey(field.id, rIndex), opt, $event)"
                                                     class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
                                                 <span class="text-sm text-gray-600 group-hover:text-gray-900">{{ opt }}</span>
                                             </label>
@@ -304,13 +314,13 @@ if (!$id) die("Survey ID required");
                                             type="file"
                                             :multiple="field.allow_multiple"
                                             :accept="getFileAccept(field)"
-                                            @change="handleFileUpload(field.id, $event, field)"
+                                            @change="handleFileUpload(getFieldKey(field.id, rIndex), $event, field)"
                                             :required="field.is_required"
                                             class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                         
                                         <!-- File Preview -->
-                                        <div v-if="field.field_type === 'file' && field.show_preview && filePreviews[field.id] && filePreviews[field.id].length > 0" class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
-                                            <div v-for="(preview, index) in filePreviews[field.id]" :key="index" class="relative group">
+                                        <div v-if="field.field_type === 'file' && field.show_preview && filePreviews[getFieldKey(field.id, rIndex)] && filePreviews[getFieldKey(field.id, rIndex)].length > 0" class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+                                            <div v-for="(preview, index) in filePreviews[getFieldKey(field.id, rIndex)]" :key="index" class="relative group">
                                                 <div class="border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                                                     <!-- Image Preview -->
                                                     <img v-if="preview.type === 'image'" :src="preview.url" class="w-full h-32 object-cover">
@@ -323,21 +333,36 @@ if (!$id) die("Survey ID required");
                                                         <p class="text-xs text-gray-600 font-medium text-center truncate w-full">{{ preview.name }}</p>
                                                     </div>
                                                 </div>
-                                                <button @click="removeFile(field.id, index)" type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <button @click="removeFile(getFieldKey(field.id, rIndex), index)" type="button" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                                 </button>
                                                 <p class="text-xs text-gray-500 mt-1 truncate">{{ formatFileSize(preview.size) }}</p>
                                             </div>
                                         </div>
-                                        
-                                        <p v-if="field.field_type === 'file' && field.max_files && field.allow_multiple" class="text-xs text-gray-400 mt-1">
-                                            Max {{ field.max_files }} files, {{ field.max_file_size }}MB each
-                                        </p>
                                     </div>
                                     
                                     <p v-if="field.help_text" class="text-xs text-gray-400 font-medium italic">{{ field.help_text }}</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    </div>
+
+                    <!-- Cumulative Totals for Repeatable Section -->
+                    <div v-if="section.is_repeatable && getRepeatCount(section) > 0" class="mt-8 p-6 bg-blue-50 rounded-2xl border-2 border-blue-100">
+                        <h4 class="text-sm font-bold text-blue-800 uppercase tracking-widest mb-4">Cumulative Summary</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div v-for="field in section.fields" v-if="field.field_type === 'number'" :key="'total-' + field.id" class="p-3 bg-white rounded-xl shadow-sm border border-blue-100 text-center">
+                                <p class="text-xs text-gray-500 font-bold mb-1">{{ field.label }}</p>
+                                <p class="text-xl font-extrabold text-blue-600">{{ getFieldTotal(field.id, section) }}</p>
+                            </div>
+                            <!-- Totals for subsection fields -->
+                            <template v-for="subsection in section.subsections">
+                                <div v-for="field in subsection.fields" v-if="field.field_type === 'number'" :key="'total-sub-' + field.id" class="p-3 bg-white rounded-xl shadow-sm border border-blue-100 text-center">
+                                    <p class="text-xs text-purple-500 font-bold mb-1">{{ field.label }}</p>
+                                    <p class="text-xl font-extrabold text-purple-600">{{ getFieldTotal(field.id, section) }}</p>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -371,6 +396,41 @@ createApp({
             filePreviews: {},
             submitting: false
         };
+    },
+    computed: {
+        totals() {
+            const res = {};
+            this.sections.forEach(section => {
+                if (section.is_repeatable) {
+                    const count = this.getRepeatCount(section);
+                    // Process main fields
+                    section.fields.forEach(field => {
+                        if (field.field_type === 'number') {
+                            let sum = 0;
+                            for (let i = 1; i <= count; i++) {
+                                sum += parseFloat(this.formData[`${field.id}_${i}`]) || 0;
+                            }
+                            res[field.id] = sum;
+                        }
+                    });
+                    // Process subsections
+                    if (section.subsections) {
+                        section.subsections.forEach(sub => {
+                            sub.fields.forEach(field => {
+                                if (field.field_type === 'number') {
+                                    let sum = 0;
+                                    for (let i = 1; i <= count; i++) {
+                                        sum += parseFloat(this.formData[`${field.id}_${i}`]) || 0;
+                                    }
+                                    res[field.id] = sum;
+                                }
+                            });
+                        });
+                    }
+                }
+            });
+            return res;
+        }
     },
     methods: {
         async loadSurvey() {
@@ -437,6 +497,23 @@ createApp({
         getOptions(optionsString) {
             if (!optionsString) return [];
             return optionsString.split(',').map(opt => opt.trim()).filter(opt => opt);
+        },
+
+        getRepeatCount(section) {
+            if (!section.is_repeatable) return 1;
+            if (!section.repeat_source_field_id) return 1;
+            
+            const count = parseInt(this.formData[section.repeat_source_field_id]) || 0;
+            return Math.max(0, count);
+        },
+
+        getFieldKey(fieldId, repeatIndex, section) {
+            if (!section.is_repeatable) return fieldId;
+            return `${fieldId}_${repeatIndex}`;
+        },
+
+        getFieldTotal(fieldId, section) {
+            return this.totals[fieldId] || 0;
         },
         
         updateCheckbox(fieldId, value, event) {

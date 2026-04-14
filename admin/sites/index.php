@@ -422,7 +422,11 @@ ob_start();
                             <button onclick="viewSite(${site.id})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="View Site"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
                             <button onclick="editSite(${site.id})" class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Edit Site"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
                             <button onclick="conductMaterials(${site.id}, ${site.survey_id})" class="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors" title="Material Request"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg></button>
-                            <button onclick="viewSurvey(${site.survey_id})" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors ${!site.survey_id ? 'opacity-30 pointer-events-none' : ''}" title="View Survey"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></button>
+                            <button onclick="${site.survey_id ? `viewSurvey(${site.survey_id})` : `conductSurvey(${site.id})`}" 
+                                    class="p-1.5 ${site.survey_id ? 'text-blue-500' : 'text-emerald-600'} hover:bg-gray-50 rounded-lg transition-colors ${(!site.survey_id && !site.delegated_vendor_name) ? 'opacity-30 pointer-events-none' : ''}" 
+                                    title="${site.survey_id ? 'View Survey' : 'Conduct Survey'}">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            </button>
                             <button onclick="deleteSite(${site.id})" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete Site"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
                         </div>
                     </td>
@@ -585,7 +589,7 @@ ob_start();
     }
 
     function conductSurvey(id) {
-        window.location.href = `../../admin/site-survey2.php?delegation_id=${id}`;
+        window.location.href = `../../admin/site-survey2.php?site_id=${id}`;
     }
 
     function conductMaterials(siteId, surveyId) {

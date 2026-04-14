@@ -1,14 +1,17 @@
 <?php
-require_once __DIR__ . '/../config/database.php';
+require_once 'config/database.php';
 $db = Database::getInstance()->getConnection();
 
-function getCol($db, $table, $col) {
-    $stmt = $db->query("DESCRIBE $table $col");
-    return $stmt->fetch(PDO::FETCH_ASSOC);
+$tables = ['dynamic_surveys', 'dynamic_survey_sections', 'dynamic_survey_fields', 'dynamic_survey_revisions', 'dynamic_survey_responses', 'dynamic_survey_response_values'];
+
+foreach ($tables as $table) {
+    echo "--- $table ---\n";
+    try {
+        $stmt = $db->query("DESCRIBE $table");
+        foreach($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            echo "  " . $row['Field'] . "\n";
+        }
+    } catch (Exception $e) {
+        echo "  ERROR: " . $e->getMessage() . "\n";
+    }
 }
-
-echo "inventory_stock.boq_item_id: ";
-print_r(getCol($db, 'inventory_stock', 'boq_item_id'));
-
-echo "\nboq_items.id: ";
-print_r(getCol($db, 'boq_items', 'id'));

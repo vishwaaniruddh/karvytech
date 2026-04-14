@@ -5,37 +5,40 @@ date_default_timezone_set('Asia/Kolkata');
 
 // Environment detection function (defined early)
 if (!function_exists('getEnvironment')) {
-    function getEnvironment() {
+    function getEnvironment()
+    {
         // Always check server first for production detection
         $host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '';
-        
+
         // Production domain detection (highest priority) - be more specific
-        if ($host === 'project.sarsspl.com' || $host === 'www.project.sarsspl.com' || 
-            strpos($host, 'sarsspl.com') !== false) {
+        if (
+            $host === 'karvy.sarsspl.com' || $host === 'www.karvy.sarsspl.com' ||
+            strpos($host, 'sarsspl.com') !== false
+        ) {
             return 'production';
         }
 
-        
-        
+
+
         // Check environment variables
         if (isset($_ENV['APP_ENV']) && in_array($_ENV['APP_ENV'], ['development', 'testing', 'production'])) {
             return $_ENV['APP_ENV'];
         }
-        
+
         $envVar = getenv('APP_ENV');
         if ($envVar && in_array($envVar, ['development', 'testing', 'production'])) {
             return $envVar;
         }
-        
+
         // Final fallback based on domain patterns
         if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
             return 'development';
         }
-        
+
         if (strpos($host, 'test.') === 0 || strpos($host, 'staging.') === 0) {
             return 'testing';
         }
-        
+
         if (preg_match('/\.(com|net|org)$/', $host)) {
             return 'production';
         }
@@ -50,7 +53,7 @@ $currentEnv = getEnvironment();
 $baseUrls = [
     'development' => 'http://localhost/project',
     'testing' => 'http://localhost/project',
-    'production' => 'https://project.sarsspl.com'
+    'production' => 'https://karvy.sarsspl.com'
 ];
 
 // Set BASE_URL based on environment
@@ -64,7 +67,8 @@ define('APP_ENV', $currentEnv);
 
 // URL helper functions
 if (!function_exists('url')) {
-    function url($path = '') {
+    function url($path = '')
+    {
         $baseUrl = defined('BASE_URL') ? rtrim(BASE_URL, '/') : '';
         $path = ltrim($path, '/');
         return $path ? $baseUrl . '/' . $path : $baseUrl;
@@ -72,26 +76,30 @@ if (!function_exists('url')) {
 }
 
 if (!function_exists('asset')) {
-    function asset($path) {
+    function asset($path)
+    {
         return url($path);
     }
 }
 
 // Environment helper functions
 if (!function_exists('isDevelopment')) {
-    function isDevelopment() {
+    function isDevelopment()
+    {
         return getEnvironment() === 'development';
     }
 }
 
 if (!function_exists('isTesting')) {
-    function isTesting() {
+    function isTesting()
+    {
         return getEnvironment() === 'testing';
     }
 }
 
 if (!function_exists('isProduction')) {
-    function isProduction() {
+    function isProduction()
+    {
         return getEnvironment() === 'production';
     }
 }
@@ -100,11 +108,24 @@ if (!function_exists('isProduction')) {
 define('UPLOAD_DIR', 'assets/uploads/');
 define('MAX_FILE_SIZE', 10 * 1024 * 1024); // 10MB
 define('ALLOWED_FILE_TYPES', [
-    'jpg', 'jpeg', 'png', 'gif', 'webp', // Images
-    'pdf', 'doc', 'docx', 'txt', // Documents
-    'xlsx', 'xls', 'csv', // Spreadsheets
-    'dwg', 'dxf', // CAD files
-    'mp4', 'avi', 'mov', 'wmv' // Videos
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'webp', // Images
+    'pdf',
+    'doc',
+    'docx',
+    'txt', // Documents
+    'xlsx',
+    'xls',
+    'csv', // Spreadsheets
+    'dwg',
+    'dxf', // CAD files
+    'mp4',
+    'avi',
+    'mov',
+    'wmv' // Videos
 ]);
 
 // Pagination settings

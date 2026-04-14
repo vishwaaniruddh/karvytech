@@ -1,0 +1,25 @@
+
+Raj Sekhar
+12:37 PM
+Total No Camaras Field	50	Analytical Cameras Field	7
+			
+Floor1			
+SLP Camera	10		
+Analytical Camera	2		
+Blind Spot	3		
+			
+Floor2			
+SLP Camera	10		
+Analytical Camera	2		
+Blind Spot	3		
+			
+Floor3			
+SLP Camera	10		
+Analytical Camera	2		
+Blind Spot	1		
+			
+Floor4			
+SLP Camera	5		
+Analytical Camera	1		
+Blind Spot	1
+niz-moah-por

@@ -91,18 +91,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
         // 3. Save sections, subsections, and nested fields
         foreach ($data['sections'] as $sIndex => $section) {
             // Save main section
-            $stmt = $db->prepare("INSERT INTO dynamic_survey_sections (survey_id, parent_section_id, title, description, sort_order) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$id, null, $section['title'], $section['description'] ?? '', $sIndex]);
+            $stmt = $db->prepare("INSERT INTO dynamic_survey_sections (survey_id, parent_section_id, title, description, is_permanent, is_repeatable, repeat_source_field_id, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([
+                $id, null, $section['title'], $section['description'] ?? '', 
+                ($section['is_permanent'] ?? false) ? 1 : 0,
+                ($section['is_repeatable'] ?? false) ? 1 : 0,
+                $section['repeat_source_field_id'] ?? null,
+                $sIndex
+            ]);
             $sectionId = $db->lastInsertId();
 
             // Save fields directly in the main section
             foreach ($section['fields'] as $fIndex => $field) {
                 $stmt = $db->prepare("INSERT INTO dynamic_survey_fields (
                     survey_id, section_id, label, placeholder, field_width, default_value, help_text, 
-                    field_type, is_required, allow_negative, allow_multiple, max_files, 
+                    field_type, is_required, allow_negative, min_value, is_integer, is_permanent, allow_multiple, max_files, 
                     file_type_restriction, custom_file_types, max_file_size, show_preview,
                     options, field_config, validation_rules, conditional_logic, sort_order
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 
                 $stmt->execute([
                     $id,
@@ -115,6 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
                     $field['field_type'],
                     ($field['is_required'] ?? false) ? 1 : 0,
                     ($field['allow_negative'] ?? true) ? 1 : 0,
+                    $field['min_value'] ?? null,
+                    ($field['is_integer'] ?? false) ? 1 : 0,
+                    ($field['is_permanent'] ?? false) ? 1 : 0,
                     ($field['allow_multiple'] ?? false) ? 1 : 0,
                     $field['max_files'] ?? 5,
                     $field['file_type_restriction'] ?? '',
@@ -132,18 +141,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
             // Save subsections
             if (isset($section['subsections']) && is_array($section['subsections'])) {
                 foreach ($section['subsections'] as $subIndex => $subsection) {
-                    $stmt = $db->prepare("INSERT INTO dynamic_survey_sections (survey_id, parent_section_id, title, description, sort_order) VALUES (?, ?, ?, ?, ?)");
-                    $stmt->execute([$id, $sectionId, $subsection['title'], $subsection['description'] ?? '', $subIndex]);
+                    $stmt = $db->prepare("INSERT INTO dynamic_survey_sections (survey_id, parent_section_id, title, description, is_permanent, is_repeatable, repeat_source_field_id, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([
+                        $id, $sectionId, $subsection['title'], $subsection['description'] ?? '', 
+                        ($subsection['is_permanent'] ?? false) ? 1 : 0,
+                        ($subsection['is_repeatable'] ?? false) ? 1 : 0,
+                        $subsection['repeat_source_field_id'] ?? null,
+                        $subIndex
+                    ]);
                     $subsectionId = $db->lastInsertId();
 
                     // Save fields in subsection
                     foreach ($subsection['fields'] as $fIndex => $field) {
                         $stmt = $db->prepare("INSERT INTO dynamic_survey_fields (
                             survey_id, section_id, label, placeholder, field_width, default_value, help_text, 
-                            field_type, is_required, allow_negative, allow_multiple, max_files, 
+                            field_type, is_required, allow_negative, min_value, is_integer, is_permanent, allow_multiple, max_files, 
                             file_type_restriction, custom_file_types, max_file_size, show_preview,
                             options, field_config, validation_rules, conditional_logic, sort_order
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                         
                         $stmt->execute([
                             $id,
@@ -156,6 +171,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
                             $field['field_type'],
                             ($field['is_required'] ?? false) ? 1 : 0,
                             ($field['allow_negative'] ?? true) ? 1 : 0,
+                            $field['min_value'] ?? null,
+                            ($field['is_integer'] ?? false) ? 1 : 0,
+                            ($field['is_permanent'] ?? false) ? 1 : 0,
                             ($field['allow_multiple'] ?? false) ? 1 : 0,
                             $field['max_files'] ?? 5,
                             $field['file_type_restriction'] ?? '',
@@ -198,6 +216,9 @@ if ($action === 'load') {
 
     // Fetch fields and subsections for each main section
     foreach ($sections as &$section) {
+        $section['is_permanent'] = (bool)($section['is_permanent'] ?? false);
+        $section['is_repeatable'] = (bool)($section['is_repeatable'] ?? false);
+        $section['repeat_source_field_id'] = $section['repeat_source_field_id'] ? (int)$section['repeat_source_field_id'] : null;
         // Get fields for this section
         $stmt = $db->prepare("SELECT * FROM dynamic_survey_fields WHERE section_id = ? ORDER BY sort_order ASC");
         $stmt->execute([$section['id']]);
@@ -210,6 +231,9 @@ if ($action === 'load') {
             $field['conditional_logic'] = json_decode($field['conditional_logic'] ?? '[]', true);
             $field['is_required'] = (bool)$field['is_required'];
             $field['allow_negative'] = (bool)($field['allow_negative'] ?? true);
+            $field['min_value'] = ($field['min_value'] !== null) ? (int)$field['min_value'] : null;
+            $field['is_integer'] = (bool)($field['is_integer'] ?? false);
+            $field['is_permanent'] = (bool)($field['is_permanent'] ?? false);
             $field['allow_multiple'] = (bool)($field['allow_multiple'] ?? false);
             $field['show_preview'] = (bool)($field['show_preview'] ?? true);
         }
@@ -221,6 +245,9 @@ if ($action === 'load') {
         $subsections = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($subsections as &$subsection) {
+            $subsection['is_permanent'] = (bool)($subsection['is_permanent'] ?? false);
+            $subsection['is_repeatable'] = (bool)($subsection['is_repeatable'] ?? false);
+            $subsection['repeat_source_field_id'] = $subsection['repeat_source_field_id'] ? (int)$subsection['repeat_source_field_id'] : null;
             // Get fields for this subsection
             $stmt = $db->prepare("SELECT * FROM dynamic_survey_fields WHERE section_id = ? ORDER BY sort_order ASC");
             $stmt->execute([$subsection['id']]);
@@ -233,6 +260,9 @@ if ($action === 'load') {
                 $subField['conditional_logic'] = json_decode($subField['conditional_logic'] ?? '[]', true);
                 $subField['is_required'] = (bool)$subField['is_required'];
                 $subField['allow_negative'] = (bool)($subField['allow_negative'] ?? true);
+                $subField['min_value'] = ($subField['min_value'] !== null) ? (int)$subField['min_value'] : null;
+                $subField['is_integer'] = (bool)($subField['is_integer'] ?? false);
+                $subField['is_permanent'] = (bool)($subField['is_permanent'] ?? false);
                 $subField['allow_multiple'] = (bool)($subField['allow_multiple'] ?? false);
                 $subField['show_preview'] = (bool)($subField['show_preview'] ?? true);
             }
@@ -371,33 +401,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'restore_revision') {
         // Restore sections and fields from revision
         foreach ($revisionData['sections'] as $sIndex => $section) {
             if ($section['parent_section_id'] === null) {
-                $stmt = $db->prepare("INSERT INTO dynamic_survey_sections (survey_id, parent_section_id, title, description, sort_order) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$surveyId, null, $section['title'], $section['description'], $sIndex]);
+                $stmt = $db->prepare("INSERT INTO dynamic_survey_sections (survey_id, parent_section_id, title, description, is_permanent, is_repeatable, repeat_source_field_id, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([
+                    $surveyId, null, $section['title'], $section['description'], 
+                    ($section['is_permanent'] ?? false) ? 1 : 0,
+                    ($section['is_repeatable'] ?? false) ? 1 : 0,
+                    $section['repeat_source_field_id'] ?? null,
+                    $sIndex
+                ]);
                 $sectionId = $db->lastInsertId();
                 
                 // Restore fields
                 foreach ($section['fields'] as $fIndex => $field) {
-                    $stmt = $db->prepare("INSERT INTO dynamic_survey_fields (survey_id, section_id, label, placeholder, field_width, default_value, help_text, field_type, is_required, options, field_config, validation_rules, conditional_logic, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    $stmt = $db->prepare("INSERT INTO dynamic_survey_fields (
+                        survey_id, section_id, label, placeholder, field_width, default_value, help_text, 
+                        field_type, is_required, allow_negative, min_value, is_integer, is_permanent, allow_multiple, max_files, 
+                        file_type_restriction, custom_file_types, max_file_size, show_preview,
+                        options, field_config, validation_rules, conditional_logic, sort_order
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    
                     $stmt->execute([
                         $surveyId, $sectionId, $field['label'], $field['placeholder'], $field['field_width'] ?? 'full',
-                        $field['default_value'], $field['help_text'], $field['field_type'], $field['is_required'],
-                        $field['options'], $field['field_config'], $field['validation_rules'], $field['conditional_logic'], $fIndex
+                        $field['default_value'], $field['help_text'], $field['field_type'], $field['is_required'] ? 1 : 0,
+                        $field['allow_negative'] ? 1 : 0, $field['min_value'] ?? null, $field['is_integer'] ? 1 : 0, $field['is_permanent'] ? 1 : 0,
+                        $field['allow_multiple'] ? 1 : 0, $field['max_files'] ?? 5, $field['file_type_restriction'] ?? '',
+                        $field['custom_file_types'] ?? '', $field['max_file_size'] ?? 5, $field['show_preview'] ? 1 : 0,
+                        $field['options'], json_encode($field['field_config']), json_encode($field['validation_rules']),
+                        json_encode($field['conditional_logic']), $fIndex
                     ]);
                 }
                 
                 // Restore subsections
                 if (isset($section['subsections'])) {
                     foreach ($section['subsections'] as $subIndex => $subsection) {
-                        $stmt = $db->prepare("INSERT INTO dynamic_survey_sections (survey_id, parent_section_id, title, description, sort_order) VALUES (?, ?, ?, ?, ?)");
-                        $stmt->execute([$surveyId, $sectionId, $subsection['title'], $subsection['description'], $subIndex]);
+                        $stmt = $db->prepare("INSERT INTO dynamic_survey_sections (survey_id, parent_section_id, title, description, is_permanent, is_repeatable, repeat_source_field_id, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                        $stmt->execute([
+                            $surveyId, $sectionId, $subsection['title'], $subsection['description'], 
+                            ($subsection['is_permanent'] ?? false) ? 1 : 0,
+                            ($subsection['is_repeatable'] ?? false) ? 1 : 0,
+                            $subsection['repeat_source_field_id'] ?? null,
+                            $subIndex
+                        ]);
                         $subsectionId = $db->lastInsertId();
                         
                         foreach ($subsection['fields'] as $fIndex => $field) {
-                            $stmt = $db->prepare("INSERT INTO dynamic_survey_fields (survey_id, section_id, label, placeholder, field_width, default_value, help_text, field_type, is_required, options, field_config, validation_rules, conditional_logic, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                            $stmt = $db->prepare("INSERT INTO dynamic_survey_fields (
+                                survey_id, section_id, label, placeholder, field_width, default_value, help_text, 
+                                field_type, is_required, allow_negative, min_value, is_integer, is_permanent, allow_multiple, max_files, 
+                                file_type_restriction, custom_file_types, max_file_size, show_preview,
+                                options, field_config, validation_rules, conditional_logic, sort_order
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                            
                             $stmt->execute([
                                 $surveyId, $subsectionId, $field['label'], $field['placeholder'], $field['field_width'] ?? 'full',
-                                $field['default_value'], $field['help_text'], $field['field_type'], $field['is_required'],
-                                $field['options'], $field['field_config'], $field['validation_rules'], $field['conditional_logic'], $fIndex
+                                $field['default_value'], $field['help_text'], $field['field_type'], $field['is_required'] ? 1 : 0,
+                                $field['allow_negative'] ? 1 : 0, $field['min_value'] ?? null, $field['is_integer'] ? 1 : 0, $field['is_permanent'] ? 1 : 0,
+                                $field['allow_multiple'] ? 1 : 0, $field['max_files'] ?? 5, $field['file_type_restriction'] ?? '',
+                                $field['custom_file_types'] ?? '', $field['max_file_size'] ?? 5, $field['show_preview'] ? 1 : 0,
+                                $field['options'], json_encode($field['field_config']), json_encode($field['validation_rules']),
+                                json_encode($field['conditional_logic']), $fIndex
                             ]);
                         }
                     }
