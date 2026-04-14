@@ -46,10 +46,10 @@ ob_start();
 
 <div class="flex justify-between items-start mb-6">
     <div>
-        <h1 class="text-2xl font-semibold text-gray-900">Form Maker</h1>
+        <h1 class="text-2xl font-semibold text-gray-900">Form Master</h1>
         <p class="mt-1 text-sm text-gray-600">Create and manage dynamic forms for Surveys and Installations</p>
     </div>
-    <a href="form-maker-v2.php?type=<?php echo htmlspecialchars(urlencode($defaultCreateType)); ?><?php echo $customerFilter !== '' ? '&customer_id=' . htmlspecialchars(urlencode($customerFilter)) : ''; ?>" class="btn btn-primary shadow-sm bg-blue-600 border-none hover:bg-blue-700">
+    <a href="form-designer.php" class="btn btn-primary shadow-sm bg-blue-600 border-none hover:bg-blue-700">
         <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
         </svg>
@@ -147,7 +147,7 @@ ob_start();
                                 </td>
                                 <td>
                                     <div class="flex space-x-2">
-                                        <a href="form-maker-v2.php?id=<?php echo $survey['id']; ?>" class="btn btn-sm btn-secondary hover:bg-indigo-50 hover:text-indigo-600 border-gray-200" title="Edit Form">
+                                        <a href="form-designer.php?id=<?php echo $survey['id']; ?>" class="btn btn-sm btn-secondary hover:bg-indigo-50 hover:text-indigo-600 border-gray-200" title="Edit Form">
                                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path></svg>
                                         </a>
                                         <button onclick="previewSurvey(<?php echo $survey['id']; ?>)" class="btn btn-sm btn-secondary hover:bg-blue-50 hover:text-blue-600 border-gray-200" title="Preview Form">
@@ -226,10 +226,10 @@ ob_start();
                 
                 <div class="flex justify-between items-center mb-6">
                     <h4 class="text-md font-bold text-gray-700 uppercase tracking-wide">Fields Configuration</h4>
-                    <button type="button" onclick="addNewField()" class="btn btn-sm btn-secondary flex items-center">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                        Add New Field
-                    </button>
+                    <a href="form-designer.php" class="btn btn-primary inline-flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Create New Form
+                    </a>
                 </div>
                 
                 <div id="fieldsContainer" class="space-y-4"></div>

@@ -27,7 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
                 'description' => $description,
                 'status' => $status,
                 'form_type' => $formType,
-                'customer_id' => $customerId
+                'customer_id' => $customerId,
+                'created_by' => $_SESSION['user_id'] ?? null
             ]);
             
             // Re-create fields (Simpler for now: delete and insert)
@@ -76,7 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
                 'description' => $description,
                 'status' => $status,
                 'form_type' => $formType,
-                'customer_id' => $customerId
+                'customer_id' => $customerId,
+                'created_by' => $_SESSION['user_id'] ?? null
             ], $formattedFields);
             
             echo json_encode(['success' => true, 'id' => $newId]);

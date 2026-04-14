@@ -178,7 +178,7 @@ ob_start();
         </svg>
         <h3 class="text-lg font-medium text-gray-900 mb-2">No Survey Form Found</h3>
         <p class="text-gray-500">No active survey form found for this customer</p>
-        <a href="../masters/form-maker-v2.php?type=survey" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+        <a href="../masters/form-designer.php?type=survey" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
             Create Survey Form
         </a>
     </div>

@@ -1793,7 +1793,8 @@ $currentUser = Auth::getCurrentUser();
             const {
                 confirmText = 'Yes, Proceed',
                 cancelText = 'Cancel',
-                confirmType = 'primary' // primary, danger, success
+                confirmType = 'primary', // primary, danger, success
+                hideCancel = false
             } = options;
 
             // Create modal if not exists
@@ -1828,6 +1829,9 @@ $currentUser = Auth::getCurrentUser();
             modal.querySelector('#confirm-message').textContent = message;
             okBtn.textContent = confirmText;
             cancelBtn.textContent = cancelText;
+
+            // Handle alert-only mode (hide cancel button)
+            cancelBtn.classList.toggle('hidden', hideCancel);
 
             // Configure style based on type
             const typeConfig = {

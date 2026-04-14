@@ -74,7 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
             'description' => $data['description'] ?? '',
             'status' => $data['status'] ?? 'active',
             'form_type' => $data['form_type'] ?? 'survey',
-            'customer_id' => $data['customer_id'] ?: null
+            'customer_id' => $data['customer_id'] ?: null,
+            'created_by' => $_SESSION['user_id'] ?? null
         ];
 
         if ($id) {
@@ -89,6 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
         $db->prepare("DELETE FROM dynamic_survey_sections WHERE survey_id = ?")->execute([$id]); // Then delete sections
 
         // 3. Save sections, subsections, and nested fields
+        $fieldIdMap = []; // Maps client-side IDs to new Database IDs
+        $sectionsToUpdate = []; // Sections that need repeat_source_field_id mapping
+
         foreach ($data['sections'] as $sIndex => $section) {
             // Save main section
             $stmt = $db->prepare("INSERT INTO dynamic_survey_sections (survey_id, parent_section_id, title, description, is_permanent, is_repeatable, repeat_source_field_id, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
@@ -96,10 +100,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
                 $id, null, $section['title'], $section['description'] ?? '', 
                 ($section['is_permanent'] ?? false) ? 1 : 0,
                 ($section['is_repeatable'] ?? false) ? 1 : 0,
-                $section['repeat_source_field_id'] ?? null,
+                null, // Set to null for now, will update in second pass
                 $sIndex
             ]);
             $sectionId = $db->lastInsertId();
+
+            if (($section['is_repeatable'] ?? false) && !empty($section['repeat_source_field_id'])) {
+                $sectionsToUpdate[] = [
+                    'id' => $sectionId,
+                    'client_source_id' => $section['repeat_source_field_id']
+                ];
+            }
 
             // Save fields directly in the main section
             foreach ($section['fields'] as $fIndex => $field) {
@@ -111,31 +122,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 
                 $stmt->execute([
-                    $id,
-                    $sectionId,
-                    $field['label'],
-                    $field['placeholder'] ?? null,
-                    $field['field_width'] ?? 'full',
-                    $field['default_value'] ?? null,
-                    $field['help_text'] ?? null,
-                    $field['field_type'],
-                    ($field['is_required'] ?? false) ? 1 : 0,
-                    ($field['allow_negative'] ?? true) ? 1 : 0,
-                    $field['min_value'] ?? null,
-                    ($field['is_integer'] ?? false) ? 1 : 0,
-                    ($field['is_permanent'] ?? false) ? 1 : 0,
-                    ($field['allow_multiple'] ?? false) ? 1 : 0,
-                    $field['max_files'] ?? 5,
-                    $field['file_type_restriction'] ?? '',
-                    $field['custom_file_types'] ?? '',
-                    $field['max_file_size'] ?? 5,
-                    ($field['show_preview'] ?? true) ? 1 : 0,
-                    $field['options'] ?? null,
-                    json_encode($field['field_config'] ?? []),
-                    json_encode($field['validation_rules'] ?? []),
-                    json_encode($field['conditional_logic'] ?? []),
-                    $fIndex
+                    $id, $sectionId, $field['label'], $field['placeholder'] ?? null, $field['field_width'] ?? 'full',
+                    $field['default_value'] ?? null, $field['help_text'] ?? null, $field['field_type'],
+                    ($field['is_required'] ?? false) ? 1 : 0, ($field['allow_negative'] ?? true) ? 1 : 0, $field['min_value'] ?? null,
+                    ($field['is_integer'] ?? false) ? 1 : 0, ($field['is_permanent'] ?? false) ? 1 : 0, ($field['allow_multiple'] ?? false) ? 1 : 0,
+                    $field['max_files'] ?? 5, $field['file_type_restriction'] ?? '', $field['custom_file_types'] ?? '', $field['max_file_size'] ?? 5,
+                    ($field['show_preview'] ?? true) ? 1 : 0, $field['options'] ?? null, json_encode($field['field_config'] ?? []),
+                    json_encode($field['validation_rules'] ?? []), json_encode($field['conditional_logic'] ?? []), $fIndex
                 ]);
+                $newFieldId = $db->lastInsertId();
+                if (!empty($field['id'])) {
+                    $fieldIdMap[$field['id']] = $newFieldId;
+                }
             }
 
             // Save subsections
@@ -146,13 +144,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
                         $id, $sectionId, $subsection['title'], $subsection['description'] ?? '', 
                         ($subsection['is_permanent'] ?? false) ? 1 : 0,
                         ($subsection['is_repeatable'] ?? false) ? 1 : 0,
-                        $subsection['repeat_source_field_id'] ?? null,
+                        null,
                         $subIndex
                     ]);
                     $subsectionId = $db->lastInsertId();
 
+                    if (($subsection['is_repeatable'] ?? false) && !empty($subsection['repeat_source_field_id'])) {
+                        $sectionsToUpdate[] = [
+                            'id' => $subsectionId,
+                            'client_source_id' => $subsection['repeat_source_field_id']
+                        ];
+                    }
+
                     // Save fields in subsection
-                    foreach ($subsection['fields'] as $fIndex => $field) {
+                    foreach ($subsection['fields'] as $sfIndex => $field) {
                         $stmt = $db->prepare("INSERT INTO dynamic_survey_fields (
                             survey_id, section_id, label, placeholder, field_width, default_value, help_text, 
                             field_type, is_required, allow_negative, min_value, is_integer, is_permanent, allow_multiple, max_files, 
@@ -161,33 +166,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                         
                         $stmt->execute([
-                            $id,
-                            $subsectionId,
-                            $field['label'],
-                            $field['placeholder'] ?? null,
-                            $field['field_width'] ?? 'full',
-                            $field['default_value'] ?? null,
-                            $field['help_text'] ?? null,
-                            $field['field_type'],
-                            ($field['is_required'] ?? false) ? 1 : 0,
-                            ($field['allow_negative'] ?? true) ? 1 : 0,
-                            $field['min_value'] ?? null,
-                            ($field['is_integer'] ?? false) ? 1 : 0,
-                            ($field['is_permanent'] ?? false) ? 1 : 0,
-                            ($field['allow_multiple'] ?? false) ? 1 : 0,
-                            $field['max_files'] ?? 5,
-                            $field['file_type_restriction'] ?? '',
-                            $field['custom_file_types'] ?? '',
-                            $field['max_file_size'] ?? 5,
-                            ($field['show_preview'] ?? true) ? 1 : 0,
-                            $field['options'] ?? null,
-                            json_encode($field['field_config'] ?? []),
-                            json_encode($field['validation_rules'] ?? []),
-                            json_encode($field['conditional_logic'] ?? []),
-                            $fIndex
+                            $id, $subsectionId, $field['label'], $field['placeholder'] ?? null, $field['field_width'] ?? 'full',
+                            $field['default_value'] ?? null, $field['help_text'] ?? null, $field['field_type'],
+                            ($field['is_required'] ?? false) ? 1 : 0, ($field['allow_negative'] ?? true) ? 1 : 0, $field['min_value'] ?? null,
+                            ($field['is_integer'] ?? false) ? 1 : 0, ($field['is_permanent'] ?? false) ? 1 : 0, ($field['allow_multiple'] ?? false) ? 1 : 0,
+                            $field['max_files'] ?? 5, $field['file_type_restriction'] ?? '', $field['custom_file_types'] ?? '', $field['max_file_size'] ?? 5,
+                            ($field['show_preview'] ?? true) ? 1 : 0, $field['options'] ?? null, json_encode($field['field_config'] ?? []),
+                            json_encode($field['validation_rules'] ?? []), json_encode($field['conditional_logic'] ?? []), $sfIndex
                         ]);
+                        $newFieldId = $db->lastInsertId();
+                        if (!empty($field['id'])) {
+                            $fieldIdMap[$field['id']] = $newFieldId;
+                        }
                     }
                 }
+            }
+        }
+
+        // 4. Second Pass: Update repeat_source_field_id with new database IDs
+        foreach ($sectionsToUpdate as $update) {
+            $clientSourceId = $update['client_source_id'];
+            $dbFieldId = $fieldIdMap[$clientSourceId] ?? null;
+            
+            if ($dbFieldId) {
+                $stmt = $db->prepare("UPDATE dynamic_survey_sections SET repeat_source_field_id = ? WHERE id = ?");
+                $stmt->execute([$dbFieldId, $update['id']]);
             }
         }
 

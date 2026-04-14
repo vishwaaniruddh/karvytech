@@ -72,6 +72,17 @@ ob_start();
 // var_dump($_SESSION);
 
 ?>
+<style>
+    .form-group { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .form-section { animation: slideIn 0.5s ease-out; }
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .form-label { display: block; font-size: 0.75rem; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .form-input, .form-select, .form-textarea { width: 100%; padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; background-color: #f9fafb; font-size: 0.875rem; transition: all 0.2s; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #3b82f6; ring: 3px; ring-color: rgba(59, 130, 246, 0.1); background-color: #fff; }
+</style>
 
 
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
@@ -234,12 +245,113 @@ ob_start();
                              class="form-group">
                             <label class="form-label">
                                 {{ field.label }}
-                                <span v-if="field.is_required" class="text-red-500">*</span>
+                                <span v-if="field.is_required" class="text-red-500 font-bold ml-1">*</span>
                             </label>
 
                             <!-- Text, Email, Password, Number -->
                             <input 
-                            <p v-if="field.help_text" class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+                                v-if="['text', 'email', 'password', 'number'].includes(field.field_type)"
+                                :type="field.field_type"
+                                v-model="formData[getFieldKey(field.id, rIndex, section)]"
+                                :placeholder="field.placeholder"
+                                :required="field.is_required"
+                                :min="field.field_type === 'number' && !field.allow_negative ? '0' : null"
+                                class="form-input">
+
+                            <!-- Textarea -->
+                            <textarea 
+                                v-if="field.field_type === 'textarea'"
+                                v-model="formData[getFieldKey(field.id, rIndex, section)]"
+                                :placeholder="field.placeholder"
+                                :required="field.is_required"
+                                class="form-textarea"
+                                rows="3"></textarea>
+
+                            <!-- Date, Time -->
+                            <input 
+                                v-if="['date', 'time'].includes(field.field_type)"
+                                :type="field.field_type"
+                                v-model="formData[getFieldKey(field.id, rIndex, section)]"
+                                :required="field.is_required"
+                                class="form-input">
+
+                            <!-- DateTime -->
+                            <input 
+                                v-if="['datetime', 'datetime-local'].includes(field.field_type)"
+                                type="datetime-local"
+                                v-model="formData[getFieldKey(field.id, rIndex, section)]"
+                                :required="field.is_required"
+                                class="form-input">
+
+                            <!-- Select Dropdown -->
+                            <select 
+                                v-if="field.field_type === 'select'"
+                                v-model="formData[getFieldKey(field.id, rIndex, section)]"
+                                :required="field.is_required"
+                                class="form-select">
+                                <option value="">Select an option...</option>
+                                <option v-for="opt in getOptions(field.options)" :key="opt" :value="opt">{{ opt }}</option>
+                            </select>
+
+                            <!-- Radio Buttons -->
+                            <div v-if="field.field_type === 'radio'" class="space-y-2 mt-2">
+                                <label v-for="opt in getOptions(field.options)" :key="opt" class="flex items-center cursor-pointer group">
+                                    <input 
+                                        type="radio" 
+                                        :name="'field_' + getFieldKey(field.id, rIndex, section)"
+                                        :value="opt"
+                                        v-model="formData[getFieldKey(field.id, rIndex, section)]"
+                                        :required="field.is_required"
+                                        class="mr-2 h-4 w-4 text-blue-600">
+                                    <span class="text-sm text-gray-700 group-hover:text-blue-600 transition-colors">{{ opt }}</span>
+                                </label>
+                            </div>
+
+                            <!-- Checkboxes -->
+                            <div v-if="field.field_type === 'checkbox'" class="space-y-2 mt-2">
+                                <label v-for="opt in getOptions(field.options)" :key="opt" class="flex items-center cursor-pointer group">
+                                    <input 
+                                        type="checkbox" 
+                                        :value="opt"
+                                        @change="updateCheckbox(getFieldKey(field.id, rIndex, section), opt, $event)"
+                                        class="mr-2 h-4 w-4 text-blue-600 rounded">
+                                    <span class="text-sm text-gray-700 group-hover:text-blue-600 transition-colors">{{ opt }}</span>
+                                </label>
+                            </div>
+
+                            <!-- File Upload -->
+                            <input 
+                                v-if="field.field_type === 'file'"
+                                type="file"
+                                :multiple="field.allow_multiple"
+                                :accept="getFileAccept(field)"
+                                @change="handleFileUpload(getFieldKey(field.id, rIndex, section), $event, field)"
+                                :required="field.is_required && (!formData[getFieldKey(field.id, rIndex, section)] || formData[getFieldKey(field.id, rIndex, section)].length === 0)"
+                                class="form-input">
+                            
+                            <!-- File Preview -->
+                            <div v-if="field.field_type === 'file' && field.show_preview && filePreviews[getFieldKey(field.id, rIndex, section)] && filePreviews[getFieldKey(field.id, rIndex, section)].length > 0" class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div v-for="(preview, index) in filePreviews[getFieldKey(field.id, rIndex, section)]" :key="index" class="relative group">
+                                    <div class="border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50 aspect-video flex items-center justify-center">
+                                        <img v-if="preview.type === 'image'" :src="preview.url" class="w-full h-full object-cover">
+                                        <div v-else class="w-full h-full flex flex-col items-center justify-center p-3">
+                                            <svg class="w-8 h-8 text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                            </svg>
+                                            <p class="text-[10px] text-gray-600 font-medium text-center truncate w-full">{{ preview.name }}</p>
+                                        </div>
+                                    </div>
+                                    <button @click="removeFile(getFieldKey(field.id, rIndex, section), index)" type="button" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-red-600 transition-colors">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <p v-if="field.field_type === 'file' && field.max_files && field.allow_multiple" class="text-[10px] text-gray-400 mt-1 uppercase tracking-wider font-bold">
+                                Max {{ field.max_files }} files • {{ field.max_file_size }}MB each
+                            </p>
+
+                            <p v-if="field.help_text" class="text-xs text-gray-400 mt-1 italic">{{ field.help_text }}</p>
                         </div>
                     </div>
 
@@ -377,23 +489,27 @@ ob_start();
                             </div>
                         </div>
                     </div>
-
-                    <!-- Cumulative Totals for Repeatable Section -->
-                    <div v-if="section.is_repeatable && getRepeatCount(section) > 0" class="mt-8 p-6 bg-blue-50 rounded-xl border-2 border-blue-100">
-                        <h4 class="text-sm font-bold text-blue-800 uppercase tracking-widest mb-4">Cumulative Summary</h4>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div v-for="field in section.fields" v-if="field.field_type === 'number'" :key="'total-' + field.id" class="p-3 bg-white rounded-xl shadow-sm border border-blue-100 text-center">
+                </div>
+                
+                <!-- Cumulative Totals for Repeatable Section (Outside the repeat loop) -->
+                <div v-if="section.is_repeatable && getRepeatCount(section) > 0" class="mb-8 p-6 bg-blue-50 rounded-xl border-2 border-blue-100">
+                    <h4 class="text-sm font-bold text-blue-800 uppercase tracking-widest mb-4">Cumulative Summary</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <template v-for="field in section.fields" :key="'total-' + field.id">
+                            <div v-if="field.field_type === 'number'" class="p-3 bg-white rounded-xl shadow-sm border border-blue-100 text-center">
                                 <p class="text-xs text-gray-500 font-bold mb-1">{{ field.label }}</p>
                                 <p class="text-xl font-extrabold text-blue-600">{{ totals[field.id] || 0 }}</p>
                             </div>
-                            <!-- Totals for subsection fields -->
-                            <template v-for="subsection in section.subsections">
-                                <div v-for="field in subsection.fields" v-if="field.field_type === 'number'" :key="'total-sub-' + field.id" class="p-3 bg-white rounded-xl shadow-sm border border-blue-100 text-center">
+                        </template>
+                        <!-- Totals for subsection fields -->
+                        <template v-for="subsection in section.subsections" :key="'subsection-' + subsection.id">
+                            <template v-for="field in subsection.fields" :key="'total-sub-' + field.id">
+                                <div v-if="field.field_type === 'number'" class="p-3 bg-white rounded-xl shadow-sm border border-blue-100 text-center">
                                     <p class="text-xs text-purple-500 font-bold mb-1">{{ field.label }}</p>
                                     <p class="text-xl font-extrabold text-purple-600">{{ totals[field.id] || 0 }}</p>
                                 </div>
                             </template>
-                        </div>
+                        </template>
                     </div>
                 </div>
                 </template>
@@ -469,16 +585,103 @@ createApp({
             return res;
         }
     },
+    watch: {
+        formData: {
+            handler(newVal) {
+                // Initialize default values for repeated sections when floor count changes
+                this.sections.forEach(section => {
+                    if (section.is_repeatable || section.title.toLowerCase().includes('floor wise')) {
+                        const count = this.getRepeatCount(section);
+                        
+                        // Initialize fields for each repeat
+                        for (let i = 1; i <= count; i++) {
+                            section.fields.forEach(field => {
+                                const key = `${field.id}_${i}`;
+                                // Only set default if the field doesn't exist yet
+                                if (this.formData[key] === undefined || this.formData[key] === '') {
+                                    if (field.default_value !== undefined && field.default_value !== null) {
+                                        this.formData[key] = field.default_value;
+                                    }
+                                }
+                            });
+                            
+                            // Initialize subsection fields
+                            if (section.subsections) {
+                                section.subsections.forEach(subsection => {
+                                    subsection.fields.forEach(field => {
+                                        const key = `${field.id}_${i}`;
+                                        if (this.formData[key] === undefined || this.formData[key] === '') {
+                                            if (field.default_value !== undefined && field.default_value !== null) {
+                                                this.formData[key] = field.default_value;
+                                            }
+                                        }
+                                    });
+                                });
+                            }
+                        }
+                    }
+                });
+            },
+            deep: true
+        }
+    },
     methods: {
         getFieldKey(fieldId, rIndex, section) {
             if (!section || !section.is_repeatable) return fieldId;
             return `${fieldId}_${rIndex}`;
         },
         getRepeatCount(section) {
+            // Special handling for "Floor Wise Camera Details" section
+            // Check by title (case-insensitive and trimmed)
+            const sectionTitle = (section.title || '').trim().toLowerCase();
+            
+            if (sectionTitle === 'floor wise camera details') {
+                // Find the "No of Floors" field in "General Information" section
+                const generalInfoSection = this.sections.find(s => 
+                    (s.title || '').trim().toLowerCase() === 'general information'
+                );
+                
+                if (generalInfoSection) {
+                    const floorsField = generalInfoSection.fields.find(f => 
+                        (f.label || '').trim().toLowerCase() === 'no of floors'
+                    );
+                    
+                    if (floorsField) {
+                        const val = this.formData[floorsField.id];
+                        const count = parseInt(val);
+                        
+                        console.log('Floor Wise Camera Details - No of Floors value:', val, 'parsed:', count);
+                        
+                        // If the field is empty or not a number, default to 0 to hide repeatable sections
+                        if (isNaN(count) || count <= 0) return 0;
+                        
+                        return Math.max(0, count);
+                    } else {
+                        console.warn('No of Floors field not found in General Information section');
+                    }
+                } else {
+                    console.warn('General Information section not found');
+                }
+                
+                // If "No of Floors" field not found, hide this section
+                return 0;
+            }
+            
+            // For all other sections, check if they are repeatable
             if (!section.is_repeatable) return 1;
+            
             const sourceId = section.repeat_source_field_id;
+            
+            // If no source field is linked, default to 1 repeat
             if (!sourceId) return 1;
-            const count = parseInt(this.formData[sourceId]) || 0;
+            
+            // Get value from formData (numeric value)
+            const val = this.formData[sourceId];
+            const count = parseInt(val);
+            
+            // If the field is empty or not a number, default to 0 to hide repeatable sections
+            if (isNaN(count)) return 0;
+            
             return Math.max(0, count);
         },
         async loadSurvey() {
@@ -496,6 +699,9 @@ createApp({
                     this.survey = data.survey;
                     this.sections = data.sections;
                     
+                    // Debug: Log all section titles
+                    console.log('Loaded sections:', this.sections.map(s => s.title));
+                    
                     // Initialize formData
                     this.sections.forEach(section => {
                         // Initialize main section fields
@@ -504,7 +710,8 @@ createApp({
                                 if (field.field_type === 'checkbox') {
                                     this.formData[field.id] = [];
                                 } else {
-                                    this.formData[field.id] = '';
+                                    // Use default_value if provided, otherwise empty string
+                                    this.formData[field.id] = field.default_value || '';
                                 }
                             });
                         }
@@ -517,7 +724,8 @@ createApp({
                                         if (field.field_type === 'checkbox') {
                                             this.formData[field.id] = [];
                                         } else {
-                                            this.formData[field.id] = '';
+                                            // Use default_value if provided, otherwise empty string
+                                            this.formData[field.id] = field.default_value || '';
                                         }
                                     });
                                 }
