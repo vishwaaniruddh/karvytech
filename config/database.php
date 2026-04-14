@@ -8,33 +8,34 @@
 require_once __DIR__ . '/constants.php';
 
 // Environment-based database configuration
-function getDatabaseConfig() {
+function getDatabaseConfig()
+{
     $env = getEnvironment();
-    
+
     switch ($env) {
         case 'production':
             return [
                 'host' => 'localhost',
-                'name' => 'u444388293_karvy_project', // Update with your actual production DB name
-                'user' => 'u444388293_karvy_project', // Update with your actual production DB user
+                'name' => 'u444388293_karvytech_test', // Update with your actual production DB name
+                'user' => 'u444388293_karvytech_test', // Update with your actual production DB user
                 'pass' => 'AVav@@2025', // Update with your actual production DB password
                 'charset' => 'utf8mb4'
             ];
-            
+
         case 'testing':
             return [
                 'host' => 'localhost',
-                'name' => 'u444388293_karvy_project',
+                'name' => 'u444388293_karvytech_test',
                 'user' => 'reporting',
                 'pass' => 'reporting',
                 'charset' => 'utf8mb4'
             ];
-            
+
         case 'development':
         default:
             return [
                 'host' => 'localhost',
-                'name' => 'u444388293_karvy_project',
+                'name' => 'u444388293_karvytech_test',
                 'user' => 'reporting',
                 'pass' => 'reporting',
                 'charset' => 'utf8mb4'
@@ -52,44 +53,47 @@ define('DB_USER', $dbConfig['user']);
 define('DB_PASS', $dbConfig['pass']);
 define('DB_CHARSET', $dbConfig['charset']);
 
-class Database {
+class Database
+{
     private static $instance = null;
     private $connection;
     private $environment;
-    
-    private function __construct() {
+
+    private function __construct()
+    {
         $this->environment = getEnvironment();
         $this->connect();
     }
-    
-    private function connect() {
+
+    private function connect()
+    {
         try {
             $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-            
+
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES " . DB_CHARSET
             ];
-            
+
             // Add SSL options for production if needed
             if ($this->environment === 'production') {
                 // Uncomment and configure if your production server requires SSL
                 // $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
             }
-            
+
             $this->connection = new PDO($dsn, DB_USER, DB_PASS, $options);
-            
+
             // Log successful connection (only in development)
             if ($this->environment === 'development') {
                 error_log("Database connected successfully to " . DB_NAME . " (" . $this->environment . ")");
             }
-            
+
         } catch (PDOException $e) {
             $errorMsg = "Database connection failed in " . $this->environment . " environment: " . $e->getMessage();
             error_log($errorMsg);
-            
+
             // In production, don't expose database details
             if ($this->environment === 'production') {
                 throw new Exception("Database connection failed. Please contact administrator.");
@@ -98,27 +102,32 @@ class Database {
             }
         }
     }
-    
-    public static function getInstance() {
+
+    public static function getInstance()
+    {
         if (self::$instance === null) {
             self::$instance = new self();
         }
         return self::$instance;
     }
-    
-    public function getConnection() {
+
+    public function getConnection()
+    {
         return $this->connection;
     }
-    
-    public function getEnvironment() {
+
+    public function getEnvironment()
+    {
         return $this->environment;
     }
-    
-    public function getDatabaseName() {
+
+    public function getDatabaseName()
+    {
         return DB_NAME;
     }
-    
-    public function testConnection() {
+
+    public function testConnection()
+    {
         try {
             $stmt = $this->connection->query("SELECT 1");
             return $stmt !== false;
@@ -127,12 +136,13 @@ class Database {
             return false;
         }
     }
-    
+
     /**
      * Get database configuration info (for debugging)
      * Note: Passwords are masked for security
      */
-    public function getConnectionInfo() {
+    public function getConnectionInfo()
+    {
         return [
             'environment' => $this->environment,
             'host' => DB_HOST,

@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `u444388293_karvy_project`
+-- Database: `u444388293_karvytech_test`
 --
 
 -- --------------------------------------------------------
@@ -2175,7 +2175,7 @@ ALTER TABLE `zones`
 --
 DROP TABLE IF EXISTS `inventory_summary`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`u444388293_karvy_project`@`127.0.0.1` SQL SECURITY INVOKER VIEW `inventory_summary`  AS SELECT `bi`.`id` AS `boq_item_id`, `bi`.`item_name` AS `item_name`, `bi`.`item_code` AS `item_code`, `bi`.`unit` AS `unit`, `bi`.`category` AS `category`, `bi`.`icon_class` AS `icon_class`, count(case when `ist`.`item_status` = 'available' then 1 end) AS `available_stock`, count(case when `ist`.`item_status` = 'dispatched' then 1 end) AS `dispatched_stock`, count(case when `ist`.`item_status` = 'delivered' then 1 end) AS `delivered_stock`, count(case when `ist`.`item_status` = 'returned' then 1 end) AS `returned_stock`, count(case when `ist`.`item_status` = 'damaged' then 1 end) AS `damaged_stock`, count(0) AS `total_stock`, avg(`ist`.`unit_cost`) AS `avg_unit_cost`, sum(case when `ist`.`item_status` = 'available' then `ist`.`unit_cost` else 0 end) AS `available_value`, sum(`ist`.`unit_cost`) AS `total_value`, count(case when `ist`.`location_type` = 'warehouse' then 1 end) AS `warehouse_stock`, count(case when `ist`.`location_type` = 'vendor_site' then 1 end) AS `vendor_site_stock`, count(case when `ist`.`location_type` = 'in_transit' then 1 end) AS `in_transit_stock` FROM (`boq_items` `bi` left join `inventory_stock` `ist` on(`bi`.`id` = `ist`.`boq_item_id`)) WHERE `bi`.`status` = 'active' GROUP BY `bi`.`id`, `bi`.`item_name`, `bi`.`item_code`, `bi`.`unit`, `bi`.`category`, `bi`.`icon_class` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`u444388293_karvytech_test`@`127.0.0.1` SQL SECURITY INVOKER VIEW `inventory_summary`  AS SELECT `bi`.`id` AS `boq_item_id`, `bi`.`item_name` AS `item_name`, `bi`.`item_code` AS `item_code`, `bi`.`unit` AS `unit`, `bi`.`category` AS `category`, `bi`.`icon_class` AS `icon_class`, count(case when `ist`.`item_status` = 'available' then 1 end) AS `available_stock`, count(case when `ist`.`item_status` = 'dispatched' then 1 end) AS `dispatched_stock`, count(case when `ist`.`item_status` = 'delivered' then 1 end) AS `delivered_stock`, count(case when `ist`.`item_status` = 'returned' then 1 end) AS `returned_stock`, count(case when `ist`.`item_status` = 'damaged' then 1 end) AS `damaged_stock`, count(0) AS `total_stock`, avg(`ist`.`unit_cost`) AS `avg_unit_cost`, sum(case when `ist`.`item_status` = 'available' then `ist`.`unit_cost` else 0 end) AS `available_value`, sum(`ist`.`unit_cost`) AS `total_value`, count(case when `ist`.`location_type` = 'warehouse' then 1 end) AS `warehouse_stock`, count(case when `ist`.`location_type` = 'vendor_site' then 1 end) AS `vendor_site_stock`, count(case when `ist`.`location_type` = 'in_transit' then 1 end) AS `in_transit_stock` FROM (`boq_items` `bi` left join `inventory_stock` `ist` on(`bi`.`id` = `ist`.`boq_item_id`)) WHERE `bi`.`status` = 'active' GROUP BY `bi`.`id`, `bi`.`item_name`, `bi`.`item_code`, `bi`.`unit`, `bi`.`category`, `bi`.`icon_class` ;
 
 --
 -- Constraints for dumped tables
