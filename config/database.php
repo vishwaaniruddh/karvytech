@@ -25,7 +25,7 @@ function getDatabaseConfig()
         case 'testing':
             return [
                 'host' => 'localhost',
-                'name' => 'u444388293_karvytech_test',
+                'name' => 'u444388293_karvy_project',
                 'user' => 'reporting',
                 'pass' => 'reporting',
                 'charset' => 'utf8mb4'
@@ -35,7 +35,7 @@ function getDatabaseConfig()
         default:
             return [
                 'host' => 'localhost',
-                'name' => 'u444388293_karvytech_test',
+                'name' => 'u444388293_karvy_project',
                 'user' => 'reporting',
                 'pass' => 'reporting',
                 'charset' => 'utf8mb4'
