@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vue Survey Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div id="dynamicFormApp" class="bg-white rounded-lg shadow p-6">
+        <div v-if="loading" class="text-center">
+            <p>Loading...</p>
+        </div>
+        
+        <div v-if="error" class="bg-red-100 p-4 rounded">
+            <p class="text-red-600">{{ error }}</p>
+        </div>
+        
+        <template v-if="!loading && !error">
+            <!-- Start Survey Banner -->
+            <div v-if="surveyStatus === 'not_started'" class="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6 rounded-r-lg">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg class="w-8 h-8 text-blue-500 mr-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div>
+                            <h3 class="text-xl font-bold text-blue-900">Ready to Begin Survey</h3>
+                            <p class="text-sm text-blue-700 mt-1">Click "Start Survey" to begin.</p>
+                        </div>
+                    </div>
+                    <button @click="startSurvey" 
+                            type="button"
+                            class="px-8 py-4 text-white bg-green-600 hover:bg-green-700 rounded-lg font-bold shadow-lg">
+                        Start Survey
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-gray-50 rounded">
+                <p><strong>Survey Status:</strong> {{ surveyStatus }}</p>
+                <p><strong>Loading:</strong> {{ loading }}</p>
+                <p><strong>Error:</strong> {{ error || 'None' }}</p>
+            </div>
+        </template>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    loading: false,
+                    error: null,
+                    surveyStatus: 'not_started'
+                };
+            },
+            methods: {
+                startSurvey() {
+                    alert('Start Survey clicked!');
+                    this.surveyStatus = 'in_progress';
+                }
+            },
+            mounted() {
+                console.log('Vue app mounted');
+                console.log('Survey Status:', this.surveyStatus);
+            }
+        }).mount('#dynamicFormApp');
+    </script>
+</body>
+</html>

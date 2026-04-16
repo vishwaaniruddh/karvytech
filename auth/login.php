@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Return JSON response for AJAX
                     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                         header('Content-Type: application/json');
-                        $redirectUrl = ($user['role'] === VENDOR_ROLE || $user['role'] === 'contractor') 
+                        $redirectUrl = ($user['role_category'] === 'external') 
                             ? BASE_URL . '/contractor/' 
                             : BASE_URL . '/admin/dashboard.php';
                         echo json_encode([
@@ -92,11 +92,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         exit();
                     }
                     
-                    // Redirect based on role
-                    if ($user['role'] === VENDOR_ROLE || $user['role'] === 'contractor') {
+                    // Redirect based on role category
+                    if ($user['role_category'] === 'external') {
                         header('Location: ' . BASE_URL . '/contractor/');
                     } else {
-                        // All other roles go to admin dashboard (superadmin, admin, manager, accountmanager, etc.)
+                        // All internal roles go to admin dashboard
                         header('Location: ' . BASE_URL . '/admin/dashboard.php');
                     }
                     exit();

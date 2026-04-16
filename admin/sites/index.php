@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../config/auth.php';
-Auth::requireRole(ADMIN_ROLE);
+// Require module access
+Auth::requireModuleAccess('sites');
 
 $title = 'Advanced Sites Management';
 ob_start();

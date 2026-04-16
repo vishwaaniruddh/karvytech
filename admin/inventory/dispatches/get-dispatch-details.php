@@ -23,9 +23,15 @@ try {
         exit;
     }
     
+    // Fetch additional context for the "Intelligence Report"
+    $deliveryConfirmation = $inventoryModel->getDeliveryConfirmationDetails($dispatchId);
+    $hasDocuments = $inventoryModel->hasUploadedDocuments($dispatchId);
+    
     echo json_encode([
         'success' => true,
-        'dispatch' => $dispatch
+        'dispatch' => $dispatch,
+        'deliveryConfirmation' => $deliveryConfirmation,
+        'hasDocuments' => $hasDocuments
     ]);
     
 } catch (Exception $e) {

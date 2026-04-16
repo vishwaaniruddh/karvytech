@@ -28,7 +28,11 @@ $stmt = $db->prepare("
     SELECT sr.*, 
            ds.title as survey_title, 
            ds.description as survey_description,
+           s.id as sites_table_id,
            s.site_id, s.store_id, s.site_ticket_id,
+           s.city, s.state, s.country, s.zone, s.customer, s.vendor,
+           s.location, s.pincode, s.branch,
+           s.contact_person_name, s.contact_person_number, s.contact_person_email,
            COALESCE(NULLIF(TRIM(CONCAT_WS(' ', u.first_name, u.last_name)), ''), u.username) as surveyor_name,
            c.name as customer_name,
            approved_u.username as approved_by_name
@@ -76,7 +80,33 @@ if ($revisionId) {
 
 // Decode JSON data
 $formData = json_decode($response['form_data'], true) ?? [];
-$siteMasterData = json_decode($response['site_master_data'], true) ?? [];
+
+// Site information is already fetched from the main query join
+$siteMasterData = [];
+if (!empty($response['site_id'])) {
+    $siteMasterData = [
+        'site_id' => $response['site_id'] ?? '',
+        'store_id' => $response['store_id'] ?? '',
+        'site_ticket_id' => $response['site_ticket_id'] ?? '',
+        'location' => $response['location'] ?? '',
+        'pincode' => $response['pincode'] ?? '',
+        'branch' => $response['branch'] ?? '',
+        'contact_person_name' => $response['contact_person_name'] ?? '',
+        'contact_person_number' => $response['contact_person_number'] ?? '',
+        'contact_person_email' => $response['contact_person_email'] ?? '',
+        'city' => $response['city'] ?? '',
+        'state' => $response['state'] ?? '',
+        'country' => $response['country'] ?? '',
+        'zone' => $response['zone'] ?? '',
+        'customer' => $response['customer'] ?? '',
+        'vendor' => $response['vendor'] ?? ''
+    ];
+    
+    // Remove empty values
+    $siteMasterData = array_filter($siteMasterData, function($value) {
+        return !empty($value);
+    });
+}
 
 // Get form structure from database tables
 $formStructure = ['sections' => []];
@@ -111,6 +141,47 @@ foreach ($sections as $sectionIndex => $sectionData) {
 }
 
 $formStructure['sections'] = $sections;
+
+// Helper function to get repeat count for a section
+function getRepeatCount($section, $sections, $formData) {
+    $sectionTitle = strtolower(trim($section['title'] ?? ''));
+    
+    // Special handling for "Floor Wise Camera Details"
+    if ($sectionTitle === 'floor wise camera details') {
+        // Find "General Information" section
+        foreach ($sections as $s) {
+            if (strtolower(trim($s['title'] ?? '')) === 'general information') {
+                // Find "No of Floors" field
+                foreach ($s['fields'] as $field) {
+                    if (strtolower(trim($field['label'] ?? '')) === 'no of floors') {
+                        $value = $formData[$field['id']] ?? 0;
+                        $count = intval($value);
+                        return max(0, $count);
+                    }
+                }
+            }
+        }
+        return 0;
+    }
+    
+    // For other repeatable sections
+    if ($section['is_repeatable'] && $section['repeat_source_field_id']) {
+        $value = $formData[$section['repeat_source_field_id']] ?? 0;
+        $count = intval($value);
+        return max(0, $count);
+    }
+    
+    return 1; // Default: show once
+}
+
+// Helper function to get field key
+function getFieldKey($fieldId, $repeatIndex, $section) {
+    $isRepeatable = $section['is_repeatable'] || stripos($section['title'] ?? '', 'floor wise') !== false;
+    if (!$isRepeatable) {
+        return $fieldId;
+    }
+    return $fieldId . '_' . $repeatIndex;
+}
 
 $title = 'Survey Response - ' . ($response['site_id'] ?? 'Unknown Site');
 
@@ -243,17 +314,21 @@ ob_start();
         <h3 class="text-lg font-semibold text-gray-900">Site Information</h3>
     </div>
     <div class="p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <?php foreach ($siteMasterData as $key => $value): ?>
-                <?php if (!empty($value)): ?>
-                    <div>
-                        <label
-                            class="block text-xs font-medium text-gray-500 mb-1"><?php echo ucwords(str_replace('_', ' ', $key)); ?></label>
-                        <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded"><?php echo htmlspecialchars($value); ?></p>
-                    </div>
-                <?php endif; ?>
-            <?php endforeach; ?>
-        </div>
+        <?php if (empty($siteMasterData)): ?>
+            <p class="text-sm text-gray-500 italic">No site information available</p>
+        <?php else: ?>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <?php foreach ($siteMasterData as $key => $value): ?>
+                    <?php if (!empty($value)): ?>
+                        <div>
+                            <label
+                                class="block text-xs font-medium text-gray-500 mb-1"><?php echo ucwords(str_replace('_', ' ', $key)); ?></label>
+                            <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded"><?php echo htmlspecialchars($value); ?></p>
+                        </div>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -269,8 +344,18 @@ ob_start();
     <div class="p-6">
         <!-- Dynamic Sections (Read-only version of edit page) -->
         <?php foreach ($formStructure['sections'] as $section): ?>
-            <div class="form-section mb-8">
-                <h4 class="text-lg font-semibold text-gray-800 mb-4"><?php echo htmlspecialchars($section['title']); ?></h4>
+            <?php 
+            $repeatCount = getRepeatCount($section, $formStructure['sections'], $formData);
+            $isRepeatable = $section['is_repeatable'] || stripos($section['title'] ?? '', 'floor wise') !== false;
+            ?>
+            <?php for ($rIndex = 1; $rIndex <= $repeatCount; $rIndex++): ?>
+            <div class="form-section mb-8 <?php echo $isRepeatable ? 'border-l-4 border-blue-500 pl-6' : ''; ?>">
+                <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                    <?php echo htmlspecialchars($section['title']); ?>
+                    <?php if ($isRepeatable && $repeatCount > 1): ?>
+                        <span class="text-blue-500 ml-2">( #<?php echo $rIndex; ?> )</span>
+                    <?php endif; ?>
+                </h4>
                 <?php if (!empty($section['description'])): ?>
                     <p class="text-sm text-gray-500 mb-4"><?php echo htmlspecialchars($section['description']); ?></p>
                 <?php endif; ?>
@@ -280,7 +365,8 @@ ob_start();
                     <div class="flex flex-wrap gap-6 mb-6">
                         <?php foreach ($section['fields'] as $field): ?>
                             <?php
-                            $fieldValue = $formData[$field['id']] ?? null;
+                            $fieldKey = getFieldKey($field['id'], $rIndex, $section);
+                            $fieldValue = $formData[$fieldKey] ?? null;
                             $widthClass = 'w-full';
                             if ($field['field_width'] === 'half')
                                 $widthClass = 'w-full md:w-[calc(50%-0.75rem)]';
@@ -397,7 +483,8 @@ ob_start();
                                 <div class="flex flex-wrap gap-6">
                                     <?php foreach ($subsection['fields'] as $field): ?>
                                         <?php
-                                        $fieldValue = $formData[$field['id']] ?? null;
+                                        $fieldKey = getFieldKey($field['id'], $rIndex, $section);
+                                        $fieldValue = $formData[$fieldKey] ?? null;
                                         $widthClass = 'w-full';
                                         if ($field['field_width'] === 'half')
                                             $widthClass = 'w-full md:w-[calc(50%-0.75rem)]';
@@ -494,7 +581,61 @@ ob_start();
                     </div>
                 <?php endif; ?>
             </div>
-        <?php endforeach; ?>
+            <?php endfor; // End repeat loop ?>
+            
+            <!-- Cumulative Summary for Repeatable Sections -->
+            <?php if ($isRepeatable && $repeatCount > 0): ?>
+                <div class="mb-8 p-6 bg-blue-50 rounded-xl border-2 border-blue-100">
+                    <h4 class="text-sm font-bold text-blue-800 uppercase tracking-widest mb-4">Cumulative Summary</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <?php foreach ($section['fields'] as $field): ?>
+                            <?php if ($field['field_type'] === 'number'): ?>
+                                <?php
+                                // Calculate sum across all repeats
+                                $sum = 0;
+                                for ($i = 1; $i <= $repeatCount; $i++) {
+                                    $fieldKey = getFieldKey($field['id'], $i, $section);
+                                    $value = floatval($formData[$fieldKey] ?? 0);
+                                    $sum += $value;
+                                }
+                                ?>
+                                <div class="bg-white p-4 rounded-lg shadow-sm border border-blue-200">
+                                    <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">
+                                        Total <?php echo htmlspecialchars($field['label']); ?>
+                                    </p>
+                                    <p class="text-2xl font-bold text-blue-900"><?php echo number_format($sum); ?></p>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                        
+                        <?php // Also process subsection fields ?>
+                        <?php if (!empty($section['subsections'])): ?>
+                            <?php foreach ($section['subsections'] as $subsection): ?>
+                                <?php foreach ($subsection['fields'] as $field): ?>
+                                    <?php if ($field['field_type'] === 'number'): ?>
+                                        <?php
+                                        $sum = 0;
+                                        for ($i = 1; $i <= $repeatCount; $i++) {
+                                            $fieldKey = getFieldKey($field['id'], $i, $section);
+                                            $value = floatval($formData[$fieldKey] ?? 0);
+                                            $sum += $value;
+                                        }
+                                        ?>
+                                        <div class="bg-white p-4 rounded-lg shadow-sm border border-blue-200">
+                                            <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">
+                                                Total <?php echo htmlspecialchars($field['label']); ?>
+                                            </p>
+                                            <p class="text-2xl font-bold text-blue-900"><?php echo number_format($sum); ?></p>
+                                        </div>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+            
+        <?php endforeach; // End section loop ?>
     </div>
 </div>
 

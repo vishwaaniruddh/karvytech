@@ -12,8 +12,8 @@ if (!function_exists('url')) {
     }
 }
 
-// Require admin authentication
-Auth::requireRole(ADMIN_ROLE);
+// Require authentication (but allow granular module permissions to control specific page access)
+Auth::requireAuth();
 $currentUser = Auth::getCurrentUser();
 ?>
 <!DOCTYPE html>

@@ -9,21 +9,31 @@ class Menu extends BaseModel {
     }
     
     public function getMenuForUser($userId, $userRole) {
-        // Get menu items that the user has explicit access to (no default access)
-        $sql = "
-            SELECT DISTINCT m.*
-            FROM menu_items m
-            INNER JOIN user_menu_permissions ump ON m.id = ump.menu_item_id 
-            WHERE m.status = 'active' 
-            AND ump.user_id = ?
-            AND ump.can_access = TRUE
-            ORDER BY m.parent_id ASC, m.sort_order ASC, m.title ASC
-        ";
+        // Superadmin sees all active menu items
+        if ($userRole === 'superadmin') {
+            $sql = "SELECT * FROM menu_items WHERE status = 'active' ORDER BY parent_id ASC, sort_order ASC, title ASC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+        } else {
+            // For other roles, join with roles, role_permissions and explicit role_menu_permissions
+            $sql = "
+                SELECT DISTINCT m.*
+                FROM menu_items m
+                INNER JOIN users u ON u.id = ?
+                INNER JOIN roles r ON (u.role_id = r.id OR u.role = r.name)
+                LEFT JOIN role_menu_permissions rmp ON (r.id = rmp.role_id AND m.id = rmp.menu_item_id)
+                INNER JOIN role_permissions rp ON r.id = rp.role_id
+                INNER JOIN permissions p ON rp.permission_id = p.id
+                WHERE m.status = 'active' 
+                AND (rmp.can_access IS NULL OR rmp.can_access = 1)
+                AND (m.module_id IS NULL OR m.module_id = p.module_id)
+                ORDER BY m.parent_id ASC, m.sort_order ASC, m.title ASC
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$userId]);
+        }
         
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$userId]);
         $menuItems = $stmt->fetchAll();
-        
         return $this->buildMenuTree($menuItems);
     }
     

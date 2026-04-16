@@ -99,7 +99,7 @@ class User extends BaseModel {
     
     public function findByEmailOrPhone($emailOrPhone) {
         $stmt = $this->db->prepare("
-            SELECT u.*, r.name as role 
+            SELECT u.*, r.name as role, r.role_category
             FROM {$this->table} u
             LEFT JOIN roles r ON u.role_id = r.id
             WHERE u.email = ? OR u.phone = ?
@@ -235,8 +235,16 @@ class User extends BaseModel {
         // Role validation
         if (empty($data['role'])) {
             $errors['role'] = 'Role is required';
-        } elseif (!in_array($data['role'], ['admin', 'vendor'])) {
-            $errors['role'] = 'Invalid role selected';
+        } else {
+            // Check if role exists in roles table
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM roles WHERE name = ? AND status = 'active'");
+            $stmt->execute([$data['role']]);
+            if ($stmt->fetchColumn() == 0) {
+                // For backward compatibility, check if it's one of the legacy hardcoded roles if not found in roles table
+                if (!in_array($data['role'], ['admin', 'vendor'])) {
+                    $errors['role'] = 'Invalid role selected';
+                }
+            }
         }
         
         // Status validation
@@ -480,5 +488,35 @@ class User extends BaseModel {
      */
     public function assignRole($userId, $roleId) {
         return $this->update($userId, ['role_id' => $roleId]);
+    }
+    /**
+     * Check if user has at least one permission in a module
+     */
+    public function hasModuleAccess($userId, $moduleName) {
+        $query = "
+            SELECT COUNT(*) as has_access
+            FROM permissions p
+            JOIN modules m ON p.module_id = m.id
+            LEFT JOIN role_permissions rp ON p.id = rp.permission_id
+            LEFT JOIN users u ON u.role_id = rp.role_id AND u.id = ?
+            LEFT JOIN user_permissions up ON p.id = up.permission_id AND up.user_id = ?
+            WHERE m.name = ? AND p.status = 'active' AND m.status = 'active'
+            AND (
+                -- Include role permissions that are not explicitly removed
+                (u.id = ? AND NOT EXISTS (
+                    SELECT 1 FROM user_permissions up_removed 
+                    WHERE up_removed.user_id = ? 
+                    AND up_removed.permission_id = p.id 
+                    AND up_removed.status = 'inactive'
+                ))
+                OR 
+                -- Include user-specific active permissions
+                (up.user_id = ? AND up.status = 'active')
+            )
+        ";
+        
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$userId, $userId, $moduleName, $userId, $userId, $userId]);
+        return $stmt->fetchColumn() > 0;
     }
 }

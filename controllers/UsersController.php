@@ -64,8 +64,16 @@ class UsersController extends BaseController {
                 'status' => $_POST['status'] ?? 'active'
             ];
             
-            // Add vendor_id if role is vendor
-            if ($data['role'] === 'vendor' && !empty($_POST['vendor_id'])) {
+            // Map role name to role_id for RBAC
+            if (!empty($data['role'])) {
+                $stmt = $this->db->prepare("SELECT id FROM roles WHERE name = ?");
+                $stmt->execute([$data['role']]);
+                $roleRec = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($roleRec) $data['role_id'] = $roleRec['id'];
+            }
+            
+            // Add vendor_id if role is vendor or contractor
+            if (in_array($data['role'], ['vendor', 'contractor']) && !empty($_POST['vendor_id'])) {
                 $data['vendor_id'] = (int)$_POST['vendor_id'];
             } else {
                 $data['vendor_id'] = null;
@@ -172,8 +180,16 @@ class UsersController extends BaseController {
                 'status' => $_POST['status'] ?? 'active'
             ];
             
-            // Add vendor_id if role is vendor
-            if ($data['role'] === 'vendor' && !empty($_POST['vendor_id'])) {
+            // Map role name to role_id for RBAC
+            if (!empty($data['role'])) {
+                $stmt = $this->db->prepare("SELECT id FROM roles WHERE name = ?");
+                $stmt->execute([$data['role']]);
+                $roleRec = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($roleRec) $data['role_id'] = $roleRec['id'];
+            }
+            
+            // Add vendor_id if role is vendor or contractor
+            if (in_array($data['role'], ['vendor', 'contractor']) && !empty($_POST['vendor_id'])) {
                 $data['vendor_id'] = (int)$_POST['vendor_id'];
             } else {
                 $data['vendor_id'] = null;

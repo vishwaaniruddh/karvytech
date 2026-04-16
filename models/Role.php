@@ -103,11 +103,12 @@ class Role extends BaseModel {
     /**
      * Create new role
      */
-    public function createRole($name, $displayName, $description = null) {
+    public function createRole($name, $displayName, $description = null, $roleCategory = 'internal') {
         return $this->create([
             'name' => $name,
             'display_name' => $displayName,
             'description' => $description,
+            'role_category' => $roleCategory,
             'status' => 'active'
         ]);
     }
@@ -115,13 +116,16 @@ class Role extends BaseModel {
     /**
      * Update role
      */
-    public function updateRole($roleId, $displayName, $description = null, $status = null) {
+    public function updateRole($roleId, $displayName, $description = null, $status = null, $roleCategory = null) {
         $data = [
             'display_name' => $displayName,
             'description' => $description
         ];
         if ($status) {
             $data['status'] = $status;
+        }
+        if ($roleCategory) {
+            $data['role_category'] = $roleCategory;
         }
         return $this->update($roleId, $data);
     }
@@ -239,6 +243,10 @@ class Role extends BaseModel {
             $stmt = $this->db->prepare("DELETE FROM role_permissions WHERE role_id = ?");
             $stmt->execute([$roleId]);
             
+            if (empty($permissionIds)) {
+                return true;
+            }
+            
             // Then add new permissions
             $stmt = $this->db->prepare(
                 "INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)"
@@ -251,6 +259,47 @@ class Role extends BaseModel {
             return true;
         } catch (PDOException $e) {
             throw new Exception("Failed to assign permissions: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get all sidebar menu permissions for a role
+     */
+    public function getRoleMenuPermissions($roleId) {
+        $stmt = $this->db->prepare("
+            SELECT menu_item_id, can_access 
+            FROM role_menu_permissions 
+            WHERE role_id = ?
+        ");
+        $stmt->execute([$roleId]);
+        return $stmt->fetchAll();
+    }
+    
+    /**
+     * Assign sidebar menu permissions to role
+     */
+    public function assignMenuPermissionsToRole($roleId, $menuItemIds) {
+        try {
+            // First, remove all existing menu permissions
+            $stmt = $this->db->prepare("DELETE FROM role_menu_permissions WHERE role_id = ?");
+            $stmt->execute([$roleId]);
+            
+            if (empty($menuItemIds)) {
+                return true;
+            }
+            
+            // Then add new menu permissions
+            $stmt = $this->db->prepare(
+                "INSERT INTO role_menu_permissions (role_id, menu_item_id, can_access) VALUES (?, ?, 1)"
+            );
+            
+            foreach ($menuItemIds as $menuItemId) {
+                $stmt->execute([$roleId, $menuItemId]);
+            }
+            
+            return true;
+        } catch (PDOException $e) {
+            throw new Exception("Failed to assign menu permissions: " . $e->getMessage());
         }
     }
 }

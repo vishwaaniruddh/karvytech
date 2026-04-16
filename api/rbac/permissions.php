@@ -24,9 +24,19 @@ try {
             ");
             $permissions = $stmt->fetchAll();
             
+            // Also get all active root menu items for sidebar management
+            $stmt = $db->query("
+                SELECT id, title, icon, module_id 
+                FROM menu_items 
+                WHERE status = 'active' AND parent_id IS NULL
+                ORDER BY sort_order ASC, title ASC
+            ");
+            $menus = $stmt->fetchAll();
+            
             echo json_encode([
                 'success' => true,
-                'permissions' => $permissions
+                'permissions' => $permissions,
+                'menus' => $menus
             ]);
             break;
             

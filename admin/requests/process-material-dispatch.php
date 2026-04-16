@@ -70,11 +70,12 @@ try {
     
     // Validate required fields
     debugLog("Validating required fields");
+    // We now allow contact_person_name and contact_person_phone to come from editable inputs
     $requiredFields = ['material_request_id', 'contact_person_name', 'contact_person_phone', 'dispatch_date', 'delivery_address'];
     foreach ($requiredFields as $field) {
         if (empty($_POST[$field])) {
             debugLog("Missing required field", $field);
-            throw new Exception("Field '$field' is required");
+            throw new Exception("Field '$field' is required. Please fill in all document details.");
         }
     }
     debugLog("All required fields present");
@@ -87,6 +88,15 @@ try {
         throw new Exception($phoneValidation['message']);
     }
     $cleanPhone = $phoneValidation['formatted'];
+    
+    // Normalize dispatch date (handle d-M-y from interactive UI)
+    $dispatchDate = $_POST['dispatch_date'];
+    if ($dispatchDate && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dispatchDate)) {
+        $timestamp = strtotime($dispatchDate);
+        if ($timestamp) {
+            $dispatchDate = date('Y-m-d', $timestamp);
+        }
+    }
     debugLog("Phone validated successfully", $cleanPhone);
     
     $materialRequestId = intval($_POST['material_request_id']);
@@ -143,7 +153,7 @@ try {
     foreach ($stockAvailability as $boqItemId => $stock) {
         debugLog("Checking stock for item", ['boq_item_id' => $boqItemId, 'is_sufficient' => $stock['is_sufficient']]);
         if (!$stock['is_sufficient']) {
-            $issue = $stock['item_name'] . ' (Available: ' . $stock['available_quantity'] . ', Required: ' . $stock['requested_quantity'] . ')';
+            $issue = $stock['item_name'] . ' (Available: ' . $stock['available_qty'] . ', Required: ' . $stock['requested_qty'] . ')';
             $stockIssues[] = $issue;
             debugLog("Stock issue found", $issue);
         }
@@ -158,29 +168,35 @@ try {
     // Generate dispatch number
     debugLog("Generating dispatch number");
     try {
-        $dispatchNumber = $inventoryModel->generateDispatchNumber();
+        $dispatchNumber = $inventoryModel->generateCustomDispatchNumber($materialRequest['site_id']);
         debugLog("Dispatch number generated", $dispatchNumber);
     } catch (Exception $e) {
         debugLog("Error generating dispatch number", $e->getMessage());
         throw new Exception('Error generating dispatch number: ' . $e->getMessage());
     }
     
+    // Construct delivery remarks to include consignor info if it differs from default
+    $consignorPerson = $_POST['consignor_contact_person'] ?? 'Bela';
+    $consignorPhone = $_POST['consignor_contact_phone'] ?? '8425851115';
+    $remarksBase = $_POST['dispatch_remarks'] ?? '';
+    $finalRemarks = "Consignor: $consignorPerson ($consignorPhone). " . $remarksBase;
+
     // Prepare dispatch data
     $dispatchData = [
         'dispatch_number' => $dispatchNumber,
-        'dispatch_date' => $_POST['dispatch_date'],
+        'dispatch_date' => $dispatchDate,
         'material_request_id' => $materialRequestId,
         'site_id' => $materialRequest['site_id'],
         'vendor_id' => $materialRequest['vendor_id'],
         'contact_person_name' => $_POST['contact_person_name'],
-        'contact_person_phone' => $cleanPhone, // Use validated and cleaned phone number
+        'contact_person_phone' => $cleanPhone, 
         'delivery_address' => $_POST['delivery_address'],
         'courier_name' => $_POST['courier_name'] ?? null,
         'tracking_number' => $_POST['pod_number'] ?? null,
         'expected_delivery_date' => $_POST['expected_delivery_date'] ?? null,
         'dispatch_status' => 'dispatched',
         'dispatched_by' => $currentUser['id'],
-        'delivery_remarks' => $_POST['dispatch_remarks'] ?? null
+        'delivery_remarks' => trim($finalRemarks)
     ];
     
     // Create dispatch record
@@ -190,10 +206,37 @@ try {
         throw new Exception('Failed to create dispatch record');
     }
     
-    // Process dispatch items
+    // Prepare dispatch items
     $dispatchItems = [];
     $totalItems = 0;
     $totalValue = 0;
+    
+    // Pre-fetch unit costs for all BOQ items for performance
+    debugLog("Pre-fetching unit costs for performance");
+    $itemCosts = [];
+    $boqItemIds = [];
+    foreach ($_POST['items'] as $itemData) {
+        if (!empty($itemData['boq_item_id'])) {
+            $boqItemIds[] = intval($itemData['boq_item_id']);
+        }
+    }
+    
+    if (!empty($boqItemIds)) {
+        $uniqueIds = array_unique($boqItemIds);
+        $placeholders = implode(',', array_fill(0, count($uniqueIds), '?'));
+        try {
+            $stmt = Database::getInstance()->getConnection()->prepare(
+                "SELECT boq_item_id, avg_unit_cost FROM inventory_summary WHERE boq_item_id IN ($placeholders)"
+            );
+            $stmt->execute(array_values($uniqueIds));
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $itemCosts[$row['boq_item_id']] = floatval($row['avg_unit_cost'] ?: 100);
+            }
+            debugLog("Unit costs fetched", ['count' => count($itemCosts)]);
+        } catch (Exception $e) {
+            debugLog("Error pre-fetching costs, will use defaults", $e->getMessage());
+        }
+    }
     
     foreach ($_POST['items'] as $itemData) {
         // Check if this is a BOQ-based item or installation material
@@ -222,35 +265,14 @@ try {
             continue;
         }
         
-        // Get unit cost from inventory stock (average cost) for BOQ items
+        // Get unit cost - Prioritize value from editable UI
         $unitCost = 0;
-        if ($isBoqItem) {
-            debugLog("Getting unit cost for BOQ item", $boqItemId);
-            try {
-                $stockInfo = $inventoryModel->getStockOverview('', '', false);
-                debugLog("Stock overview retrieved", ['stock_count' => count($stockInfo)]);
-                
-                foreach ($stockInfo as $stock) {
-                    if ($stock['boq_item_id'] == $boqItemId) {
-                        $unitCost = $stock['unit_cost'] ?? 0;
-                        debugLog("Unit cost found for item", ['boq_item_id' => $boqItemId, 'unit_cost' => $unitCost]);
-                        break;
-                    }
-                }
-                
-                if ($unitCost == 0) {
-                    debugLog("No unit cost found for item, using default", $boqItemId);
-                    $unitCost = 100; // Default fallback cost
-                }
-            } catch (Exception $e) {
-                debugLog('Stock overview error', [
-                    'error' => $e->getMessage(),
-                    'boq_item_id' => $boqItemId,
-                    'trace' => $e->getTraceAsString()
-                ]);
-                // Use a default unit cost if stock overview fails
-                $unitCost = 100; // Default fallback cost
-            }
+        if (!empty($itemData['unit_cost'])) {
+            $unitCost = floatval($itemData['unit_cost']);
+            debugLog("Using UI-provided unit cost", ['boq_item_id' => $boqItemId, 'unit_cost' => $unitCost]);
+        } else if ($isBoqItem) {
+            $unitCost = $itemCosts[$boqItemId] ?? 100; // Default fallback cost
+            debugLog("Using pre-fetched unit cost", ['boq_item_id' => $boqItemId, 'unit_cost' => $unitCost]);
         } else {
             // For installation materials, use a default cost or get from request
             $unitCost = 0; // Installation materials don't have inventory cost tracking

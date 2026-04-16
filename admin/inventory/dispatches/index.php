@@ -150,6 +150,12 @@ if (typeof window.printDispatch === 'undefined') {
     };
 }
 
+if (typeof window.viewChallan === 'undefined') {
+    window.viewChallan = function(dispatchId) {
+        window.open('view-delivery-challan.php?id=' + dispatchId, '_blank');
+    };
+}
+
 // Log that functions are available
 console.log('Dispatch functions loaded:', {
     viewDispatch: typeof window.viewDispatch,
@@ -198,6 +204,9 @@ console.log('Dispatch functions loaded:', {
                                 <?php endif; ?>
                                 <button onclick="printDispatch(<?php echo $dispatch['id']; ?>)" class="w-8 h-8 rounded-lg bg-gray-50 text-gray-500 flex items-center justify-center hover:bg-gray-900 hover:text-white transition-all shadow-sm" title="Print Labels">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                </button>
+                                <button onclick="viewChallan(<?php echo $dispatch['id']; ?>)" class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all shadow-sm" title="View Delivery Challan">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                 </button>
                             </div>
                         </td>
@@ -463,6 +472,11 @@ window.viewDispatch = function(dispatchId) {
 window.printDispatch = function(dispatchId) {
     console.log('printDispatch called with ID:', dispatchId);
     window.open(`print-dispatch.php?id=${dispatchId}`, '_blank');
+};
+
+window.viewChallan = function(dispatchId) {
+    console.log('viewChallan called with dispatchId:', dispatchId);
+    window.open(`view-delivery-challan.php?id=${dispatchId}`, '_blank');
 };
 
 window.updateDispatchStatus = function(dispatchId) {

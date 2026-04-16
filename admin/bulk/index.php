@@ -1,8 +1,8 @@
 <?php
 require_once __DIR__ . '/../../config/auth.php';
 
-// Require admin authentication
-Auth::requireRole(ADMIN_ROLE);
+// Require module access
+Auth::requireModuleAccess('bulk');
 $currentUser = Auth::getCurrentUser();
 
 $title = 'Bulk Operations Dashboard';

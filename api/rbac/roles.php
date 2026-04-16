@@ -26,10 +26,12 @@ try {
             }
             
             $permissions = $roleModel->getRolePermissions($roleId);
+            $menuPermissions = $roleModel->getRoleMenuPermissions($roleId);
             
             echo json_encode([
                 'success' => true,
-                'permissions' => $permissions
+                'permissions' => $permissions,
+                'menu_permissions' => $menuPermissions
             ]);
             break;
             
@@ -44,6 +46,7 @@ try {
             
             $roleId = $_POST['role_id'] ?? 0;
             $permissionIds = $_POST['permissions'] ?? [];
+            $menuItemIds = $_POST['menu_items'] ?? [];
             
             if (!$roleId) {
                 echo json_encode([
@@ -54,10 +57,19 @@ try {
             }
             
             $roleModel->assignPermissionsToRole($roleId, $permissionIds);
+            $roleModel->assignMenuPermissionsToRole($roleId, $menuItemIds);
             
             echo json_encode([
                 'success' => true,
                 'message' => 'Role permissions updated successfully'
+            ]);
+            break;
+            
+        case 'list':
+            $roles = $roleModel->getAllRoles();
+            echo json_encode([
+                'success' => true,
+                'roles' => $roles
             ]);
             break;
             

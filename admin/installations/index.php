@@ -3,8 +3,8 @@ require_once __DIR__ . '/../../config/auth.php';
 require_once __DIR__ . '/../../models/Installation.php';
 require_once __DIR__ . '/../../models/Vendor.php';
 
-// Require admin authentication
-Auth::requireRole(ADMIN_ROLE);
+// Require module access
+Auth::requireModuleAccess('installations');
 
 $installationModel = new Installation();
 $vendorModel = new Vendor();

@@ -508,7 +508,12 @@ createApp({
         },
 
         getFieldKey(fieldId, repeatIndex, section) {
-            if (!section.is_repeatable) return fieldId;
+            // Handle undefined section
+            if (!section) return fieldId;
+            
+            // Check if section is repeatable or is "Floor Wise Camera Details"
+            const isRepeatable = section.is_repeatable || (section.title || '').toLowerCase().includes('floor wise');
+            if (!isRepeatable) return fieldId;
             return `${fieldId}_${repeatIndex}`;
         },
 

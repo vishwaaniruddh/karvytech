@@ -9,7 +9,8 @@ ob_start();
 
 <?php
 require_once __DIR__ . '/../../config/auth.php';
-// Auth check could be here if needed, but layout might handle it
+// Require module access
+Auth::requireModuleAccess('surveys');
 $selectedCustomer = $_GET['customer_id'] ?? '';
 
 $title = 'Survey Responses';

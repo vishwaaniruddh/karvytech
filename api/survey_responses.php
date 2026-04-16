@@ -85,17 +85,18 @@ try {
             }
         }
 
-        // 3. Get responses
+        // 3. Get responses for this customer only
+        // Use INNER JOIN to ensure we only get responses where customer_id matches
         $stmt = $db->prepare("SELECT sr.*, s.site_id as site_code, 
                              CONCAT_WS(' ', u.first_name, u.last_name) as surveyor_name,
                              c.name as customer_name
                              FROM dynamic_survey_responses sr
-                             LEFT JOIN sites s ON sr.site_id = s.id
+                             INNER JOIN sites s ON sr.site_id = s.id
                              LEFT JOIN users u ON sr.surveyor_id = u.id
-                             LEFT JOIN customers c ON s.customer_id = c.id
-                             WHERE sr.survey_form_id = ?
+                             INNER JOIN customers c ON s.customer_id = c.id
+                             WHERE sr.survey_form_id = ? AND c.id = ?
                              ORDER BY sr.submitted_date DESC");
-        $stmt->execute([$surveyForm['id']]);
+        $stmt->execute([$surveyForm['id'], $selectedCustomer]);
         $responses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         echo json_encode([

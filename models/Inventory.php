@@ -270,7 +270,7 @@ class Inventory {
     public function getDispatchDetails($dispatchId) {
         try {
             $sql = "SELECT id.*, COALESCE(s.site_id, 'N/A') as site_code, COALESCE(s.location, 'Unknown Location') as site_name, 
-                    v.company_name as vendor_company_name
+                    v.company_name as vendor_company_name, v.name as vendor_name
                     FROM inventory_dispatches id
                     LEFT JOIN sites s ON id.site_id = s.id
                     LEFT JOIN vendors v ON id.vendor_id = v.id
@@ -280,13 +280,59 @@ class Inventory {
             $dispatch = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($dispatch) {
-                $sqlItems = "SELECT idi.*, bi.item_name, bi.item_code, bi.unit
+                $requestId = $dispatch['material_request_id'] ?? null;
+                
+                // 1. Fetch items ONLY for the specific dispatch ID
+                $sqlItems = "SELECT idi.boq_item_id, idi.item_condition, idi.batch_number, idi.unit_cost,
+                             COUNT(*) as quantity_dispatched,
+                             SUM(idi.unit_cost) as total_cost,
+                             GROUP_CONCAT(ist.serial_number SEPARATOR ', ') as serial_numbers,
+                             bi.item_name, bi.item_code, bi.unit, idi.dispatch_notes as remarks
                              FROM inventory_dispatch_items idi
                              JOIN boq_items bi ON idi.boq_item_id = bi.id
-                             WHERE idi.dispatch_id = ?";
+                             LEFT JOIN inventory_stock ist ON idi.inventory_stock_id = ist.id
+                             WHERE idi.dispatch_id = ?
+                             GROUP BY idi.boq_item_id, idi.item_condition, idi.batch_number, idi.unit_cost";
+                
                 $stmtItems = $this->db->prepare($sqlItems);
                 $stmtItems->execute([$dispatchId]);
                 $dispatch['items'] = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
+
+                // 2. If the manifest is empty, fallback to the parent Material Request's manifest
+                if (count($dispatch['items']) === 0 && $requestId) {
+                    $sqlMr = "SELECT items FROM material_requests WHERE id = ?";
+                    $stmtMr = $this->db->prepare($sqlMr);
+                    $stmtMr->execute([$requestId]);
+                    $mrItemsJson = $stmtMr->fetchColumn();
+                    
+                    if ($mrItemsJson) {
+                        $mrItems = json_decode($mrItemsJson, true);
+                        if (is_array($mrItems)) {
+                            $reqTotalCount = 0;
+                            foreach ($mrItems as $mItem) {
+                                // Map Material Request item format to Manifest format
+                                $dispatch['items'][] = [
+                                    'item_name' => $mItem['material_name'] ?? 'Unknown Material',
+                                    'item_code' => $mItem['item_code'] ?? 'N/A',
+                                    'item_condition' => 'standard', 
+                                    'quantity_dispatched' => $mItem['quantity'] ?? 0,
+                                    'unit' => $mItem['unit'] ?? 'units',
+                                    'unit_cost' => 0, 
+                                    'total_cost' => 0,
+                                    'remarks' => $mItem['notes'] ?? $mItem['reason'] ?? '--',
+                                    'is_request_fallback' => true
+                                ];
+                                $reqTotalCount += (int)($mItem['quantity'] ?? 0);
+                            }
+                            
+                            // Update header totals for request manifest fallback
+                            if ($dispatch['total_items'] == 0 || $dispatch['total_items'] == "0") {
+                                $dispatch['total_items'] = $reqTotalCount;
+                                $dispatch['is_request_manifest'] = true;
+                            }
+                        }
+                    }
+                }
             }
 
             return $dispatch;
@@ -315,6 +361,41 @@ class Inventory {
             return "DS-$year-" . str_pad($num + 1, 4, '0', STR_PAD_LEFT);
         } catch (PDOException $e) {
             return "DS-" . date('YmdHis');
+        }
+    }
+
+    /**
+     * Generate a custom formatted DC number: [SiteCode]-[FY]-[DC-Sequence]-[Random]
+     * Example: KTEX-26-27-DC097-9591
+     */
+    public function generateCustomDispatchNumber($siteId) {
+        try {
+            // 1. Get Site Code
+            $stmt = $this->db->prepare("SELECT site_id FROM sites WHERE id = ?");
+            $stmt->execute([$siteId]);
+            $siteCode = $stmt->fetchColumn() ?: 'KTV';
+
+            // 2. Financial Year (April to March)
+            $month = (int)date('n');
+            $year = (int)date('y');
+            if ($month >= 4) {
+                $fy = $year . '-' . ($year + 1);
+            } else {
+                $fy = ($year - 1) . '-' . $year;
+            }
+
+            // 3. DC Sequence for this site
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM inventory_dispatches WHERE site_id = ?");
+            $stmt->execute([$siteId]);
+            $count = (int)$stmt->fetchColumn() + 1;
+            $sequence = "DC" . str_pad($count, 3, '0', STR_PAD_LEFT);
+
+            // 4. Random number
+            $random = str_pad(rand(1000, 9999), 4, '0', STR_PAD_LEFT);
+
+            return "{$siteCode}-{$fy}-{$sequence}-{$random}";
+        } catch (Exception $e) {
+            return "DC-" . date('Ymd') . "-" . rand(1000, 9999);
         }
     }
 
@@ -393,6 +474,393 @@ class Inventory {
             return "REC-$year-" . str_pad($num + 1, 4, '0', STR_PAD_LEFT);
         } catch (PDOException $e) {
             return "REC-" . date('YmdHis');
+        }
+    }
+
+    /**
+     * Check stock availability for multiple items
+     * @param array $requestedItems Array of items with boq_item_id and quantity
+     * @return array Stock availability information for each item
+     */
+    public function checkStockAvailabilityForItems($requestedItems) {
+        $availability = [];
+        
+        try {
+            foreach ($requestedItems as $item) {
+                // Normalize IDs (some use material_id, some use boq_item_id)
+                $boqItemId = $item['boq_item_id'] ?? $item['material_id'] ?? null;
+                $requestedQty = floatval($item['quantity'] ?? 0);
+                $itemName = $item['item_name'] ?? $item['material_name'] ?? 'Unknown Item';
+                
+                if (empty($boqItemId)) {
+                    $key = 'unmapped_' . md5($itemName);
+                    $availability[$key] = [
+                        'boq_item_id' => null,
+                        'item_name' => $itemName,
+                        'requested_qty' => $requestedQty,
+                        'available_qty' => 0,
+                        'is_sufficient' => false,
+                        'not_found' => true,
+                        'shortage' => $requestedQty
+                    ];
+                    continue;
+                }
+                
+                // Get available stock for this item
+                $sql = "SELECT 
+                            COALESCE(SUM(CASE WHEN item_status = 'available' AND quality_status = 'good' THEN 1 ELSE 0 END), 0) as available_qty,
+                            bi.item_name as db_item_name
+                        FROM inventory_stock ist
+                        RIGHT JOIN boq_items bi ON ist.boq_item_id = bi.id
+                        WHERE bi.id = ?
+                        GROUP BY bi.id";
+                
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$boqItemId]);
+                $stock = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if (!$stock) {
+                    // Item exists as ID but maybe not in boq_items table?
+                    $availability[$boqItemId] = [
+                        'boq_item_id' => $boqItemId,
+                        'item_name' => $itemName,
+                        'requested_qty' => $requestedQty,
+                        'available_qty' => 0,
+                        'is_sufficient' => false,
+                        'not_found' => true,
+                        'shortage' => $requestedQty
+                    ];
+                    continue;
+                }
+
+                $availableQty = floatval($stock['available_qty'] ?? 0);
+                
+                $availability[$boqItemId] = [
+                    'boq_item_id' => $boqItemId,
+                    'item_name' => $stock['db_item_name'] ?? $itemName,
+                    'requested_qty' => $requestedQty,
+                    'available_qty' => $availableQty,
+                    'is_sufficient' => $availableQty >= $requestedQty,
+                    'not_found' => false,
+                    'shortage' => max(0, $requestedQty - $availableQty)
+                ];
+            }
+            
+            return $availability;
+        } catch (PDOException $e) {
+            error_log("Inventory::checkStockAvailabilityForItems error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Create a new dispatch record
+     */
+    public function createDispatch($data) {
+        try {
+            $sql = "INSERT INTO inventory_dispatches (
+                        dispatch_number, dispatch_date, material_request_id,
+                        site_id, vendor_id, contact_person_name,
+                        contact_person_phone, delivery_address, courier_name,
+                        tracking_number, expected_delivery_date, dispatch_status,
+                        dispatched_by, delivery_remarks
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([
+                $data['dispatch_number'],
+                $data['dispatch_date'],
+                $data['material_request_id'],
+                $data['site_id'],
+                $data['vendor_id'],
+                $data['contact_person_name'],
+                $data['contact_person_phone'],
+                $data['delivery_address'],
+                $data['courier_name'],
+                $data['tracking_number'],
+                $data['expected_delivery_date'],
+                $data['dispatch_status'],
+                $data['dispatched_by'],
+                $data['delivery_remarks']
+            ]);
+            
+            return $result ? $this->db->lastInsertId() : false;
+        } catch (PDOException $e) {
+            error_log("Inventory::createDispatch error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Add multiple items to a dispatch and update stock levels
+     */
+    /**
+     * Add multiple items to a dispatch and update stock levels
+     * Maps each dispatched unit to a specific row in inventory_stock
+     */
+    public function addDispatchItems($dispatchId, $items) {
+        try {
+            $this->db->beginTransaction();
+            
+            $totalValue = 0;
+            $totalItemsDispatched = 0;
+            
+            // Prepare insert for dispatch items
+            $insertSql = "INSERT INTO inventory_dispatch_items (
+                        dispatch_id, inventory_stock_id, boq_item_id, 
+                        unit_cost, item_condition, batch_number, dispatch_notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $insertStmt = $this->db->prepare($insertSql);
+            
+            // Prepare update for stock status
+            $updateStockSql = "UPDATE inventory_stock SET item_status = 'dispatched', dispatch_id = ?, dispatched_at = NOW() WHERE id = ?";
+            $updateStmt = $this->db->prepare($updateStockSql);
+            
+            foreach ($items as $item) {
+                $boqItemId = $item['boq_item_id'];
+                if (empty($boqItemId)) continue;
+                
+                $qty = (int)$item['quantity_dispatched'];
+                $unitCost = floatval($item['unit_cost']);
+                $batchNumber = $item['batch_number'] ?? null;
+                $dispatchNotes = $item['remarks'] ?? null;
+                $itemCondition = $item['item_condition'] ?? 'new';
+                $serialNumbers = !empty($item['individual_records']) ? json_decode($item['individual_records'], true) : [];
+
+                // 1. Identify specific IDs to dispatch
+                $stockIdsToDispatch = [];
+                
+                if (!empty($serialNumbers)) {
+                    // Dispatch specific serial numbers
+                    foreach ($serialNumbers as $record) {
+                        $sn = $record['serial_number'] ?? null;
+                        if (!$sn) continue;
+                        
+                        $checkSql = "SELECT id FROM inventory_stock 
+                                    WHERE boq_item_id = ? AND serial_number = ? AND item_status = 'available' 
+                                    LIMIT 1";
+                        $checkStmt = $this->db->prepare($checkSql);
+                        $checkStmt->execute([$boqItemId, $sn]);
+                        $stockId = $checkStmt->fetchColumn();
+                        
+                        if ($stockId) {
+                            $stockIdsToDispatch[] = $stockId;
+                        } else {
+                            throw new Exception("Serial number '$sn' not available for dispatch for BOQ item $boqItemId");
+                        }
+                    }
+                } else {
+                    // FIFO Selection for bulk items
+                    $pickSql = "SELECT id FROM inventory_stock 
+                                WHERE boq_item_id = ? AND item_status = 'available' AND quality_status = 'good' 
+                                ORDER BY id ASC LIMIT ?";
+                    $pickStmt = $this->db->prepare($pickSql);
+                    $pickStmt->execute([$boqItemId, $qty]);
+                    $stockIdsToDispatch = $pickStmt->fetchAll(PDO::FETCH_COLUMN);
+                    
+                    if (count($stockIdsToDispatch) < $qty) {
+                        throw new Exception("Insufficient available stock for BOQ item $boqItemId. Requested: $qty, Found: " . count($stockIdsToDispatch));
+                    }
+                }
+
+                // 2. Process each unit individually (as per schema design)
+                foreach ($stockIdsToDispatch as $stockId) {
+                    // Insert into dispatch items mapping
+                    $insertStmt->execute([
+                        $dispatchId,
+                        $stockId,
+                        $boqItemId,
+                        $unitCost,
+                        $itemCondition,
+                        $batchNumber,
+                        $dispatchNotes
+                    ]);
+                    
+                    // Update stock status
+                    $updateStmt->execute([$dispatchId, $stockId]);
+                    
+                    $totalValue += $unitCost;
+                    $totalItemsDispatched++;
+                }
+            }
+            
+            // 3. Update dispatch totals
+            $updateDispatch = "UPDATE inventory_dispatches 
+                               SET total_items = ?, total_value = ? 
+                               WHERE id = ?";
+            $dispatchStmt = $this->db->prepare($updateDispatch);
+            $dispatchStmt->execute([$totalItemsDispatched, $totalValue, $dispatchId]);
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            error_log("Inventory::addDispatchItems error: " . $e->getMessage());
+            throw $e; // Re-throw to caller for handling
+        }
+    }
+
+    /**
+     * Create a tracking entry for material movement
+     */
+    public function createTrackingEntry($data) {
+        try {
+            $sql = "INSERT INTO inventory_tracking (
+                        boq_item_id, batch_number, serial_number,
+                        current_location_type, current_location_name,
+                        site_id, vendor_id, dispatch_id,
+                        quantity, status, movement_remarks
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                $data['boq_item_id'],
+                $data['batch_number'] ?? null,
+                $data['serial_number'] ?? null,
+                $data['current_location_type'],
+                $data['current_location_name'],
+                $data['site_id'] ?? null,
+                $data['vendor_id'] ?? null,
+                $data['dispatch_id'] ?? null,
+                $data['quantity'],
+                $data['status'],
+                $data['movement_remarks'] ?? null
+            ]);
+        } catch (PDOException $e) {
+            error_log("Inventory::createTrackingEntry error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get stock summary for a specific BOQ item
+     */
+    public function getStockSummaryByItem($itemId) {
+        try {
+            $sql = "SELECT * FROM inventory_summary WHERE boq_item_id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$itemId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [
+                'total_stock' => 0,
+                'available_stock' => 0,
+                'dispatched_stock' => 0,
+                'total_value' => 0
+            ];
+        } catch (PDOException $e) {
+            error_log("Inventory::getStockSummaryByItem error: " . $e->getMessage());
+            return [
+                'total_stock' => 0,
+                'available_stock' => 0,
+                'dispatched_stock' => 0,
+                'total_value' => 0
+            ];
+        }
+    }
+
+    /**
+     * Get individual stock details for a specific BOQ item
+     */
+    public function getStockDetailsByItem($itemId) {
+        try {
+            $sql = "SELECT *, item_status as status FROM inventory_stock 
+                    WHERE boq_item_id = ? 
+                    ORDER BY created_at DESC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$itemId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Inventory::getStockDetailsByItem error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Update an individual stock entry
+     */
+    public function updateIndividualStockEntry($id, $data) {
+        try {
+            $fields = [];
+            $params = [];
+            
+            foreach ($data as $key => $value) {
+                $fields[] = "$key = ?";
+                $params[] = $value;
+            }
+            
+            if (empty($fields)) return false;
+            
+            $sql = "UPDATE inventory_stock SET " . implode(", ", $fields) . ", updated_at = NOW() WHERE id = ?";
+            $params[] = $id;
+            
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            error_log("Inventory::updateIndividualStockEntry error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get delivery confirmation details for a dispatch
+     */
+    public function getDeliveryConfirmationDetails($dispatchId) {
+        try {
+            $sql = "SELECT delivery_date, delivery_time, received_by, received_by_phone, 
+                           actual_delivery_address, delivery_notes, lr_copy_path, 
+                           additional_documents, item_confirmations, confirmed_by, confirmation_date
+                    FROM inventory_dispatches
+                    WHERE id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$dispatchId]);
+            $details = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($details) {
+                // Parse JSON fields
+                if (!empty($details['additional_documents'])) {
+                    $details['additional_documents'] = json_decode($details['additional_documents'], true) ?: [];
+                } else {
+                    $details['additional_documents'] = [];
+                }
+                
+                if (!empty($details['item_confirmations'])) {
+                    $details['item_confirmations'] = json_decode($details['item_confirmations'], true) ?: [];
+                } else {
+                    $details['item_confirmations'] = [];
+                }
+            }
+            
+            return $details;
+        } catch (PDOException $e) {
+            error_log("Inventory::getDeliveryConfirmationDetails error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Check if a dispatch has any uploaded documents
+     */
+    public function hasUploadedDocuments($dispatchId) {
+        try {
+            $sql = "SELECT lr_copy_path, additional_documents FROM inventory_dispatches WHERE id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$dispatchId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$row) return false;
+            
+            if (!empty($row['lr_copy_path'])) return true;
+            
+            if (!empty($row['additional_documents'])) {
+                $docs = json_decode($row['additional_documents'], true);
+                return !empty($docs);
+            }
+            
+            return false;
+        } catch (PDOException $e) {
+            error_log("Inventory::hasUploadedDocuments error: " . $e->getMessage());
+            return false;
         }
     }
 }

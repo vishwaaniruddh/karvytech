@@ -9,8 +9,11 @@ require_once '../models/Inventory.php';
 require_once '../models/Installation.php';
 require_once '../models/MaterialRequest.php';
 
-// Require admin authentication
-Auth::requireRole(ADMIN_ROLE);
+// Require internal administrative authentication
+if (!Auth::isInternal()) {
+    header('Location: ' . url('/shared/403.php?role=internal'));
+    exit();
+}
 
 $title = 'Admin Dashboard';
 $currentUser = Auth::getCurrentUser();
@@ -22,57 +25,79 @@ $surveyModel = new SiteSurvey();
 $inventoryModel = new Inventory();
 $installationModel = new Installation();
 
+// Initialize stats with full defaults to handle unauthorized access gracefully
+$totalSites = 0; 
+$siteStats = ['delegated' => 0, 'surveyed' => 0, 'installed' => 0, 'pending' => 0];
+$vendorStats = ['total' => 0, 'active' => 0, 'inactive' => 0];
+$surveyStats = ['total' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0];
+$installationStats = ['total' => 0, 'assigned' => 0, 'in_progress' => 0, 'completed' => 0, 'overdue' => 0];
+$inventoryStats = ['total_items' => 0, 'total_quantity' => 0, 'low_stock_items' => 0];
+$requestStats = ['total' => 0, 'pending' => 0, 'approved' => 0, 'dispatched' => 0, 'delivered' => 0];
+$recentActivities = [];
+
 // Get comprehensive dashboard statistics
 try {
     $db = Database::getInstance()->getConnection();
     
     // Sites Statistics
-    $stmt = $db->query("SELECT COUNT(*) as total FROM sites");
-    $totalSites = $stmt->fetch()['total'];
-    
-    $stmt = $db->query("SELECT 
-        SUM(CASE WHEN is_delegate = 1 THEN 1 ELSE 0 END) as delegated,
-        SUM(CASE WHEN survey_status = 1 THEN 1 ELSE 0 END) as surveyed,
-        SUM(CASE WHEN installation_status = 1 THEN 1 ELSE 0 END) as installed,
-        SUM(CASE WHEN is_delegate = 0 THEN 1 ELSE 0 END) as pending
-        FROM sites");
-    $siteStats = $stmt->fetch();
+    if (Auth::hasModuleAccess('sites')) {
+        $stmt = $db->query("SELECT COUNT(*) as total FROM sites");
+        $totalSites = $stmt->fetch()['total'];
+        
+        $stmt = $db->query("SELECT 
+            SUM(CASE WHEN is_delegate = 1 THEN 1 ELSE 0 END) as delegated,
+            SUM(CASE WHEN survey_status = 1 THEN 1 ELSE 0 END) as surveyed,
+            SUM(CASE WHEN installation_status = 1 THEN 1 ELSE 0 END) as installed,
+            SUM(CASE WHEN is_delegate = 0 THEN 1 ELSE 0 END) as pending
+            FROM sites");
+        $siteStats = $stmt->fetch();
+    }
     
     // Vendors Statistics
-    $stmt = $db->query("SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
-        SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) as inactive
-        FROM vendors");
-    $vendorStats = $stmt->fetch();
+    if (Auth::hasModuleAccess('users')) { // Vendors are managed under users/vendors
+        $stmt = $db->query("SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
+            SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) as inactive
+            FROM vendors");
+        $vendorStats = $stmt->fetch();
+    }
     
     // Survey Statistics
-    $stmt = $db->query("SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN survey_status = 'pending' THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN survey_status = 'approved' THEN 1 ELSE 0 END) as approved,
-        SUM(CASE WHEN survey_status = 'rejected' THEN 1 ELSE 0 END) as rejected
-        FROM site_surveys");
-    $surveyStats = $stmt->fetch();
+    if (Auth::hasModuleAccess('surveys')) {
+        $stmt = $db->query("SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN survey_status = 'pending' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN survey_status = 'approved' THEN 1 ELSE 0 END) as approved,
+            SUM(CASE WHEN survey_status = 'rejected' THEN 1 ELSE 0 END) as rejected
+            FROM site_surveys");
+        $surveyStats = $stmt->fetch();
+    }
     
     // Installation Statistics
-    $installationStats = $installationModel->getInstallationStats();
+    if (Auth::hasModuleAccess('installations')) {
+        $installationStats = $installationModel->getInstallationStats();
+    }
     
     // Inventory Statistics
-    $stmt = $db->query("SELECT COUNT(DISTINCT item_name) as total_items,
-     COALESCE(SUM(total_stock), 0) as total_quantity, 
-     SUM(CASE WHEN total_stock < 10 THEN 1 ELSE 0 END) as low_stock_items
-      FROM inventory_summary");
-    $inventoryStats = $stmt->fetch();
+    if (Auth::hasModuleAccess('inventory')) {
+        $stmt = $db->query("SELECT COUNT(DISTINCT item_name) as total_items,
+         COALESCE(SUM(total_stock), 0) as total_quantity, 
+         SUM(CASE WHEN total_stock < 10 THEN 1 ELSE 0 END) as low_stock_items
+          FROM inventory_summary");
+        $inventoryStats = $stmt->fetch() ?: $inventoryStats;
+    }
     
     // Material Requests Statistics
-    $stmt = $db->query("SELECT 
-        COUNT(*) as total,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
-        SUM(CASE WHEN status = 'dispatched' THEN 1 ELSE 0 END) as dispatched
-        FROM material_requests");
-    $requestStats = $stmt->fetch();
+    if (Auth::hasModuleAccess('materials')) {
+        $stmt = $db->query("SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
+            SUM(CASE WHEN status = 'dispatched' THEN 1 ELSE 0 END) as dispatched
+            FROM material_requests");
+        $requestStats = $stmt->fetch() ?: $requestStats;
+    }
     
     // Recent Activities
     $stmt = $db->query("SELECT 
@@ -98,7 +123,7 @@ try {
         FROM material_requests mr
         WHERE mr.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
         ORDER BY activity_date DESC LIMIT 10");
-    $recentActivities = $stmt->fetchAll();
+    $recentActivities = $stmt->fetchAll() ?: [];
     
     // Monthly trends (last 6 months)
     $stmt = $db->query("SELECT 
@@ -108,7 +133,7 @@ try {
         WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
         GROUP BY DATE_FORMAT(created_at, '%Y-%m')
         ORDER BY month");
-    $monthlyTrends = $stmt->fetchAll();
+    $monthlyTrends = $stmt->fetchAll() ?: [];
     
     // Top performing vendors
     $stmt = $db->query("SELECT 
@@ -122,7 +147,7 @@ try {
         GROUP BY v.id, v.name
         ORDER BY (COUNT(ss.id) + COUNT(id.id)) DESC
         LIMIT 5");
-    $topVendors = $stmt->fetchAll();
+    $topVendors = $stmt->fetchAll() ?: [];
     
 } catch (Exception $e) {
     // Default values in case of error
@@ -132,7 +157,7 @@ try {
     $surveyStats = ['total' => 0, 'pending' => 0, 'approved' => 0, 'rejected' => 0];
     $installationStats = ['total' => 0, 'assigned' => 0, 'in_progress' => 0, 'completed' => 0, 'overdue' => 0];
     $inventoryStats = ['total_items' => 0, 'total_quantity' => 0, 'low_stock_items' => 0];
-    $requestStats = ['total' => 0, 'pending' => 0, 'approved' => 0, 'dispatched' => 0];
+    $requestStats = ['total' => 0, 'pending' => 0, 'approved' => 0, 'dispatched' => 0, 'delivered' => 0];
     $recentActivities = [];
     $monthlyTrends = [];
     $topVendors = [];
@@ -164,6 +189,7 @@ ob_start();
 <!-- Key Metrics Cards -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <!-- Total Sites Card -->
+    <?php if (Auth::hasModuleAccess('sites')): ?>
     <div class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100 hover:shadow-xl transition-shadow duration-300">
         <div class="p-5">
             <div class="text-sm font-medium text-gray-500 mb-3">Total Sites</div>
@@ -176,14 +202,16 @@ ob_start();
                 <div class="text-right">
                     <div class="text-2xl font-bold text-gray-900"><?php echo ($totalSites); ?></div>
                     <div class="text-sm text-gray-600 mt-1">
-                        <span class="text-green-600">+<?php echo $siteStats['delegated']; ?></span> delegated
+                        <span class="text-green-600">+<?php echo $siteStats['delegated'] ?? 0; ?></span> delegated
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
     <!-- Active Vendors Card -->
+    <?php if (Auth::hasModuleAccess('users')): ?>
     <div class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100 hover:shadow-xl transition-shadow duration-300">
         <div class="p-5">
             <div class="text-sm font-medium text-gray-500 mb-3">Active Vendors</div>
@@ -194,16 +222,18 @@ ob_start();
                     </svg>
                 </div>
                 <div class="text-right">
-                    <div class="text-2xl font-bold text-gray-900"><?php echo number_format($vendorStats['active']); ?></div>
+                    <div class="text-2xl font-bold text-gray-900"><?php echo number_format($vendorStats['active'] ?? 0); ?></div>
                     <div class="text-sm text-gray-600 mt-1">
-                        <span class="text-gray-500"><?php echo $vendorStats['inactive']; ?> inactive</span>
+                        <span class="text-gray-500"><?php echo $vendorStats['inactive'] ?? 0; ?> inactive</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
     <!-- Pending Surveys Card -->
+    <?php if (Auth::hasModuleAccess('surveys')): ?>
     <div class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100 hover:shadow-xl transition-shadow duration-300">
         <div class="p-5">
             <div class="text-sm font-medium text-gray-500 mb-3">Pending Surveys</div>
@@ -214,16 +244,18 @@ ob_start();
                     </svg>
                 </div>
                 <div class="text-right">
-                    <div class="text-2xl font-bold text-gray-900"><?php echo number_format($surveyStats['pending']); ?></div>
+                    <div class="text-2xl font-bold text-gray-900"><?php echo number_format($surveyStats['pending'] ?? 0); ?></div>
                     <div class="text-sm text-gray-600 mt-1">
-                        <span class="text-green-600"><?php echo $surveyStats['approved']; ?> approved</span>
+                        <span class="text-green-600"><?php echo $surveyStats['approved'] ?? 0; ?> approved</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
     <!-- Active Installations Card -->
+    <?php if (Auth::hasModuleAccess('installations')): ?>
     <div class="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100 hover:shadow-xl transition-shadow duration-300">
         <div class="p-5">
             <div class="text-sm font-medium text-gray-500 mb-3">Active Installation</div>
@@ -243,6 +275,7 @@ ob_start();
             </div>
         </div>
     </div>
+    <?php endif; ?>
 </div>
 
 <!-- Secondary Metrics Row -->
@@ -260,15 +293,15 @@ ob_start();
         <div class="space-y-3">
             <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-600">Total Items</span>
-                <span class="font-semibold text-gray-900"><?php echo number_format($inventoryStats['total_items']); ?></span>
+                <span class="font-semibold text-gray-900"><?php echo number_format($inventoryStats['total_items'] ?? 0); ?></span>
             </div>
             <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-600">Total Quantity</span>
-                <span class="font-semibold text-gray-900"><?php echo number_format($inventoryStats['total_quantity']); ?></span>
+                <span class="font-semibold text-gray-900"><?php echo number_format($inventoryStats['total_quantity'] ?? 0); ?></span>
             </div>
             <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-600">Low Stock Items</span>
-                <span class="font-semibold text-red-600"><?php echo number_format($inventoryStats['low_stock_items']); ?></span>
+                <span class="font-semibold text-red-600"><?php echo number_format($inventoryStats['low_stock_items'] ?? 0); ?></span>
             </div>
         </div>
     </div>
@@ -286,15 +319,15 @@ ob_start();
         <div class="space-y-3">
             <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-600">Total Requests</span>
-                <span class="font-semibold text-gray-900"><?php echo number_format($requestStats['total']); ?></span>
+                <span class="font-semibold text-gray-900"><?php echo number_format($requestStats['total'] ?? 0); ?></span>
             </div>
             <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-600">Pending</span>
-                <span class="font-semibold text-yellow-600"><?php echo number_format($requestStats['pending']); ?></span>
+                <span class="font-semibold text-yellow-600"><?php echo number_format($requestStats['pending'] ?? 0); ?></span>
             </div>
             <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-600">Dispatched</span>
-                <span class="font-semibold text-green-600"><?php echo number_format($requestStats['dispatched']); ?></span>
+                <span class="font-semibold text-green-600"><?php echo number_format($requestStats['dispatched'] ?? 0); ?></span>
             </div>
         </div>
     </div>
@@ -309,25 +342,33 @@ ob_start();
                 </svg>
             </div>
         </div>
-        <div class="space-y-3">
-            <a href="<?php echo BASE_URL; ?>/admin/sites/" class="block w-full bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+        <div class="space-y-4">
+            <?php if (Auth::hasModuleAccess('sites')): ?>
+            <a href="<?php echo BASE_URL; ?>/admin/sites/index.php" class="block w-full bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
                 Add New Site
             </a>
+            <?php endif; ?>
+
+            <?php if (Auth::hasModuleAccess('users')): ?>
             <a href="<?php echo BASE_URL; ?>/admin/vendors/" class="block w-full bg-green-50 hover:bg-green-100 text-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                 </svg>
                 Manage Vendors
             </a>
+            <?php endif; ?>
+
+            <?php if (Auth::hasModuleAccess('inventory')): ?>
             <a href="<?php echo BASE_URL; ?>/admin/inventory/" class="block w-full bg-purple-50 hover:bg-purple-100 text-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
                 <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                 </svg>
                 View Inventory
             </a>
+            <?php endif; ?>
         </div>
     </div>
 </div>

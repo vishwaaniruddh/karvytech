@@ -11,12 +11,24 @@ header('Content-Type: application/json');
 $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 20;
 $search = $_GET['search'] ?? '';
+
+
 $filters = [
     'city' => $_GET['city'] ?? '',
     'state' => $_GET['state'] ?? '',
     'activity_status' => $_GET['activity_status'] ?? '',
-    'survey_status' => $_GET['survey_status'] ?? ''
+    'survey_status' => $_GET['survey_status'] ?? '',
+    'surveyor_id' => $_GET['surveyor_id'] ?? '',
+    'site_id' => $_GET['site_id'] ?? '',
+    'branch' => $_GET['branch'] ?? '',
+    'created_by' => $_GET['created_by'] ?? '',
+    'contact_person_name' => $_GET['contact_person_name'] ?? '',
+    'contact_person_number' => $_GET['contact_person_number'] ?? '',
+    'installation_status' => $_GET['installation_status'] ?? '',
+    'material_status' => $_GET['material_status'] ?? '',
 ];
+
+
 
 try {
     $siteModel = new Site();
@@ -73,11 +85,13 @@ try {
         $site['installer_name'] = $instLog ? $instLog['username'] : '-';
         $site['installation_completed_time'] = ($instLog && $instLog['inst_status'] === 'completed') ? $instLog['updated_at'] : null;
         $site['installation_status_label'] = $instLog ? ucfirst($instLog['inst_status']) : 'Pending';
+        // $site['installation_status'] = $instLog ? ucfirst($instLog['inst_status']) : 'Pending';
     }
 
     echo json_encode([
         'success' => true,
         'sites' => $sites,
+        'filter' => $filters,
         'pagination' => [
             'total_records' => $result['total'],
             'total_pages' => $result['pages'],

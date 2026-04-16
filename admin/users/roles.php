@@ -71,6 +71,7 @@ ob_start();
                     <th class="px-4 py-2 text-left">Role Name</th>
                     <th class="px-4 py-2 text-left">Display Name</th>
                     <th class="px-4 py-2 text-left">Description</th>
+                    <th class="px-4 py-2 text-left">Category</th>
                     <th class="px-4 py-2 text-left">Status</th>
                     <th class="px-4 py-2 text-right">Actions</th>
                 </tr>
@@ -94,6 +95,13 @@ ob_start();
                             </td>
                             <td class="px-4 py-2">
                                 <span class="px-2 py-0.5 rounded-full text-[10px] font-medium <?php 
+                                    echo $role['role_category'] === 'internal' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
+                                ?>">
+                                    <?php echo ucfirst($role['role_category']); ?>
+                                </span>
+                            </td>
+                            <td class="px-4 py-2">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-medium <?php 
                                     if ($role['status'] === 'active') echo 'bg-green-100 text-green-700';
                                     elseif ($role['status'] === 'pending_deletion') echo 'bg-orange-100 text-orange-700';
                                     else echo 'bg-gray-100 text-gray-700';
@@ -106,6 +114,7 @@ ob_start();
                                     <span class="text-gray-400 italic">Deletion Pending</span>
                                 <?php else: ?>
                                     <button onclick="editRole(<?php echo htmlspecialchars(json_encode($role)); ?>)" class="text-blue-600 hover:text-blue-800">Edit</button>
+                                    <button onclick="managePermissions(<?php echo $role['id']; ?>, '<?php echo htmlspecialchars($role['display_name']); ?>')" class="text-indigo-600 hover:text-indigo-800">Permissions</button>
                                     <button onclick="confirmRequestDelete(<?php echo $role['id']; ?>, '<?php echo htmlspecialchars($role['display_name']); ?>')" class="text-red-600 hover:text-red-800">Delete</button>
                                 <?php endif; ?>
                             </td>
@@ -161,6 +170,14 @@ ob_start();
                     <label class="block text-xs font-medium text-gray-700 mb-1">Description</label>
                     <textarea id="roleDescription" name="description" rows="3" class="w-full px-3 py-2 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 outline-none" placeholder="Describe what this role does..."></textarea>
                 </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Role Category</label>
+                    <select id="roleCategory" name="role_category" class="w-full px-3 py-2 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 outline-none" required>
+                        <option value="internal">Internal (Admin Area)</option>
+                        <option value="external">External (Vendor Portal)</option>
+                    </select>
+                    <p class="text-[10px] text-gray-500 mt-1">Determines which portal layout the user sees</p>
+                </div>
                 <div id="statusGroup" class="hidden">
                     <label class="block text-xs font-medium text-gray-700 mb-1">Status</label>
                     <select id="roleStatus" name="status" class="w-full px-3 py-2 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 outline-none">
@@ -174,6 +191,32 @@ ob_start();
                 <button type="submit" class="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700">Save Role</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Permissions Modal -->
+<div id="permissionsModal" class="modal">
+    <div class="modal-content max-w-2xl">
+        <div class="modal-header">
+            <h3 class="modal-title" id="permModalTitle">Manage Permissions</h3>
+            <button type="button" class="modal-close" onclick="closeModal('permissionsModal')">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="permRoleId">
+            <div id="permissionsLoading" class="py-10 text-center text-gray-500">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mb-2"></div>
+                <p>Loading permissions...</p>
+            </div>
+            <div id="permissionsContainer" class="hidden space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                <!-- Permissions grouped by module will be injected here -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" onclick="closeModal('permissionsModal')" class="px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50">Cancel</button>
+            <button type="button" onclick="savePermissions()" class="px-4 py-2 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700">Save Changes</button>
+        </div>
     </div>
 </div>
 
@@ -204,6 +247,7 @@ function editRole(role) {
     document.getElementById('roleName').disabled = true;
     document.getElementById('roleDisplayName').value = role.display_name;
     document.getElementById('roleDescription').value = role.description;
+    document.getElementById('roleCategory').value = role.role_category || 'internal';
     document.getElementById('roleStatus').value = role.status;
     
     document.getElementById('modalTitle').innerText = 'Edit Role: ' + role.display_name;
@@ -236,6 +280,154 @@ function handleRoleSubmit(e) {
     .catch(error => {
         console.error('Error:', error);
         showToast('An error occurred. Please try again.', 'error');
+    });
+}
+
+async function managePermissions(roleId, roleDisplayName) {
+    document.getElementById('permRoleId').value = roleId;
+    document.getElementById('permModalTitle').innerText = 'Permissions: ' + roleDisplayName;
+    document.getElementById('permissionsLoading').classList.remove('hidden');
+    document.getElementById('permissionsContainer').classList.add('hidden');
+    openModal('permissionsModal');
+
+    try {
+        // Fetch all available permissions and this role's permissions
+        const [allRes, roleRes] = await Promise.all([
+            fetch('../../api/rbac/permissions.php?action=all'),
+            fetch(`../../api/rbac/roles.php?action=permissions&role_id=${roleId}`)
+        ]);
+
+        const allData = await allRes.json();
+        const roleData = await roleRes.json();
+
+        if (allData.success && roleData.success) {
+            renderPermissionGroups(allData.permissions, roleData.permissions, allData.menus, roleData.menu_permissions);
+        } else {
+            showToast('Failed to load permissions', 'error');
+            closeModal('permissionsModal');
+        }
+    } catch (error) {
+        console.error('Error loading permissions:', error);
+        showToast('An error occurred while loading permissions', 'error');
+        closeModal('permissionsModal');
+    }
+}
+
+function renderPermissionGroups(allPermissions, rolePermissions, allMenus = [], roleMenuPermissions = []) {
+    const container = document.getElementById('permissionsContainer');
+    container.innerHTML = '';
+    
+    const rolePermIds = rolePermissions.map(p => p.id);
+    const roleMenuIds = roleMenuPermissions.map(m => m.menu_item_id);
+    
+    // 1. Sidebar Menu Access Section
+    if (allMenus && allMenus.length > 0) {
+        const menuHtml = `
+            <div class="border-2 border-blue-100 rounded-lg p-4 bg-blue-50/30 mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-6 bg-blue-500 rounded-full"></div>
+                        <h4 class="text-base font-bold text-gray-900">Sidebar Menu Access</h4>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mb-4">Explicitly choose which main menu sections this role can see in the sidebar.</p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    ${allMenus.map(m => `
+                        <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg bg-white border border-gray-200 hover:border-blue-400 hover:shadow-sm transition-all shadow-sm">
+                            <input type="checkbox" name="menu_items[]" value="${m.id}" 
+                                ${roleMenuIds.includes(m.id) ? 'checked' : ''}
+                                class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                            <div class="flex flex-col">
+                                <span class="text-xs font-bold text-gray-800">${m.title}</span>
+                                <span class="text-[10px] text-gray-400">Main Menu Section</span>
+                            </div>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-2 h-6 bg-gray-300 rounded-full"></div>
+                <h4 class="text-base font-bold text-gray-900">Module Capabilities</h4>
+            </div>
+            <p class="text-xs text-gray-500 mb-6">Fine-grained operational permissions within each module.</p>
+        `;
+        container.insertAdjacentHTML('beforeend', menuHtml);
+    }
+    
+    // 2. Capabilities Section (Existing)
+    const groups = {};
+    allPermissions.forEach(p => {
+        if (!groups[p.module_name]) {
+            groups[p.module_name] = {
+                display: p.module_display_name,
+                perms: []
+            };
+        }
+        groups[p.module_name].perms.push(p);
+    });
+
+    for (const mod in groups) {
+        const group = groups[mod];
+        const groupHtml = `
+            <div class="border border-gray-100 rounded-lg p-3 bg-gray-50/50">
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="text-sm font-bold text-gray-800">${group.display}</h4>
+                    <button type="button" onclick="toggleModule('${mod}', true)" class="text-[10px] text-blue-600 hover:underline">Select All</button>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    ${group.perms.map(p => `
+                        <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-white transition-colors border border-transparent hover:border-gray-200">
+                            <input type="checkbox" name="perms[]" value="${p.id}" data-module="${mod}" 
+                                ${rolePermIds.includes(p.id) ? 'checked' : ''}
+                                class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                            <span class="text-xs text-gray-600 capitalize">${p.display_name}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', groupHtml);
+    }
+
+    document.getElementById('permissionsLoading').classList.add('hidden');
+    container.classList.remove('hidden');
+}
+
+function toggleModule(moduleName, checked) {
+    const checkboxes = document.querySelectorAll(`input[data-module="${moduleName}"]`);
+    checkboxes.forEach(cb => cb.checked = checked);
+}
+
+function savePermissions() {
+    const roleId = document.getElementById('permRoleId').value;
+    const permCheckboxes = document.querySelectorAll('input[name="perms[]"]:checked');
+    const menuCheckboxes = document.querySelectorAll('input[name="menu_items[]"]:checked');
+    
+    const permissionIds = Array.from(permCheckboxes).map(cb => cb.value);
+    const menuIds = Array.from(menuCheckboxes).map(cb => cb.value);
+
+    const formData = new FormData();
+    formData.append('role_id', roleId);
+    permissionIds.forEach(id => formData.append('permissions[]', id));
+    menuIds.forEach(id => formData.append('menu_items[]', id));
+
+    fetch('../../api/rbac/roles.php?action=update_permissions', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Permissions updated successfully', 'success');
+            closeModal('permissionsModal');
+        } else {
+            showToast(data.message || 'Failed to update permissions', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving permissions:', error);
+        showToast('An error occurred while saving permissions', 'error');
     });
 }
 

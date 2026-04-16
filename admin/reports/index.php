@@ -5,8 +5,8 @@ require_once __DIR__ . '/../../models/SiteSurvey.php';
 require_once __DIR__ . '/../../models/MaterialRequest.php';
 require_once __DIR__ . '/../../models/Installation.php';
 
-// Require admin authentication
-Auth::requireRole(ADMIN_ROLE);
+// Require module access
+Auth::requireModuleAccess('reports');
 
 $title = 'Reports & Analytics';
 ob_start();

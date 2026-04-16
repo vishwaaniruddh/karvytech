@@ -1,32 +1,41 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../models/Menu.php';
 
 $db = Database::getInstance()->getConnection();
 
-echo "--- MENU ITEMS ---\n";
-$stmt = $db->query("SELECT * FROM menu_items ORDER BY parent_id, sort_order");
+echo "--- Modules ---\n";
+$stmt = $db->query("SELECT id, name, display_name FROM modules");
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     echo json_encode($row) . "\n";
 }
 
-echo "\n--- SUPERADMIN PERMISSIONS ---\n";
-$stmt = $db->query("SELECT * FROM users WHERE role = 'superadmin' LIMIT 1");
-$superadmin = $stmt->fetch(PDO::FETCH_ASSOC);
-
-if ($superadmin) {
-    echo "Superadmin ID: " . $superadmin['id'] . "\n";
-    $stmt = $db->prepare("SELECT ump.*, m.title FROM user_menu_permissions ump JOIN menu_items m ON ump.menu_item_id = m.id WHERE ump.user_id = ?");
-    $stmt->execute([$superadmin['id']]);
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        echo json_encode($row) . "\n";
-    }
-} else {
-    echo "No superadmin found.\n";
-}
-
-echo "\n--- ROLE PERMISSIONS ---\n";
-$stmt = $db->query("SELECT rmp.*, m.title FROM role_menu_permissions rmp JOIN menu_items m ON rmp.menu_item_id = m.id WHERE rmp.role = 'superadmin'");
+echo "\n--- Permissions (Sample) ---\n";
+$stmt = $db->query("SELECT id, module_id, name, display_name FROM permissions LIMIT 20");
 while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
     echo json_encode($row) . "\n";
 }
-?>
+
+echo "\n--- Active Menu Items ---\n";
+$stmt = $db->query("SELECT id, parent_id, title, url, module_id FROM menu_items WHERE status = 'active'");
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    echo json_encode($row) . "\n";
+}
+
+echo "\n--- User Role and Role ID check ---\n";
+$stmt = $db->query("SELECT id, username, role, role_id FROM users WHERE username = 'Bela' OR role = 'Inventory'");
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    echo json_encode($row) . "\n";
+}
+
+echo "\n--- Role Permissions for Inventory ---\n";
+$stmt = $db->query("
+    SELECT rp.role_id, p.module_id, p.name 
+    FROM role_permissions rp 
+    JOIN permissions p ON rp.permission_id = p.id 
+    JOIN roles r ON rp.role_id = r.id 
+    WHERE r.name = 'Inventory'
+");
+while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+    echo json_encode($row) . "\n";
+}

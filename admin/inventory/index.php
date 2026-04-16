@@ -4,8 +4,8 @@ require_once __DIR__ . '/../../models/Inventory.php';
 require_once __DIR__ . '/../../models/BoqItem.php';
 require_once __DIR__ . '/../../models/Warehouse.php';
 
-// Require admin authentication
-Auth::requireRole(ADMIN_ROLE);
+// Require module access
+Auth::requireModuleAccess('inventory');
 
 $inventoryModel = new Inventory();
 $boqModel = new BoqItem();

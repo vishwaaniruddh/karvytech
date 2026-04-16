@@ -226,10 +226,7 @@ ob_start();
             class="appearance-none px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-50 focus:border-blue-200 shadow-sm outline-none cursor-pointer min-w-[130px]"
             onchange="applyFilters()">
             <option value="">All Roles</option>
-            <option value="superadmin">Superadmin</option>
-            <option value="administrator">Administrator</option>
-            <option value="admin">Admin</option>
-            <option value="vendor">Vendor</option>
+            <!-- Dynamic roles will be injected here -->
         </select>
         <select id="statusFilter"
             class="appearance-none px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-50 focus:border-blue-200 shadow-sm outline-none cursor-pointer min-w-[130px]"
@@ -302,12 +299,11 @@ ob_start();
                 <input type="password" name="password" placeholder="Password"
                     class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100"
                     required>
-                <select name="role"
+                <select name="role" id="create_role"
                     class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100"
                     onchange="toggleVendorField(this.value)" required>
                     <option value="">Role</option>
-                    <option value="admin">Admin</option>
-                    <option value="vendor">Vendor</option>
+                    <!-- Roles injected here -->
                 </select>
                 <select name="status"
                     class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100">
@@ -348,8 +344,8 @@ ob_start();
                 <select id="edit_role" name="role"
                     class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none"
                     onchange="toggleEditVendorField(this.value)" required>
-                    <option value="admin">Admin</option>
-                    <option value="vendor">Vendor</option>
+                    <option value="">Select Role</option>
+                    <!-- Roles injected here -->
                 </select>
                 <select id="edit_status" name="status"
                     class="w-full px-4 py-2 bg-gray-50 border-none rounded-xl text-sm outline-none">
@@ -835,6 +831,35 @@ ob_start();
         }
     }
 
+    async function loadRoles() {
+        try {
+            const res = await fetch('../../api/rbac/roles.php?action=list');
+            const data = await res.json();
+            if (data.success) {
+                const roles = data.roles;
+                const filters = document.getElementById('roleFilter');
+                const createSelect = document.getElementById('create_role');
+                const editSelect = document.getElementById('edit_role');
+                
+                // Clear existing dynamic roles (keep the first option)
+                while(filters.options.length > 1) filters.remove(1);
+                while(createSelect.options.length > 1) createSelect.remove(1);
+                while(editSelect.options.length > 1) editSelect.remove(1);
+
+                roles.forEach(role => {
+                    const opt1 = new Option(role.display_name, role.name);
+                    const opt2 = new Option(role.display_name, role.name);
+                    const opt3 = new Option(role.display_name, role.name);
+                    filters.add(opt1);
+                    createSelect.add(opt2);
+                    editSelect.add(opt3);
+                });
+            }
+        } catch (e) {
+            console.error('Error loading roles:', e);
+        }
+    }
+
     function toggleVendorField(role) {
         const f = document.getElementById('vendor_field');
         if (role === 'vendor') { f.className = 'block'; loadVendors('vendor_id'); }
@@ -875,6 +900,7 @@ ob_start();
         document.getElementById('roleFilter').value = params.get('role') || '';
         document.getElementById('statusFilter').value = params.get('status') || '';
         fetchUsers();
+        loadRoles();
     };
 </script>
 

@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/../../../config/auth.php';
-require_once __DIR__ . '/../../../models/Inventory.php';
 
 // Require admin authentication
 Auth::requireRole(ADMIN_ROLE);
@@ -8,557 +7,469 @@ Auth::requireRole(ADMIN_ROLE);
 $dispatchId = $_GET['id'] ?? null;
 if (!$dispatchId) { header('Location: index.php'); exit; }
 
-$inventoryModel = new Inventory();
-$dispatch = $inventoryModel->getDispatchDetails($dispatchId);
-if (!$dispatch) { header('Location: index.php?error=dispatch_not_found'); exit; }
-
-$deliveryConfirmation = $inventoryModel->getDeliveryConfirmationDetails($dispatchId);
-$hasDocuments = $inventoryModel->hasUploadedDocuments($dispatchId);
-
-$title = 'Logistics Details - ' . $dispatch['dispatch_number'];
+$title = 'Logistics Details';
 ob_start();
 ?>
 
-<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-    <div>
-        <div class="flex items-center gap-3 mb-1">
-            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Dispatch Manifest</h1>
-            <span class="px-2.5 py-1 bg-gray-900 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest"><?php echo htmlspecialchars($dispatch['dispatch_number']); ?></span>
+<style>
+    :root {
+        --primary: #2563eb;
+        --secondary: #64748b;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --background: #f8fafc;
+        --card-bg: #ffffff;
+    }
+
+    .skeleton {
+        background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 0.5rem;
+    }
+
+    @keyframes skeleton-loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    .status-stage {
+        flex: 1;
+        text-align: center;
+        padding: 1rem 0.5rem;
+        position: relative;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #94a3b8;
+        transition: all 0.3s ease;
+    }
+
+    .status-stage::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: #e2e8f0;
+        border-radius: 4px;
+    }
+
+    .status-stage.active { color: var(--primary); }
+    .status-stage.active::after { background: var(--primary); }
+    .status-stage.completed { color: var(--success); }
+    .status-stage.completed::after { background: var(--success); }
+    .status-stage.rejected { color: var(--danger); }
+    .status-stage.rejected::after { background: var(--danger); }
+</style>
+
+<div id="dispatchApp" class="px-4 py-6" data-dispatch-id="<?php echo $dispatchId; ?>">
+    <!-- Loader / Skeleton -->
+    <div id="loader" class="space-y-6">
+        <div class="h-20 skeleton w-full"></div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="h-24 skeleton"></div>
+            <div class="h-24 skeleton"></div>
+            <div class="h-24 skeleton"></div>
+            <div class="h-24 skeleton"></div>
         </div>
-        <p class="text-[13px] font-medium text-gray-500 uppercase tracking-wide">Transit & Delivery Intelligence Report</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="h-64 skeleton"></div>
+            <div class="h-64 skeleton"></div>
+        </div>
     </div>
-    <div class="flex items-center gap-3">
-        <button onclick="window.print()" class="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-            Print Ticket
-        </button>
-        <a href="index.php" class="p-2.5 bg-white border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-900 rounded-xl transition-all shadow-sm">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
-        </a>
+
+    <!-- Main Content (Hidden initially) -->
+    <div id="mainContent" class="hidden">
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <h1 class="text-2xl font-bold text-gray-900 tracking-tight" id="headerTitle">Dispatch Manifest</h1>
+                    <span id="dispatchBadge" class="px-2.5 py-1 bg-gray-900 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest"></span>
+                </div>
+                <p class="text-[13px] font-medium text-gray-500 uppercase tracking-wide">Transit & Delivery Intelligence Report</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="viewChallanBtn" style="display: none;" class="px-5 py-2.5 bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Delivery Challan
+                </button>
+                <button id="printManifestBtn" class="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Print Manifest
+                </button>
+                <a href="index.php" class="p-2.5 bg-white border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-900 rounded-xl transition-all shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- Status Progress Pipe -->
+        <div id="statusPipe" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6 flex bg-gray-50/50">
+            <!-- Stages will be rendered here -->
+        </div>
+
+        <!-- Metric Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" id="metricsGrid">
+            <!-- Stat cards will be rendered here -->
+        </div>
+
+        <!-- Details Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Logistics Card -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden" id="logisticsCard"></div>
+            <!-- Contact Card -->
+            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden" id="contactCard"></div>
+        </div>
+
+        <!-- Delivery Confirmation -->
+        <div id="deliveryConfirmationSection"></div>
+
+        <!-- Documents Section -->
+        <div id="documentsSection"></div>
+
+        <!-- Manifest Table -->
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-8" id="manifestSection"></div>
     </div>
 </div>
 
-<!-- Status Metrics -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Operational Status</p>
-        <?php
-        $actualStatus = $dispatch['dispatch_status'] ?: ($deliveryConfirmation ? ($deliveryConfirmation['confirmation_date'] ? 'confirmed' : 'delivered') : 'dispatched');
-        $statusMap = [
-            'prepared' => ['color' => 'blue', 'label' => 'Requisition Prepared'],
-            'dispatched' => ['color' => 'amber', 'label' => 'Sent to Courier'],
-            'in_transit' => ['color' => 'indigo', 'label' => 'In Transit'],
-            'delivered' => ['color' => 'emerald', 'label' => 'Gate Entry Done'],
-            'confirmed' => ['color' => 'emerald', 'label' => 'Fully Confirmed'],
-            'returned' => ['color' => 'rose', 'label' => 'Returning Inbound']
-        ];
-        $st = $statusMap[$actualStatus] ?? ['color' => 'gray', 'label' => $actualStatus];
-        ?>
-        <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-<?php echo $st['color']; ?>-500 animate-pulse"></span>
-            <span class="text-sm font-bold text-gray-900 uppercase tracking-tight"><?php echo $st['label']; ?></span>
-        </div>
-    </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const dispatchId = document.getElementById('dispatchApp').dataset.dispatchId;
+    loadDispatchData(dispatchId);
+});
+
+async function loadDispatchData(id) {
+    try {
+        const response = await fetch(`get-dispatch-details.php?id=${id}`);
+        const data = await response.json();
+
+        if (data.success) {
+            renderUI(data);
+        } else {
+            document.getElementById('dispatchApp').innerHTML = `
+                <div class="bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-2xl text-center">
+                    <p class="font-bold">Error Loading Dispatch</p>
+                    <p class="text-sm">${data.message}</p>
+                    <a href="index.php" class="inline-block mt-4 text-sm font-bold underline">Back to List</a>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Fetch error:', error);
+    }
+}
+
+function renderUI(data) {
+    const { dispatch, deliveryConfirmation, hasDocuments } = data;
     
-    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Associated Request</p>
-        <div class="text-sm font-bold text-gray-900">REQ#<?php echo $dispatch['material_request_id'] ?: 'EXT-00'; ?></div>
-    </div>
+    // Header
+    document.title = `Logistics Details - ${dispatch.dispatch_number}`;
+    document.getElementById('dispatchBadge').textContent = dispatch.dispatch_number;
+    
+    // Status Pipe
+    renderStatusPipe(dispatch.dispatch_status, deliveryConfirmation);
+    
+    // Metrics
+    renderMetrics(dispatch, deliveryConfirmation);
+    
+    // Cards
+    renderLogisticsCard(dispatch);
+    renderContactCard(dispatch);
+    
+    // Action Buttons
+    const challanBtn = document.getElementById('viewChallanBtn');
+    challanBtn.style.display = 'flex';
+    challanBtn.onclick = () => window.open(`view-delivery-challan.php?id=${dispatch.id}`, '_blank');
+    
+    document.getElementById('printManifestBtn').onclick = () => window.open(`print-dispatch.php?id=${dispatch.id}`, '_blank');
+    
+    // Delivery Details
+    if (deliveryConfirmation && (deliveryConfirmation.delivery_date || deliveryConfirmation.received_by)) {
+        renderDeliveryConfirmation(deliveryConfirmation, dispatch.delivery_address);
+    }
+    
+    // Documents
+    if (hasDocuments) {
+        renderDocuments(deliveryConfirmation);
+    }
+    
+        // Manifest
+        renderManifest(dispatch.items);
+        
+        // Show Requested Manifest Badge if applicable
+        if (dispatch.is_request_manifest) {
+            document.getElementById('manifestTitlePlaceholder').innerHTML = `
+                <div class="flex items-center gap-2">
+                    Material Manifest
+                    <span class="px-2 py-0.5 bg-amber-50 text-amber-600 border border-amber-100 rounded text-[9px] font-bold uppercase tracking-widest">Requested Manifest</span>
+                </div>
+            `;
+            document.getElementById('manifestDescription').textContent = "This manifest displays items as originally requested because specific dispatch records for this shipment are not fully recorded.";
+        }
 
-    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Dispatch Timestamp</p>
-        <div class="text-sm font-bold text-gray-900"><?php echo date('d M Y, h:i A', strtotime($dispatch['dispatch_date'])); ?></div>
-    </div>
+        // Swap visibility
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('mainContent').classList.remove('hidden');
+}
 
-    <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-        <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Manifest Volume</p>
-        <div class="text-sm font-bold text-gray-900"><?php echo count($dispatch['items']); ?> <span class="text-gray-400">Inventory Units</span></div>
-    </div>
-</div>
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    <!-- Logistics Strategy Card -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+function renderStatusPipe(status, delivery) {
+    const actualStatus = status || (delivery ? (delivery.confirmation_date ? 'confirmed' : 'delivered') : 'dispatched');
+    const stages = [
+        { key: 'prepared', label: 'Draft', matched: ['prepared', 'dispatched', 'in_transit', 'delivered', 'confirmed', 'completed'], completed: ['dispatched', 'in_transit', 'delivered', 'confirmed', 'completed'] },
+        { key: 'dispatched', label: 'Pending', matched: ['dispatched', 'in_transit', 'delivered', 'confirmed', 'completed'], completed: ['in_transit', 'delivered', 'confirmed', 'completed'] },
+        { key: 'in_transit', label: actualStatus === 'rejected' ? 'Rejected' : 'Approved', matched: ['in_transit', 'delivered', 'confirmed', 'completed'], completed: ['delivered', 'confirmed', 'completed'], rejected: actualStatus === 'rejected' },
+        { key: 'delivered', label: 'Dispatch', matched: ['delivered', 'confirmed', 'completed'], completed: ['confirmed', 'completed'] },
+        { key: 'confirmed', label: 'Delivery', matched: ['confirmed', 'completed'], completed: ['completed'] }
+    ];
+
+    const container = document.getElementById('statusPipe');
+    container.innerHTML = stages.map(stage => {
+        let classes = 'status-stage';
+        if (stage.matched.includes(actualStatus)) classes += ' active';
+        if (stage.completed.includes(actualStatus)) classes += ' completed';
+        if (stage.rejected) classes += ' rejected';
+        return `<div class="${classes}">${stage.label}</div>`;
+    }).join('');
+}
+
+function renderMetrics(dispatch, delivery) {
+    const actualStatus = dispatch.dispatch_status || (delivery ? (delivery.confirmation_date ? 'confirmed' : 'delivered') : 'dispatched');
+    const statusMap = {
+        'prepared': { color: 'blue', label: 'Requisition Prepared' },
+        'dispatched': { color: 'amber', label: 'Sent to Courier' },
+        'in_transit': { color: 'indigo', label: 'In Transit' },
+        'delivered': { color: 'emerald', label: 'Gate Entry Done' },
+        'confirmed': { color: 'emerald', label: 'Fully Confirmed' },
+        'returned': { color: 'rose', label: 'Returning Inbound' }
+    };
+    const st = statusMap[actualStatus] || { color: 'gray', label: actualStatus };
+
+    const metrics = [
+        { label: 'Operational Status', value: `<div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-${st.color}-500 animate-pulse"></span><span class="text-sm font-bold text-gray-900 uppercase tracking-tight">${st.label}</span></div>` },
+        { label: 'Associated Request', value: `REQ#${dispatch.material_request_id || 'EXT-00'}` },
+        { label: 'Dispatch Timestamp', value: formatDate(dispatch.dispatch_date, true) },
+        { label: 'Manifest Volume', value: `${dispatch.items ? dispatch.items.length : 0} <span class="text-gray-400">Inventory Units</span>` }
+    ];
+
+    document.getElementById('metricsGrid').innerHTML = metrics.map(m => `
+        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">${m.label}</p>
+            <div class="text-sm font-bold text-gray-900">${m.value}</div>
+        </div>
+    `).join('');
+}
+
+function renderLogisticsCard(dispatch) {
+    document.getElementById('logisticsCard').innerHTML = `
         <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-200">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Logistics Strategy</h3>
         </div>
         <div class="p-6 space-y-4">
-            <div class="flex justify-between items-center py-1">
-                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Destination Site</span>
-                <span class="text-sm font-bold text-gray-900"><?php echo htmlspecialchars($dispatch['site_code'] ?: 'N/A'); ?></span>
-            </div>
-            <div class="flex justify-between items-center py-1">
-                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Contractor Partner</span>
-                <span class="text-sm font-bold text-indigo-600">
-                    <?php echo htmlspecialchars($dispatch['vendor_company_name'] ?: ($dispatch['vendor_name'] ?: 'Corporate Logistics')); ?>
-                </span>
-            </div>
-            <div class="flex justify-between items-center py-1">
-                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Expected Arrival</span>
-                <span class="text-sm font-bold text-rose-600">
-                    <?php echo $dispatch['expected_delivery_date'] ? date('d M Y', strtotime($dispatch['expected_delivery_date'])) : '--'; ?>
-                </span>
-            </div>
-            <div class="flex justify-between items-center py-1">
-                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Carrier Body</span>
-                <span class="text-sm font-bold text-gray-900"><?php echo htmlspecialchars($dispatch['courier_name'] ?: 'Internal Transit'); ?></span>
-            </div>
-            <div class="flex justify-between items-center py-1">
-                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Tracking Ledger</span>
-                <span class="text-sm font-bold text-blue-600 font-mono"><?php echo htmlspecialchars($dispatch['tracking_number'] ?: 'NOT_ASSIGNED'); ?></span>
-            </div>
+            ${renderRow('Destination Site', dispatch.site_code || 'N/A')}
+            ${renderRow('Contractor Partner', `<span class="text-indigo-600">${dispatch.vendor_company_name || (dispatch.vendor_name || 'Corporate Logistics')}</span>`)}
+            ${renderRow('Expected Arrival', `<span class="text-rose-600">${formatDate(dispatch.expected_delivery_date) || '--'}</span>`)}
+            ${renderRow('Carrier Body', dispatch.courier_name || 'Internal Transit')}
+            ${renderRow('Tracking Ledger', `<span class="text-blue-600 font-mono">${dispatch.tracking_number || 'NOT_ASSIGNED'}</span>`)}
         </div>
-    </div>
+    `;
+}
 
-    <!-- Contact & Recovery Card -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+function renderContactCard(dispatch) {
+    document.getElementById('contactCard').innerHTML = `
         <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-200">
             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Recovery & Contact</h3>
         </div>
         <div class="p-6 space-y-4">
-            <div class="flex justify-between items-center py-1">
-                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-tight">PoC Identity</span>
-                <span class="text-sm font-bold text-gray-900"><?php echo htmlspecialchars($dispatch['contact_person_name']); ?></span>
-            </div>
-            <div class="flex justify-between items-center py-1">
-                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-tight">Response Line</span>
-                <span class="text-sm font-bold text-gray-900"><?php echo htmlspecialchars($dispatch['contact_person_phone'] ?: '--'); ?></span>
-            </div>
+            ${renderRow('PoC Identity', dispatch.contact_person_name || 'N/A')}
+            ${renderRow('Response Line', dispatch.contact_person_phone || '--')}
             <div class="pt-2">
                 <span class="text-[11px] font-bold text-gray-400 uppercase tracking-tight block mb-2">Primary Delivery Node</span>
                 <div class="bg-gray-50 p-4 rounded-xl text-sm font-semibold text-gray-600 leading-relaxed italic border border-gray-100">
-                    <?php echo nl2br(htmlspecialchars($dispatch['delivery_address'])); ?>
+                    ${(dispatch.delivery_address || '').replace(/\n/g, '<br>')}
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    `;
+}
 
-    <!-- Delivery Confirmation Section -->
-    <?php if ($deliveryConfirmation && is_array($deliveryConfirmation) && ($deliveryConfirmation['delivery_date'] || $deliveryConfirmation['received_by'])): ?>
+function renderDeliveryConfirmation(delivery, originalAddress) {
+    document.getElementById('deliveryConfirmationSection').innerHTML = `
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
         <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                <svg class="w-5 h-5 text-emerald-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                </svg>
+                <svg class="w-5 h-5 text-emerald-600 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
                 Delivery Confirmation
             </h3>
         </div>
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <?php if (isset($deliveryConfirmation['delivery_date']) && $deliveryConfirmation['delivery_date']): ?>
+                ${delivery.delivery_date ? `
                 <div class="bg-emerald-50 p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 text-emerald-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-sm font-medium text-emerald-800">Delivery Date</span>
-                    </div>
+                    <div class="flex items-center"><span class="text-sm font-medium text-emerald-800">Delivery Date</span></div>
                     <p class="mt-2 text-lg font-semibold text-emerald-900">
-                        <?php echo date('d M Y', strtotime($deliveryConfirmation['delivery_date'])); ?>
-                        <?php if (isset($deliveryConfirmation['delivery_time']) && $deliveryConfirmation['delivery_time']): ?>
-                            <span class="text-sm font-normal">at <?php echo date('H:i', strtotime($deliveryConfirmation['delivery_time'])); ?></span>
-                        <?php endif; ?>
+                        ${formatDate(delivery.delivery_date)}
+                        ${delivery.delivery_time ? `<span class="text-sm font-normal">at ${delivery.delivery_time}</span>` : ''}
                     </p>
-                </div>
-                <?php endif; ?>
+                </div>` : ''}
                 
-                <?php if (isset($deliveryConfirmation['received_by']) && $deliveryConfirmation['received_by']): ?>
+                ${delivery.received_by ? `
                 <div class="bg-blue-50 p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-sm font-medium text-blue-800">Received By</span>
-                    </div>
-                    <p class="mt-2 text-lg font-semibold text-blue-900"><?php echo htmlspecialchars($deliveryConfirmation['received_by']); ?></p>
-                    <?php if (isset($deliveryConfirmation['received_by_phone']) && $deliveryConfirmation['received_by_phone']): ?>
-                        <p class="text-sm text-blue-700"><?php echo htmlspecialchars($deliveryConfirmation['received_by_phone']); ?></p>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
+                    <div class="flex items-center"><span class="text-sm font-medium text-blue-800">Received By</span></div>
+                    <p class="mt-2 text-lg font-semibold text-blue-900">${delivery.received_by}</p>
+                    ${delivery.received_by_phone ? `<p class="text-sm text-blue-700">${delivery.received_by_phone}</p>` : ''}
+                </div>` : ''}
                 
-                <?php if (isset($deliveryConfirmation['confirmation_date']) && $deliveryConfirmation['confirmation_date']): ?>
+                ${delivery.confirmation_date ? `
                 <div class="bg-purple-50 p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 text-purple-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span class="text-sm font-medium text-purple-800">Confirmed</span>
-                    </div>
-                    <p class="mt-2 text-lg font-semibold text-purple-900"><?php echo date('d M Y H:i', strtotime($deliveryConfirmation['confirmation_date'])); ?></p>
-                </div>
-                <?php endif; ?>
+                    <div class="flex items-center"><span class="text-sm font-medium text-purple-800">Confirmed</span></div>
+                    <p class="mt-2 text-lg font-semibold text-purple-900">${formatDate(delivery.confirmation_date, true)}</p>
+                </div>` : ''}
             </div>
             
-            <?php if (isset($deliveryConfirmation['actual_delivery_address']) && $deliveryConfirmation['actual_delivery_address'] && $deliveryConfirmation['actual_delivery_address'] != $dispatch['delivery_address']): ?>
+            ${delivery.actual_delivery_address && delivery.actual_delivery_address !== originalAddress ? `
             <div class="mt-6 p-4 bg-yellow-50 rounded-lg">
                 <h4 class="text-sm font-medium text-yellow-800 mb-2">Actual Delivery Address</h4>
-                <p class="text-sm text-yellow-700"><?php echo nl2br(htmlspecialchars($deliveryConfirmation['actual_delivery_address'])); ?></p>
-            </div>
-            <?php endif; ?>
+                <p class="text-sm text-yellow-700">${delivery.actual_delivery_address.replace(/\n/g, '<br>')}</p>
+            </div>` : ''}
             
-            <?php if (isset($deliveryConfirmation['delivery_notes']) && $deliveryConfirmation['delivery_notes']): ?>
+            ${delivery.delivery_notes ? `
             <div class="mt-6 p-4 bg-gray-50 rounded-lg">
                 <h4 class="text-sm font-medium text-gray-800 mb-2">Delivery Notes</h4>
-                <p class="text-sm text-gray-700"><?php echo nl2br(htmlspecialchars($deliveryConfirmation['delivery_notes'])); ?></p>
-            </div>
-            <?php endif; ?>
+                <p class="text-sm text-gray-700">${delivery.delivery_notes.replace(/\n/g, '<br>')}</p>
+            </div>` : ''}
         </div>
-    </div>
-    <?php endif; ?>
-    <!-- Documents Section -->
-    <?php 
-    // Debug: Check delivery confirmation data
-    if ($deliveryConfirmation) {
-        echo "<!-- DEBUG: Delivery confirmation exists -->";
-        if (isset($deliveryConfirmation['lr_copy_path'])) {
-            echo "<!-- DEBUG: LR copy path: " . htmlspecialchars($deliveryConfirmation['lr_copy_path']) . " -->";
-        }
-        if (isset($deliveryConfirmation['additional_documents'])) {
-            echo "<!-- DEBUG: Additional documents: " . (is_array($deliveryConfirmation['additional_documents']) ? count($deliveryConfirmation['additional_documents']) : 'not array') . " -->";
-        }
-    } else {
-        echo "<!-- DEBUG: No delivery confirmation data -->";
+    </div>`;
+}
+
+function renderDocuments(delivery) {
+    const docs = [];
+    if (delivery.lr_copy_path) {
+        docs.push({ name: 'LR Copy', type: 'Delivery Receipt', path: delivery.lr_copy_path, color: 'red' });
     }
-    ?>
-    <?php if ($hasDocuments || ($deliveryConfirmation && is_array($deliveryConfirmation) && (isset($deliveryConfirmation['lr_copy_path']) || !empty($deliveryConfirmation['additional_documents'])))): ?>
+    if (delivery.additional_documents && Array.isArray(delivery.additional_documents)) {
+        delivery.additional_documents.forEach((doc, idx) => {
+            if (typeof doc === 'string') docs.push({ name: `Document ${idx + 1}`, type: 'Additional Document', path: doc, color: 'blue' });
+            else docs.push({ name: doc.name || `Document ${idx+1}`, type: doc.type || 'Additional Document', path: doc.path, color: 'blue' });
+        });
+    }
+
+    document.getElementById('documentsSection').innerHTML = `
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
         <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                <svg class="w-5 h-5 text-indigo-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
-                </svg>
+                <svg class="w-5 h-5 text-indigo-600 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
                 Documents & Attachments
             </h3>
         </div>
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <?php if ($deliveryConfirmation && isset($deliveryConfirmation['lr_copy_path']) && !empty($deliveryConfirmation['lr_copy_path'])): ?>
+                ${docs.map(doc => `
                 <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                     <div class="flex items-center">
-                        <svg class="w-8 h-8 text-red-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
-                        </svg>
-                        <div>
-                            <p class="text-sm font-medium text-gray-900">LR Copy</p>
-                            <p class="text-xs text-gray-500">Delivery Receipt</p>
-                        </div>
+                        <svg class="w-8 h-8 text-${doc.color}-600 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path></svg>
+                        <div><p class="text-sm font-medium text-gray-900">${doc.name}</p><p class="text-xs text-gray-500">${doc.type}</p></div>
                     </div>
                     <div class="mt-3">
-                        <a href="<?php echo '../../../'.htmlspecialchars($deliveryConfirmation['lr_copy_path']); ?>" 
-                           target="_blank" 
-                           class="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                            View Document →
-                        </a>
+                        <a href="../../../${doc.path}" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View Document →</a>
                     </div>
-                </div>
-                <?php endif; ?>
-                
-                <?php if ($deliveryConfirmation && !empty($deliveryConfirmation['additional_documents'])): ?>
-                    <?php foreach ($deliveryConfirmation['additional_documents'] as $index => $doc): ?>
-                    <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                        <div class="flex items-center">
-                            <svg class="w-8 h-8 text-blue-600 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
-                            </svg>
-                            <div>
-                                <?php 
-                                // Handle string paths (current format)
-                                if (is_string($doc)) {
-                                    $docPath = $doc;
-                                    $docName = "Document " . ($index + 1);
-                                    $docType = "Additional Document";
-                                } else {
-                                    // Handle object format (future compatibility)
-                                    $docPath = $doc['path'] ?? '';
-                                    $docName = $doc['name'] ?? "Document " . ($index + 1);
-                                    $docType = $doc['type'] ?? 'Additional Document';
-                                }
-                                ?>
-                                <p class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($docName); ?></p>
-                                <p class="text-xs text-gray-500"><?php echo htmlspecialchars($docType); ?></p>
-                            </div>
-                        </div>
+                </div>`).join('')}
+                ${docs.length === 0 ? '<div class="col-span-full text-center py-8 text-gray-500">No documents uploaded</div>' : ''}
+            </div>
+        </div>
+    </div>`;
+}
 
-                        <div class="mt-3">
-                            <?php if (!empty($docPath)): ?>
-                                <a href="<?php echo '../../../'.htmlspecialchars($docPath); ?>" 
-                                   target="_blank" 
-                                   class="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                    View Document →
-                                </a>
-                            <?php else: ?>
-                                <span class="text-sm text-gray-400">Document path not available</span>
-                            <?php endif; ?>
+function renderManifest(items) {
+    let totalValue = 0;
+    const rows = (items || []).map((item, idx) => {
+        totalValue += parseFloat(item.total_cost || 0);
+        return `
+            <tr class="hover:bg-gray-50/50 transition-colors">
+                <td class="px-6 py-4 text-xs font-bold text-gray-400">${idx + 1}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 mr-3">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                         </div>
+                        <div><div class="text-xs font-bold text-gray-900">${item.item_name}</div><div class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">${item.item_code}</div></div>
                     </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-                <?php if (!$hasDocuments && (!$deliveryConfirmation || (empty($deliveryConfirmation['lr_copy_path']) && empty($deliveryConfirmation['additional_documents'])))): ?>
-                <div class="col-span-full text-center py-8 text-gray-500">
-                    <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
-                    </svg>
-                    <p>No documents uploaded for this dispatch</p>
-                </div>
-                <?php endif; ?>
-            </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-xs font-bold text-gray-900">${formatNumber(item.quantity_dispatched)} <span class="text-gray-400 font-medium">${item.unit}</span></div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-xs font-bold text-gray-900">₹${formatCurrency(item.unit_cost)}</div>
+                    <div class="text-[10px] font-bold text-emerald-600 mt-0.5">TTL: ₹${formatCurrency(item.total_cost)}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${item.serial_numbers ? `<div class="text-[10px] font-bold text-blue-600 font-mono uppercase truncate max-w-[120px]" title="${item.serial_numbers}">SN: ${item.serial_numbers}</div>` : ''}
+                    ${item.batch_number ? `<div class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">BTCH: ${item.batch_number}</div>` : ''}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap"><span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">SENT: ${(item.item_condition || 'N/A').toUpperCase()}</span></td>
+                <td class="px-6 py-4 text-[10px] text-gray-500 font-medium">${item.remarks || '--'}</td>
+            </tr>`;
+    }).join('');
+
+    document.getElementById('manifestSection').innerHTML = `
+        <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-200">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest" id="manifestTitlePlaceholder">Material Manifest</h3>
+            <p id="manifestDescription" class="text-[10px] text-gray-400 mt-1"></p>
         </div>
-    </div>
-    <?php endif; ?>
-<!-- Material Manifest Table -->
-<div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-8">
-    <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-200">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Material Manifest</h3>
-    </div>
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-100">
-            <thead class="bg-gray-50/50">
-                <tr>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left w-12">#</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Item Intelligence</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Sent / Recv</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Valuation</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Logistics Meta</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Condition</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Remarks</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-                        <?php if (!empty($dispatch['items'])): ?>
-                        <?php 
-                        $totalValue = 0;
-                        $sno = 1;
-                        foreach ($dispatch['items'] as $item): 
-                            $totalValue += $item['total_cost'];
-                            
-                            $itemConfirmation = null;
-                            if ($deliveryConfirmation && !empty($deliveryConfirmation['item_confirmations'])) {
-                                foreach ($deliveryConfirmation['item_confirmations'] as $confirmation) {
-                                    if ($confirmation['boq_item_id'] == $item['boq_item_id']) { $itemConfirmation = $confirmation; break; }
-                                }
-                            }
-                            $receivedQty = $itemConfirmation ? $itemConfirmation['received_quantity'] : null;
-                            $receivedCondition = $itemConfirmation ? ($itemConfirmation['condition'] ?? null) : null;
-                            $receivedRemarks = $itemConfirmation ? ($itemConfirmation['notes'] ?? null) : null;
-                        ?>
-                        <tr class="hover:bg-gray-50/50 transition-colors">
-                            <td class="px-6 py-4 text-xs font-bold text-gray-400"><?php echo $sno++; ?></td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 mr-3">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                                    </div>
-                                    <div>
-                                        <div class="text-xs font-bold text-gray-900"><?php echo htmlspecialchars($item['item_name']); ?></div>
-                                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-tight"><?php echo htmlspecialchars($item['item_code']); ?></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-xs font-bold text-gray-900"><?php echo number_format($item['quantity_dispatched'], 0); ?> <span class="text-gray-400 font-medium"><?php echo htmlspecialchars($item['unit']); ?></span></div>
-                                <?php if ($receivedQty !== null): ?>
-                                    <div class="flex items-center gap-1 mt-1">
-                                        <span class="text-[10px] font-bold <?php echo $receivedQty == $item['quantity_dispatched'] ? 'text-emerald-600' : 'text-rose-600'; ?> uppercase tracking-tighter">RECV: <?php echo number_format($receivedQty, 0); ?></span>
-                                    </div>
-                                <?php endif; ?>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-xs font-bold text-gray-900">₹<?php echo number_format($item['unit_cost'] ?? 0, 2); ?></div>
-                                <div class="text-[10px] font-bold text-emerald-600 mt-0.5">TTL: ₹<?php echo number_format($item['total_cost'] ?? 0, 2); ?></div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <?php if (!empty($item['serial_numbers'])): ?>
-                                    <div class="text-[10px] font-bold text-blue-600 font-mono uppercase truncate max-w-[120px]" title="<?php echo htmlspecialchars($item['serial_numbers']); ?>">SN: <?php echo htmlspecialchars($item['serial_numbers']); ?></div>
-                                <?php endif; ?>
-                                <?php if (!empty($item['batch_number'])): ?>
-                                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">BTCH: <?php echo htmlspecialchars($item['batch_number']); ?></div>
-                                <?php endif; ?>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100 mb-1">SENT: <?php echo strtoupper($item['item_condition'] ?: 'NEW'); ?></span>
-                                <?php if ($receivedCondition): ?>
-                                    <br><span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-100">RECV: <?php echo strtoupper($receivedCondition); ?></span>
-                                <?php endif; ?>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-[10px] font-medium text-gray-500 leading-relaxed line-clamp-2 max-w-[200px]">
-                                    <?php echo htmlspecialchars($item['remarks'] ?: ($receivedRemarks ?: '--')); ?>
-                                </div>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="9" class="px-6 py-12 text-center">
-                                    <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    <p class="text-gray-500">No items found in this dispatch</p>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                    <tfoot class="bg-gray-50/50">
-                        <tr>
-                            <td colspan="3" class="px-6 py-4 text-right text-[11px] font-bold text-gray-400 uppercase tracking-widest">Total Valuation</td>
-                            <td class="px-6 py-4 text-sm font-bold text-emerald-600">₹<?php echo number_format($totalValue, 2); ?></td>
-                            <td colspan="3" class="px-6 py-4"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-<style>
-@media print {
-    .btn, .card-header {
-        display: none !important;
-    }
-    
-    .bg-white {
-        border: 1px solid #000 !important;
-        box-shadow: none !important;
-    }
-    
-    body {
-        background: white !important;
-    }
-}
-</style>
-
-<!-- Serial Numbers Modal -->
-<div id="serialModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900" id="serialModalTitle">Serial Numbers</h3>
-                <button type="button" onclick="closeSerialModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="bg-gray-50 border border-gray-200 rounded-md p-4 max-h-96 overflow-y-auto">
-                <table class="w-full text-sm" id="serialTable">
-                    <thead class="bg-gray-100 sticky top-0">
-                        <tr>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Serial Number</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200" id="serialModalContent">
-                        <!-- Serial numbers will be displayed here -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="flex justify-end mt-4">
-                <button type="button" onclick="copySerialNumbers()" 
-                        class="mr-3 inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
-                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
-                    </svg>
-                    Copy
-                </button>
-                <button type="button" onclick="closeSerialModal()" 
-                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-let currentSerialNumbers = '';
-
-function showSerialModal(serialNumbers, itemName) {
-    currentSerialNumbers = serialNumbers;
-    document.getElementById('serialModalTitle').textContent = 'Serial Numbers - ' + itemName + ' (' + serialArray.length + ' items)';
-    
-    // Parse serial numbers (assuming they are comma, semicolon, or newline separated)
-    const serialArray = serialNumbers.split(/[,;\n\r]+/)
-        .map(s => s.trim())
-        .filter(s => s.length > 0);
-    
-    // Generate table rows
-    let tableHTML = '';
-    serialArray.forEach((serial, index) => {
-        tableHTML += `
-            <tr class="${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
-                <td class="px-3 py-2 text-gray-900 font-medium">${index + 1}</td>
-                <td class="px-3 py-2 text-gray-900 font-mono">${serial}</td>
-            </tr>
-        `;
-    });
-    
-    document.getElementById('serialModalContent').innerHTML = tableHTML;
-    document.getElementById('serialModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100">
+                <thead class="bg-gray-50/50">
+                    <tr>
+                        <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left w-12">#</th>
+                        <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Item Intelligence</th>
+                        <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Sent / Recv</th>
+                        <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Valuation</th>
+                        <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Logistics Meta</th>
+                        <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Condition</th>
+                        <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    ${rows || '<tr><td colspan="7" class="px-6 py-12 text-center text-gray-500">No items found</td></tr>'}
+                </tbody>
+                <tfoot class="bg-gray-50/50">
+                    <tr><td colspan="3" class="px-6 py-4 text-right text-[11px] font-bold text-gray-400 uppercase tracking-widest">Total Valuation</td><td class="px-6 py-4 text-sm font-bold text-emerald-600">₹${formatCurrency(totalValue)}</td><td colspan="3"></td></tr>
+                </tfoot>
+            </table>
+        </div>`;
 }
 
-function closeSerialModal() {
-    document.getElementById('serialModal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
+// Helpers
+function formatDate(dateStr, includeTime = false) {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+    if (includeTime) {
+        options.hour = '2-digit';
+        options.minute = '2-digit';
+        options.hour12 = true;
+    }
+    return date.toLocaleDateString('en-GB', options);
 }
 
-function copySerialNumbers() {
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(currentSerialNumbers).then(function() {
-            // Show success feedback
-            const button = event.target.closest('button');
-            const originalText = button.innerHTML;
-            button.innerHTML = '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Copied!';
-            setTimeout(() => {
-                button.innerHTML = originalText;
-            }, 2000);
-        }).catch(function(err) {
-            console.error('Could not copy text: ', err);
-            fallbackCopyTextToClipboard(currentSerialNumbers);
-        });
-    } else {
-        fallbackCopyTextToClipboard(currentSerialNumbers);
-    }
+function renderRow(label, value) {
+    return `<div class="flex justify-between items-center py-1">
+        <span class="text-[11px] font-bold text-gray-400 uppercase tracking-tight">${label}</span>
+        <span class="text-sm font-bold text-gray-900">${value}</span>
+    </div>`;
 }
 
-function fallbackCopyTextToClipboard(text) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.position = "fixed";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    
-    try {
-        const successful = document.execCommand('copy');
-        if (successful) {
-            const button = event.target.closest('button');
-            const originalText = button.innerHTML;
-            button.innerHTML = '<svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>Copied!';
-            setTimeout(() => {
-                button.innerHTML = originalText;
-            }, 2000);
-        }
-    } catch (err) {
-        console.error('Fallback: Oops, unable to copy', err);
-    }
-    
-    document.body.removeChild(textArea);
+function formatCurrency(val) {
+    return parseFloat(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// Close modal when clicking outside
-document.getElementById('serialModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeSerialModal();
-    }
-});
+function formatNumber(val) {
+    return parseFloat(val || 0).toLocaleString('en-IN');
+}
 </script>
 
 <?php

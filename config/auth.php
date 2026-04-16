@@ -25,6 +25,7 @@ class Auth {
         $_SESSION['username'] = $user['username'];
         $_SESSION['role'] = $user['role'];
         $_SESSION['role_id'] = $user['role_id'] ?? null;
+        $_SESSION['role_category'] = $user['role_category'] ?? 'internal';
         $_SESSION['vendor_id'] = $user['vendor_id'] ?? null;
         $_SESSION['login_time'] = time();
         
@@ -66,10 +67,13 @@ class Auth {
     
     public static function requireAuth() {
         if (!self::isLoggedIn()) {
-            // If it's an AJAX request, return JSON
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
-                strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            // Check for AJAX/JSON request
+            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || 
+                      (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false);
+
+            if ($isAjax) {
                 header('Content-Type: application/json');
+                http_response_code(401);
                 echo json_encode(['success' => false, 'message' => 'Session expired', 'redirect' => true]);
                 exit();
             }
@@ -78,6 +82,31 @@ class Auth {
             $loginPath = self::getLoginPath();
             header('Location: ' . $loginPath);
             exit();
+        }
+
+        // Session Self-Healing: If session exists but core metadata is missing (pre-migration session)
+        if (isset($_SESSION['user_id'])) {
+            $needsRefresh = false;
+            
+            // 1. Refresh role_category if missing
+            if (!isset($_SESSION['role_category'])) {
+                try {
+                    require_once __DIR__ . '/../models/User.php';
+                    $userModel = new User();
+                    $user = $userModel->findByEmailOrPhone($_SESSION['username'] ?? '');
+                    if ($user && isset($user['role_category'])) {
+                        $_SESSION['role_category'] = $user['role_category'];
+                        $needsRefresh = true;
+                    } else {
+                        $_SESSION['role_category'] = ($_SESSION['role'] === 'contractor') ? 'external' : 'internal';
+                    }
+                } catch (Exception $e) {}
+            }
+            
+            // 2. Refresh permissions cache if missing
+            if ($needsRefresh || !isset($_SESSION['permissions'])) {
+                self::cacheUserPermissions($_SESSION['user_id']);
+            }
         }
     }
     
@@ -89,11 +118,23 @@ class Auth {
             return;
         }
         
-        if ($_SESSION['role'] !== $role) {
-            // If it's an AJAX request, return JSON
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
-                strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+        $roleMatch = false;
+        if ($role === ADMIN_ROLE) {
+            // If admin role is required, allow any internal role
+            $roleMatch = self::isInternal();
+        } else {
+            // Otherwise, match the exact role name
+            $roleMatch = ($_SESSION['role'] === $role);
+        }
+        
+        if (!$roleMatch) {
+            // Robust AJAX detection for modern fetch()
+            $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') || 
+                      (strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false);
+
+            if ($isAjax) {
                 header('Content-Type: application/json');
+                http_response_code(403);
                 echo json_encode(['success' => false, 'message' => 'Access denied', 'redirect' => false]);
                 exit();
             }
@@ -132,15 +173,31 @@ class Auth {
     }
     
     public static function isVendor() {
-        return isset($_SESSION['role']) && ($_SESSION['role'] === VENDOR_ROLE || $_SESSION['role'] === 'contractor');
+        return self::isExternal();
     }
     
     public static function isAdmin() {
-        return isset($_SESSION['role']) && $_SESSION['role'] === ADMIN_ROLE;
+        return self::isInternal();
+    }
+    
+    public static function isInternal() {
+        if (isset($_SESSION['role_category'])) {
+            return $_SESSION['role_category'] === 'internal';
+        }
+        // Legacy fallback: anyone who isn't a contractor is internal
+        return isset($_SESSION['role']) && !in_array($_SESSION['role'], ['contractor', 'vendor']);
+    }
+    
+    public static function isExternal() {
+        if (isset($_SESSION['role_category'])) {
+            return $_SESSION['role_category'] === 'external';
+        }
+        // Legacy fallback
+        return isset($_SESSION['role']) && in_array($_SESSION['role'], ['contractor', 'vendor']);
     }
     
     public static function isAdminOrSuperadmin() {
-        return self::isAdmin() || self::isSuperAdmin();
+        return self::isInternal() || self::isSuperAdmin();
     }
     
     public static function requireVendor() {
@@ -297,15 +354,24 @@ class Auth {
         }
         
         // Check cached permissions
-        if (isset($_SESSION['permissions'])) {
+        if (isset($_SESSION['permissions']) && !empty($_SESSION['permissions'])) {
             foreach ($_SESSION['permissions'] as $perm) {
                 if ($perm['module_name'] === $moduleName) {
                     return true;
                 }
             }
+            // If cache exists but doesn't have the module, we can trust it (deny by default)
+            return false;
         }
         
-        return false;
+        // If cache is missing, check database directly
+        try {
+            require_once __DIR__ . '/../models/User.php';
+            $userModel = new User();
+            return $userModel->hasModuleAccess(self::getUserId(), $moduleName);
+        } catch (Exception $e) {
+            return false;
+        }
     }
     
     /**

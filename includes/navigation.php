@@ -1,7 +1,7 @@
 <?php
 $currentUser = Auth::getCurrentUser();
-$isAdmin = $currentUser && $currentUser['role'] === ADMIN_ROLE;
-$isVendor = $currentUser && $currentUser['role'] === VENDOR_ROLE;
+$isAdmin = Auth::isInternal();
+$isVendor = Auth::isExternal();
 ?>
 
 <nav class="bg-blue-600 shadow-lg">

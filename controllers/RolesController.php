@@ -38,6 +38,7 @@ class RolesController extends BaseController {
                 'name' => trim($_POST['name'] ?? ''),
                 'display_name' => trim($_POST['display_name'] ?? ''),
                 'description' => trim($_POST['description'] ?? ''),
+                'role_category' => $_POST['role_category'] ?? 'internal',
                 'status' => $_POST['status'] ?? 'active'
             ];
             
@@ -53,7 +54,7 @@ class RolesController extends BaseController {
             }
             
             // Create role
-            $roleId = $this->roleModel->createRole($data['name'], $data['display_name'], $data['description']);
+            $roleId = $this->roleModel->createRole($data['name'], $data['display_name'], $data['description'], $data['role_category']);
             
             if ($roleId) {
                 ErrorHandler::logUserAction('CREATE_ROLE', 'roles', $roleId, null, $data);
@@ -81,6 +82,7 @@ class RolesController extends BaseController {
             $data = [
                 'display_name' => trim($_POST['display_name'] ?? ''),
                 'description' => trim($_POST['description'] ?? ''),
+                'role_category' => $_POST['role_category'] ?? 'internal',
                 'status' => $_POST['status'] ?? 'active'
             ];
             
@@ -89,7 +91,7 @@ class RolesController extends BaseController {
                 return $this->jsonResponse(['success' => false, 'message' => 'Validation failed', 'errors' => $errors], 400);
             }
             
-            $success = $this->roleModel->updateRole($id, $data['display_name'], $data['description'], $data['status']);
+            $success = $this->roleModel->updateRole($id, $data['display_name'], $data['description'], $data['status'], $data['role_category']);
             
             if ($success) {
                 ErrorHandler::logUserAction('UPDATE_ROLE', 'roles', $id, $role, $data);

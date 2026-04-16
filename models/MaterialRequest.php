@@ -40,14 +40,32 @@ class MaterialRequest {
     
     public function findWithDetails($id) {
         $sql = "SELECT mr.*, 
-                       s.site_id as site_code, s.location,
-                       v.name as vendor_name,
-                       v.company_name as vendor_company_name,
-                       ss.survey_status
+                       s.site_id as site_code, s.location, s.location as site_location,
+                       COALESCE(NULLIF(s.customer, ''), s.branch, 'Internal Project') as site_name,
+                       COALESCE(NULLIF(s.contact_person_name, ''), 'N/A') as site_contact,
+                       COALESCE(NULLIF(s.contact_person_number, ''), 'N/A') as site_phone,
+                       COALESCE(v.company_name, 'In-house Admin') as vendor_company_name,
+                       COALESCE(v.name, 'Administrator') as vendor_name,
+                       COALESCE(v.name, 'Administrator') as vendor_contact,
+                       COALESCE(v.phone, 'Internal') as vendor_phone,
+                       COALESCE(NULLIF(dv.company_name, ''), NULLIF(s.delegated_vendor, ''), 'Direct Operations') as delegated_vendor_name,
+                       COALESCE(dsr.survey_status, ss.survey_status, s.survey_status, 'No Survey') as unified_survey_status,
+                       COALESCE(dsr.submitted_date, ss.submitted_date, s.survey_submission_date) as unified_survey_date
                 FROM {$this->table} mr
                 LEFT JOIN sites s ON mr.site_id = s.id
                 LEFT JOIN vendors v ON mr.vendor_id = v.id
-                LEFT JOIN site_surveys ss ON mr.survey_id = ss.id
+                LEFT JOIN site_delegations sd ON s.id = sd.site_id AND sd.status = 'active'
+                LEFT JOIN vendors dv ON sd.vendor_id = dv.id
+                LEFT JOIN site_surveys ss ON s.id = ss.site_id
+                LEFT JOIN (
+                    SELECT dr1.site_id, dr1.survey_status, dr1.submitted_date
+                    FROM dynamic_survey_responses dr1
+                    INNER JOIN (
+                        SELECT site_id, MAX(id) as max_id
+                        FROM dynamic_survey_responses
+                        GROUP BY site_id
+                    ) dr2 ON dr1.id = dr2.max_id
+                ) dsr ON s.id = dsr.site_id
                 WHERE mr.id = ?";
         
         $stmt = $this->db->prepare($sql);
