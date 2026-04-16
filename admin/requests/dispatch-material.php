@@ -45,6 +45,27 @@ ob_start();
         .main-content { padding: 0 !important; margin: 0 !important; }
     }
 
+    .vendor-info-bar {
+        background-color: #f1f5f9;
+        border: 1px solid var(--challan-blue);
+        border-bottom: none;
+        padding: 8px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+    }
+
+    .vendor-tag {
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
     .challan-header {
         background-color: var(--challan-blue);
         color: white;
@@ -283,6 +304,18 @@ ob_start();
     <form id="dispatchDataForm">
         <input type="hidden" name="material_request_id" value="<?php echo $requestId; ?>">
         
+        <!-- Vendor Info Bar -->
+        <div id="vendorInfoBar" class="vendor-info-bar hidden">
+            <div class="flex items-center gap-2">
+                <span class="vendor-tag">Vendor / Requester:</span>
+                <span id="labelVendorName" class="font-bold text-slate-800"></span>
+            </div>
+            <div class="flex gap-4">
+                <div><span class="text-slate-500 font-medium">Contact:</span> <span id="labelVendorContact" class="font-bold"></span></div>
+                <div><span class="text-slate-500 font-medium">Phone:</span> <span id="labelVendorPhone" class="font-bold"></span></div>
+            </div>
+        </div>
+
         <!-- header -->
         <div class="challan-header">
             <h1>Delivery Challan / Bill of Supply</h1>
@@ -448,6 +481,7 @@ async function initInteractiveDispatch() {
 
         const { request, items, couriers } = result.data;
         
+        populateVendorBar(request);
         populateConsignee(request);
         populateItems(items);
         populateCouriers(couriers);
@@ -455,6 +489,20 @@ async function initInteractiveDispatch() {
     } catch (error) {
         console.error(error);
         showNotification('System Error', 'Failed to fetch request data.', 'error');
+    }
+}
+
+function populateVendorBar(request) {
+    const bar = document.getElementById('vendorInfoBar');
+    const name = document.getElementById('labelVendorName');
+    const contact = document.getElementById('labelVendorContact');
+    const phone = document.getElementById('labelVendorPhone');
+
+    if (request.vendor_company_name) {
+        name.textContent = request.vendor_company_name;
+        contact.textContent = request.vendor_contact || 'N/A';
+        phone.textContent = request.vendor_phone || 'N/A';
+        bar.classList.remove('hidden');
     }
 }
 

@@ -30,6 +30,10 @@ try {
     $result = $siteModel->getAllWithPagination(1, 1000000, $search, $filters);
     $sites = $result['sites'];
 
+    // Pre-fetch all BOQ item names to avoid queries in loop
+    $boqStmt = $db->query("SELECT id, item_name FROM boq_items");
+    $boqNames = $boqStmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
     $spreadsheet = new Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
     $sheet->setTitle('Sites Export');
@@ -48,17 +52,17 @@ try {
     $sheet->mergeCells('G1:J1'); // Changed to 4 columns
     
     $sheet->setCellValue('K1', '4. Material Part');
-    $sheet->mergeCells('K1:N1'); // Changed to 4 columns
+    $sheet->mergeCells('K1:O1'); // Increased to 5 columns
     
-    $sheet->setCellValue('O1', '5. Installation');
-    $sheet->mergeCells('O1:R1'); // Changed to 4 columns
+    $sheet->setCellValue('P1', '5. Installation');
+    $sheet->mergeCells('P1:S1'); // Shifted and sized to 4 columns
 
     // Header Row 2: Sub-columns
     $headers = [
         '#', 'Site ID / Ticket', 'Store / PO', 'Client / Location',
         'Survey Vendor', 'Inst Vendor',
         'Surveyor', 'Date/Time', 'Status', 'View Link',
-        'Req #', 'Status', 'Dispatch', 'Delivery',
+        'Req #', 'Material Details', 'Status', 'Dispatch', 'Delivery',
         'Installer', 'CompletedAt', 'Status', 'View Link'
     ];
     $sheet->fromArray($headers, NULL, 'A2');
@@ -74,14 +78,14 @@ try {
         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E9ECEF']]
     ];
-    $sheet->getStyle('A1:R2')->applyFromArray($headerStyle);
+    $sheet->getStyle('A1:S2')->applyFromArray($headerStyle);
 
     // Section Colors (Grouping)
     $sheet->getStyle('A1:D1')->getFill()->getStartColor()->setRGB('F8FAFC'); // Masters
     $sheet->getStyle('E1:F1')->getFill()->getStartColor()->setRGB('F0FDF4'); // Delegation
     $sheet->getStyle('G1:J1')->getFill()->getStartColor()->setRGB('EFF6FF'); // Survey
-    $sheet->getStyle('K1:N1')->getFill()->getStartColor()->setRGB('FFFBEB'); // Material
-    $sheet->getStyle('O1:R1')->getFill()->getStartColor()->setRGB('F5F3FF'); // Installation
+    $sheet->getStyle('K1:O1')->getFill()->getStartColor()->setRGB('FFFBEB'); // Material
+    $sheet->getStyle('P1:S1')->getFill()->getStartColor()->setRGB('F5F3FF'); // Installation
 
     // Data Row starting point
     $rowNum = 3;
@@ -101,7 +105,7 @@ try {
         
         // 2. Material Request & Dispatch Info
         $matStmt = $db->prepare("
-            SELECT mr.status as request_status, mr.id as request_id, 
+            SELECT mr.status as request_status, mr.id as request_id, mr.items,
                    md.id as dispatch_id, md.acknowledgment_status as delivery_status
             FROM material_requests mr
             LEFT JOIN material_dispatches md ON mr.id = md.material_request_id
@@ -112,6 +116,22 @@ try {
         $matData = $matStmt->fetch(PDO::FETCH_ASSOC);
         
         $matReqNo = $matData ? 'REQ-' . str_pad($matData['request_id'], 6, '0', STR_PAD_LEFT) : '-';
+        $matDetails = '-';
+        if ($matData && !empty($matData['items'])) {
+            $items = json_decode($matData['items'], true);
+            if (is_array($items)) {
+                $detailsArr = [];
+                foreach ($items as $item) {
+                    $name = $item['material_name'] ?? $item['item_name'] ?? null;
+                    if (!$name && !empty($item['boq_item_id'])) {
+                        $name = $boqNames[$item['boq_item_id']] ?? 'Unknown';
+                    }
+                    $detailsArr[] = ($name ?: 'Item') . " (Qty: " . ($item['quantity'] ?? 0) . ")";
+                }
+                $matDetails = implode("\n", $detailsArr);
+            }
+        }
+        
         $matStatus = $matData ? $matData['request_status'] : 'Pending';
         $dispatchStatus = $matData && $matData['dispatch_id'] ? 'Dispatched' : 'Pending';
         $deliveryStatus = $matData && $matData['dispatch_id'] ? (ucfirst($matData['delivery_status'] ?? 'In-Transit')) : '-';
@@ -145,25 +165,27 @@ try {
         
         // Material
         $sheet->setCellValue('K'. $rowNum, $matReqNo);
-        $sheet->setCellValue('L'. $rowNum, $matStatus);
-        $sheet->setCellValue('M'. $rowNum, $dispatchStatus);
-        $sheet->setCellValue('N'. $rowNum, $deliveryStatus);
+        $sheet->setCellValue('L'. $rowNum, $matDetails);
+        $sheet->setCellValue('M'. $rowNum, $matStatus);
+        $sheet->setCellValue('N'. $rowNum, $dispatchStatus);
+        $sheet->setCellValue('O'. $rowNum, $deliveryStatus);
         
         // Installation
-        $sheet->setCellValue('O'. $rowNum, $installer);
-        $sheet->setCellValue('P'. $rowNum, $instDate);
-        $sheet->setCellValue('Q'. $rowNum, $instStatusLabel);
-        $sheet->setCellValue('R'. $rowNum, $site['installation_id'] ? 'Data Completed' : 'Pending');
+        $sheet->setCellValue('P'. $rowNum, $installer);
+        $sheet->setCellValue('Q'. $rowNum, $instDate);
+        $sheet->setCellValue('R'. $rowNum, $instStatusLabel);
+        $sheet->setCellValue('S'. $rowNum, $site['installation_id'] ? 'Data Completed' : 'Pending');
 
         // Enable multiline
         $sheet->getStyle('B'.$rowNum.':D'.$rowNum)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('L'.$rowNum)->getAlignment()->setWrapText(true);
         
         $rowNum++;
     }
 
-    // Auto-size columns (up to R)
-    foreach(range('A','R') as $columnID) {
-        if (!in_array($columnID, ['B','C','D'])) {
+    // Auto-size columns (up to S)
+    foreach(range('A','S') as $columnID) {
+        if (!in_array($columnID, ['B','C','D', 'L'])) {
             $sheet->getColumnDimension($columnID)->setAutoSize(true);
         } else {
             $sheet->getColumnDimension($columnID)->setWidth(25);
@@ -171,7 +193,7 @@ try {
     }
 
     // Full table borders
-    $sheet->getStyle('A1:R' . ($rowNum-1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+    $sheet->getStyle('A1:S' . ($rowNum-1))->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
     // Set headers and download
     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

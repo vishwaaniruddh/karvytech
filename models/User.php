@@ -252,10 +252,10 @@ class User extends BaseModel {
             $errors['status'] = 'Invalid status selected';
         }
         
-        // Vendor validation for vendor role
-        if ($data['role'] === 'vendor') {
+        // Vendor validation for vendor or contractor role
+        if ($data['role'] === 'vendor' || $data['role'] === 'contractor') {
             if (empty($data['vendor_id'])) {
-                $errors['vendor_id'] = 'Please select a vendor when role is vendor';
+                $errors['vendor_id'] = 'Please select a vendor for this role';
             } else {
                 // Check if vendor exists and is active
                 $stmt = $this->db->prepare("SELECT id FROM vendors WHERE id = ? AND status = 'active'");

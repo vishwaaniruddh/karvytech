@@ -231,6 +231,50 @@
     </div>
 </div>
 
+<!-- View BOQ Items Modal -->
+<div id="viewBOQModal" class="modal">
+    <div class="modal-content max-w-2xl rounded-2xl shadow-2xl">
+        <div class="modal-header-fixed bg-blue-600 text-white rounded-t-2xl">
+            <div class="flex flex-col">
+                <h3 class="modal-title !text-white">Bill of Quantities (BOQ)</h3>
+                <p id="boqRequestLabel" class="text-[10px] opacity-80 font-bold uppercase tracking-widest mt-0.5">---</p>
+            </div>
+            <button type="button" class="modal-close !text-white hover:text-blue-100" onclick="closeModal('viewBOQModal')">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body p-0">
+            <div id="boqLoading" class="p-12 text-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p class="mt-2 text-sm text-gray-500">Loading requested materials...</p>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b border-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">#</th>
+                            <th class="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Material Name</th>
+                            <th class="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Quantity</th>
+                            <th class="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="boqItemsBody" class="divide-y divide-gray-50">
+                        <!-- Items injected here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="boqEmpty" class="p-12 text-center hidden">
+                <p class="text-sm text-gray-500">No items found in this request.</p>
+            </div>
+        </div>
+        <div class="modal-footer-fixed border-t border-gray-50">
+            <button type="button" onclick="closeModal('viewBOQModal')" class="btn btn-secondary px-8 font-bold text-xs uppercase letter-wide">Close</button>
+        </div>
+    </div>
+</div>
+
 <script>
 async function loadCountriesForSite(targetSelectId = 'country_id') {
     try {

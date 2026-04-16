@@ -786,7 +786,7 @@ ob_start();
             document.getElementById('edit_role').value = u.role;
             document.getElementById('edit_status').value = u.status;
             toggleEditVendorField(u.role);
-            if (u.role === 'vendor') {
+            if (u.role === 'vendor' || u.role === 'contractor') {
                 setTimeout(() => document.getElementById('edit_vendor_id').value = u.vendor_id || '', 300);
             }
             openModal('editUserModal');
@@ -862,13 +862,13 @@ ob_start();
 
     function toggleVendorField(role) {
         const f = document.getElementById('vendor_field');
-        if (role === 'vendor') { f.className = 'block'; loadVendors('vendor_id'); }
+        if (role === 'vendor' || role === 'contractor') { f.className = 'block'; loadVendors('vendor_id'); }
         else f.className = 'hidden';
     }
 
     function toggleEditVendorField(role) {
         const f = document.getElementById('edit_vendor_field');
-        if (role === 'vendor') { f.className = 'block'; loadVendors('edit_vendor_id'); }
+        if (role === 'vendor' || role === 'contractor') { f.className = 'block'; loadVendors('edit_vendor_id'); }
         else f.className = 'hidden';
     }
 

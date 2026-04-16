@@ -200,54 +200,83 @@ class Inventory {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getDispatches($page = 1, $limit = 20, $search = '', $status = '', $siteId = null) {
+    public function getDispatches($page = 1, $limit = 20, $search = '', $status = '', $siteId = null, $requestId = null) {
         $offset = ($page - 1) * $limit;
         $params = [];
         $conditions = ["1=1"];
 
         if (!empty($search)) {
-            $conditions[] = "(id.dispatch_number LIKE ? OR id.tracking_number LIKE ? OR s.site_id LIKE ? OR v.company_name LIKE ?)";
-            $term = "%$search%";
-            $params = array_merge($params, [$term, $term, $term, $term]);
+            $search = trim($search);
+            $searchReqId = $search;
+            $useExactId = false;
+
+            if (stripos($search, 'REQ-') === 0) {
+                $searchReqId = ltrim(substr($search, 4), '0');
+                $useExactId = true;
+            }
+            
+            if ($useExactId && is_numeric($searchReqId)) {
+                $conditions[] = "(disp.dispatch_number LIKE :search_1 OR disp.tracking_number LIKE :search_2 OR s.site_id LIKE :search_3 OR v.company_name LIKE :search_4 OR disp.material_request_id = :req_id_exact)";
+                $params[':search_1'] = "%$search%";
+                $params[':search_2'] = "%$search%";
+                $params[':search_3'] = "%$search%";
+                $params[':search_4'] = "%$search%";
+                $params[':req_id_exact'] = $searchReqId;
+            } else {
+                $conditions[] = "(disp.dispatch_number LIKE :search_1 OR disp.tracking_number LIKE :search_2 OR s.site_id LIKE :search_3 OR v.company_name LIKE :search_4 OR CAST(disp.material_request_id AS CHAR) LIKE :search_5)";
+                $params[':search_1'] = "%$search%";
+                $params[':search_2'] = "%$search%";
+                $params[':search_3'] = "%$search%";
+                $params[':search_4'] = "%$search%";
+                $params[':search_5'] = "%$search%";
+            }
         }
 
         if (!empty($status)) {
-            $conditions[] = "id.dispatch_status = ?";
-            $params[] = $status;
+            $conditions[] = "disp.dispatch_status = :status";
+            $params[':status'] = $status;
         }
 
-        if ($siteId) {
-            $conditions[] = "id.site_id = ?";
-            $params[] = $siteId;
+        if (!empty($siteId)) {
+            $conditions[] = "disp.site_id = :site_id";
+            $params[':site_id'] = $siteId;
+        }
+
+        if (!empty($requestId)) {
+            if (is_string($requestId) && stripos($requestId, 'REQ-') === 0) {
+                $requestId = ltrim(substr($requestId, 4), '0');
+            }
+            $conditions[] = "disp.material_request_id = :request_id";
+            $params[':request_id'] = $requestId;
         }
 
         $whereClause = "WHERE " . implode(" AND ", $conditions);
 
         try {
             // Get total count
-            $countSql = "SELECT COUNT(*) FROM inventory_dispatches id 
-                        LEFT JOIN sites s ON id.site_id = s.id 
-                        LEFT JOIN vendors v ON id.vendor_id = v.id 
+            $countSql = "SELECT COUNT(*) FROM inventory_dispatches disp 
+                        LEFT JOIN sites s ON disp.site_id = s.id 
+                        LEFT JOIN vendors v ON disp.vendor_id = v.id 
                         $whereClause";
             $stmt = $this->db->prepare($countSql);
             $stmt->execute($params);
             $total = (int)$stmt->fetchColumn();
 
-            // Get dispatches with aggregated item info
-            $sql = "SELECT id.*, COALESCE(s.site_id, 'N/A') as site_code, COALESCE(s.location, 'Unknown Location') as site_name, 
+            // Get dispatches
+            $sql = "SELECT disp.*, COALESCE(s.site_id, 'N/A') as site_code, COALESCE(s.location, 'Unknown Location') as site_name, 
                     v.company_name as vendor_company_name,
-                    (SELECT COUNT(*) FROM inventory_dispatch_items WHERE dispatch_id = id.id) as total_items,
-                    (SELECT SUM(unit_cost) FROM inventory_dispatch_items WHERE dispatch_id = id.id) as total_value
-                    FROM inventory_dispatches id
-                    LEFT JOIN sites s ON id.site_id = s.id
-                    LEFT JOIN vendors v ON id.vendor_id = v.id
+                    (SELECT COUNT(*) FROM inventory_dispatch_items WHERE dispatch_id = disp.id) as total_items,
+                    (SELECT SUM(unit_cost) FROM inventory_dispatch_items WHERE dispatch_id = disp.id) as total_value
+                    FROM inventory_dispatches disp
+                    LEFT JOIN sites s ON disp.site_id = s.id
+                    LEFT JOIN vendors v ON disp.vendor_id = v.id
                     $whereClause
-                    ORDER BY id.dispatch_date DESC
+                    ORDER BY disp.dispatch_date DESC
                     LIMIT :limit OFFSET :offset";
             
             $stmt = $this->db->prepare($sql);
-            foreach ($params as $idx => $val) {
-                $stmt->bindValue($idx + 1, $val);
+            foreach ($params as $key => $val) {
+                $stmt->bindValue($key, $val);
             }
             $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
@@ -269,12 +298,13 @@ class Inventory {
 
     public function getDispatchDetails($dispatchId) {
         try {
-            $sql = "SELECT id.*, COALESCE(s.site_id, 'N/A') as site_code, COALESCE(s.location, 'Unknown Location') as site_name, 
-                    v.company_name as vendor_company_name, v.name as vendor_name
-                    FROM inventory_dispatches id
-                    LEFT JOIN sites s ON id.site_id = s.id
-                    LEFT JOIN vendors v ON id.vendor_id = v.id
-                    WHERE id.id = ?";
+            $sql = "SELECT disp.*, COALESCE(s.site_id, 'N/A') as site_code, COALESCE(s.location, 'Unknown Location') as site_name, 
+                    v.company_name as vendor_company_name, v.name as vendor_name, u.username as dispatched_by_name
+                    FROM inventory_dispatches disp
+                    LEFT JOIN sites s ON disp.site_id = s.id
+                    LEFT JOIN vendors v ON disp.vendor_id = v.id
+                    LEFT JOIN users u ON disp.dispatched_by = u.id
+                    WHERE disp.id = ?";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$dispatchId]);
             $dispatch = $stmt->fetch(PDO::FETCH_ASSOC);

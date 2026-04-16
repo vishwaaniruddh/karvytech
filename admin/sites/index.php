@@ -784,7 +784,14 @@ ob_start();
                         ` : '<span class="text-gray-300">-</span>'}
                     </td>
                     <td class="px-4 py-3 border-r border-gray-100 section-material">
-                        <div class="text-[10px] font-mono font-bold text-gray-600">${site.material_request_number || '-'}</div>
+                        <div class="flex items-center justify-between gap-1 group/req">
+                            <div class="text-[10px] font-mono font-bold text-gray-600">${site.material_request_number || '-'}</div>
+                            ${site.material_request_id ? `
+                                <button onclick="viewBOQ(${site.material_request_id})" class="p-1 text-blue-500 hover:bg-blue-50 rounded opacity-0 group-hover/req:opacity-100 transition-all" title="View BOQ Items">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+                                </button>
+                            ` : ''}
+                        </div>
                     </td>
                     <td class="px-4 py-3 border-r border-gray-100 section-material">
                         <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${getStatusConfig(site.material_status).class}">
@@ -945,6 +952,52 @@ ob_start();
             } catch (error) {
                 Swal.fire('Error!', 'Technical error occurred.', 'error');
             }
+        }
+    }
+    async function viewBOQ(requestId) {
+        if (!requestId) return;
+        
+        openModal('viewBOQModal');
+        const body = document.getElementById('boqItemsBody');
+        const loading = document.getElementById('boqLoading');
+        const empty = document.getElementById('boqEmpty');
+        const label = document.getElementById('boqRequestLabel');
+        
+        body.innerHTML = '';
+        loading.classList.remove('hidden');
+        empty.classList.add('hidden');
+        label.textContent = `Loading Request #REQ-${String(requestId).padStart(6, '0')}...`;
+        
+        try {
+            const response = await fetch(`api/get-boq-items.php?request_id=${requestId}`);
+            const result = await response.json();
+            
+            loading.classList.add('hidden');
+            
+            if (result.success && result.items && result.items.length > 0) {
+                label.textContent = `Request #REQ-${String(requestId).padStart(6, '0')} Items`;
+                body.innerHTML = result.items.map((item, i) => `
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="px-6 py-4 text-xs font-bold text-gray-400">${i + 1}</td>
+                        <td class="px-6 py-4">
+                            <div class="text-xs font-bold text-gray-800">${item.material_name || item.item_name || '---'}</div>
+                            <div class="text-[9px] text-gray-400 uppercase font-medium">${item.item_code || 'No Code'}</div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-black">
+                                ${item.quantity}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-xs font-bold text-gray-500 uppercase">${item.unit || 'Units'}</td>
+                    </tr>
+                `).join('');
+            } else {
+                empty.classList.remove('hidden');
+                label.textContent = `Request #REQ-${String(requestId).padStart(6, '0')} (No Items)`;
+            }
+        } catch (error) {
+            loading.classList.add('hidden');
+            if (window.Swal) Swal.fire('Error', 'Failed to load BOQ items', 'error');
         }
     }
 </script>

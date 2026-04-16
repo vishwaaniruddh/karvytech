@@ -84,12 +84,6 @@ class Database
             }
 
             $this->connection = new PDO($dsn, DB_USER, DB_PASS, $options);
-
-            // Log successful connection (only in development)
-            if ($this->environment === 'development') {
-                error_log("Database connected successfully to " . DB_NAME . " (" . $this->environment . ")");
-            }
-
         } catch (PDOException $e) {
             $errorMsg = "Database connection failed in " . $this->environment . " environment: " . $e->getMessage();
             error_log($errorMsg);
@@ -155,6 +149,7 @@ class Database
 }
 
 // Test database connection on include (only in development)
+/*
 if (getEnvironment() === 'development') {
     try {
         $db = Database::getInstance();
@@ -165,4 +160,5 @@ if (getEnvironment() === 'development') {
         error_log("Database initialization error: " . $e->getMessage());
     }
 }
+*/
 ?>
