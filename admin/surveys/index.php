@@ -233,6 +233,11 @@ ob_start();
                     <p id="table_subtitle" class="text-sm text-gray-500 mt-1"></p>
                 </div>
             </div>
+            
+       
+            
+            
+            
             <div class="p-6">
                 <div class="overflow-x-auto">
                     <table id="responses_table" class="min-w-full divide-y divide-gray-200 border border-gray-300">
@@ -560,6 +565,8 @@ ob_start();
             const date = new Date(response.submitted_date);
             const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
             const formattedTime = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+
 
             bodyHtml += `
                 <tr class="hover:bg-gray-50 transition-colors">

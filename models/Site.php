@@ -10,11 +10,188 @@ class Site extends BaseModel
         parent::__construct();
     }
 
-    public function getAllWithPagination($page = 1, $limit = 20, $search = '', $filters = [])
+    // public function getAllWithPagination($page = 1, $limit = 20, $search = '', $filters = [])
+    // {
+    //     $offset = ($page - 1) * $limit;
+
+    //     $whereClause = '';
+    //     $params = [];
+    //     $conditions = [];
+
+    //     // Exclude soft-deleted records
+    //     $conditions[] = "s.deleted_at IS NULL";
+
+    //     // Search functionality
+    //     if (!empty($search)) {
+    //         $conditions[] = "(s.site_id LIKE ? OR s.store_id LIKE ? OR s.location LIKE ? OR ct.name LIKE ? OR cu.name LIKE ? OR s.contact_person_name LIKE ?)";
+    //         $searchTerm = "%$search%";
+    //         $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+    //     }
+
+    //     // Filter by city
+    //     if (!empty($filters['city'])) {
+    //         $conditions[] = "ct.name = ?";
+    //         $params[] = $filters['city'];
+    //     }
+
+    //     // Filter by state
+    //     if (!empty($filters['state'])) {
+    //         $conditions[] = "st.name = ?";
+    //         $params[] = $filters['state'];
+    //     }
+
+    //     // Filter by activity status
+    //     if (!empty($filters['activity_status'])) {
+    //         $conditions[] = "s.activity_status = ?";
+    //         $params[] = $filters['activity_status'];
+    //     }
+
+    //     // Filter by vendor
+    //     if (!empty($filters['vendor'])) {
+    //         $conditions[] = "s.vendor = ?";
+    //         $params[] = $filters['vendor'];
+    //     }
+
+    //     // Filter by survey status
+    //     if (!empty($filters['survey_status'])) {
+    //         switch ($filters['survey_status']) {
+    //             case 'pending':
+    //                 $conditions[] = "(ss.survey_status IS NULL OR ss.survey_status = '')";
+    //                 break;
+    //             case 'submitted':
+    //                 $conditions[] = "ss.survey_status = 'completed'";
+    //                 break;
+    //             case 'approved':
+    //                 $conditions[] = "ss.survey_status = 'approved'";
+    //                 break;
+    //             case 'rejected':
+    //                 $conditions[] = "ss.survey_status = 'rejected'";
+    //                 break;
+    //         }
+    //     }
+
+    //     if (!empty($conditions)) {
+    //         $whereClause = "WHERE " . implode(" AND ", $conditions);
+    //     }
+
+    //     // Get total count
+    //     $countSql = "SELECT COUNT(DISTINCT s.id) FROM {$this->table} s 
+    //                  LEFT JOIN cities ct ON s.city_id = ct.id 
+    //                  LEFT JOIN states st ON s.state_id = st.id 
+    //                  LEFT JOIN countries co ON s.country_id = co.id 
+    //                  LEFT JOIN customers cu ON s.customer_id = cu.id 
+    //                  LEFT JOIN site_delegations sd ON s.id = sd.site_id AND sd.status = 'active'
+    //                  LEFT JOIN vendors v ON sd.vendor_id = v.id
+    //                  LEFT JOIN (
+    //                      SELECT ss1.site_id, ss1.id, ss1.survey_status, ss1.submitted_date
+    //                      FROM site_surveys ss1
+    //                      INNER JOIN (
+    //                          SELECT site_id, MAX(id) as max_id
+    //                          FROM site_surveys
+    //                          GROUP BY site_id
+    //                      ) ss2 ON ss1.site_id = ss2.site_id AND ss1.id = ss2.max_id
+    //                  ) ss ON s.id = ss.site_id
+    //                  LEFT JOIN installation_delegations id ON s.id = id.site_id
+    //                  $whereClause";
+    //     $stmt = $this->db->prepare($countSql);
+    //     $stmt->execute($params);
+    //     $total = $stmt->fetchColumn();
+
+    //     // Get paginated results with relationships
+    //     $sql = "SELECT s.*, 
+    //                   ct.name as city, st.name as state, co.name as country,
+    //                   cu.name as customer,
+    //                     banks.name as bank_name,
+    //                   sd.id as delegation_id, COALESCE(NULLIF(v.company_name, ''), v.name) as delegated_vendor_name,
+    //                   sd.status as delegation_status, sd.delegation_date,
+    //                   COALESCE(ss_dynamic.id, ss_legacy.id) as survey_id, 
+    //                   COALESCE(ss_dynamic.survey_status, ss_legacy.survey_status) as actual_survey_status,
+    //                   COALESCE(ss_dynamic.submitted_date, ss_legacy.submitted_date) as survey_submitted_date,
+    //                   ss_legacy.vendor_id as survey_vendor_id,
+    //                   COALESCE(NULLIF(sv.company_name, ''), sv.name) as survey_vendor_name,
+    //                   CASE 
+    //                       WHEN ss_dynamic.id IS NOT NULL THEN 'dynamic'
+    //                       ELSE 'legacy'
+    //                   END as survey_type,
+    //                   COALESCE(
+    //                       NULLIF(TRIM(CONCAT_WS(' ', du.first_name, du.last_name)), ''), 
+    //                       du.username, 
+    //                       NULLIF(TRIM(CONCAT_WS(' ', lu.first_name, lu.last_name)), ''), 
+    //                       lu.username
+    //                   ) as surveyor_name,
+    //                   id.installation_id, id.installation_delegation_status,
+    //                   CASE 
+    //                       WHEN ss_dynamic.survey_status IN ('completed', 'approved', 'submitted') THEN 1
+    //                       WHEN ss_legacy.survey_status IN ('completed', 'approved') THEN 1
+    //                       ELSE 0
+    //                   END as has_survey_submitted
+    //             FROM {$this->table} s 
+    //             LEFT JOIN cities ct ON s.city_id = ct.id 
+    //             LEFT JOIN states st ON s.state_id = st.id 
+    //             LEFT JOIN countries co ON s.country_id = co.id 
+    //             LEFT JOIN customers cu ON s.customer_id = cu.id 
+    //             LEFT JOIN site_delegations sd ON s.id = sd.site_id AND sd.status = 'active'
+    //             LEFT JOIN vendors v ON sd.vendor_id = v.id
+    //             LEFT JOIN banks ON s.bank_id=banks.id
+    //             LEFT JOIN (
+    //                 SELECT ss1.site_id, ss1.id, ss1.survey_status, ss1.submitted_date, ss1.vendor_id, ss1.created_by
+    //                 FROM site_surveys ss1
+    //                 INNER JOIN (
+    //                     SELECT site_id, MAX(id) as max_id
+    //                     FROM site_surveys
+    //                     GROUP BY site_id
+    //                 ) ss2 ON ss1.site_id = ss2.site_id AND ss1.id = ss2.max_id
+    //             ) ss_legacy ON s.id = ss_legacy.site_id
+    //             LEFT JOIN (
+    //                 SELECT dr1.site_id, dr1.id, dr1.survey_status, dr1.submitted_date, dr1.surveyor_id
+    //                 FROM dynamic_survey_responses dr1
+    //                 INNER JOIN (
+    //                     SELECT site_id, MAX(id) as max_id
+    //                     FROM dynamic_survey_responses
+    //                     GROUP BY site_id
+    //                 ) dr2 ON dr1.site_id = dr2.site_id AND dr1.id = dr2.max_id
+    //             ) ss_dynamic ON s.id = ss_dynamic.site_id
+    //             LEFT JOIN users lu ON ss_legacy.created_by = lu.id
+    //             LEFT JOIN users du ON ss_dynamic.surveyor_id = du.id
+    //             LEFT JOIN vendors sv ON ss_legacy.vendor_id = sv.id
+    //             LEFT JOIN (
+    //                  SELECT id1.site_id, id1.id as installation_id, id1.status as installation_delegation_status
+    //                  FROM installation_delegations id1
+    //                  INNER JOIN (
+    //                      SELECT site_id, MAX(id) as max_id
+    //                      FROM installation_delegations
+    //                      GROUP BY site_id
+    //                  ) id2 ON id1.site_id = id2.site_id AND id1.id = id2.max_id
+    //              ) id ON s.id = id.site_id
+    //             $whereClause 
+    //             ORDER BY s.created_at DESC 
+    //             LIMIT $limit OFFSET $offset";
+
+
+    //     $stmt = $this->db->prepare($sql);
+    //     $stmt->execute($params);
+    //     $sites = $stmt->fetchAll();
+
+    //     return [
+    //         'sites' => $sites,
+    //         'total' => $total,
+    //         'page' => $page,
+    //         'limit' => $limit,
+    //         'pages' => ceil($total / $limit)
+    //     ];
+    // }
+
+
+     public function getAllWithPagination($page = 1, $limit = 20, $search = '', $filters = [])
     {
         $offset = ($page - 1) * $limit;
 
         $whereClause = '';
+        
+        $whereClauseMain = '';
+        $whereClauseCount = '';
+        
+        
         $params = [];
         $conditions = [];
 
@@ -29,15 +206,45 @@ class Site extends BaseModel
         }
 
         // Filter by city
+        // if (!empty($filters['city'])) {
+        //     $conditions[] = "ct.name = ?";
+        //     $params[] = $filters['city'];
+        // }
+        
         if (!empty($filters['city'])) {
-            $conditions[] = "ct.name = ?";
-            $params[] = $filters['city'];
+            $conditions[] = "LOWER(TRIM(ct.name)) LIKE LOWER(TRIM(?))";
+            $params[] = "%" . $filters['city'] . "%";
         }
 
         // Filter by state
+        // if (!empty($filters['state'])) {
+        //     $conditions[] = "st.name = ?";
+        //     $params[] = $filters['state'];
+        // }
+        
         if (!empty($filters['state'])) {
-            $conditions[] = "st.name = ?";
-            $params[] = $filters['state'];
+            $conditions[] = "LOWER(TRIM(st.name)) LIKE LOWER(TRIM(?))";
+            $params[] = "%" . $filters['state'] . "%";
+        }
+                
+
+        
+        // Filter by branch
+       if (!empty($filters['branch'])) {
+            $conditions[] = "LOWER(TRIM(s.branch)) LIKE LOWER(TRIM(?))";
+            $params[] = "%" . $filters['branch'] . "%";
+        }
+
+              // ✅ Created By filter
+        if (!empty($filters['created_by'])) {
+            $conditions[] = "LOWER(TRIM(s.created_by)) LIKE LOWER(TRIM(?))";
+            $params[] = "%" . $filters['created_by'] . "%";
+        }
+        
+        // ✅ Contact filter
+        if (!empty($filters['contact_person_number'])) {
+            $conditions[] = "TRIM(s.contact_person_number) LIKE ?";
+            $params[] = "%" . $filters['contact_person_number'] . "%";
         }
 
         // Filter by activity status
@@ -54,27 +261,50 @@ class Site extends BaseModel
 
         // Filter by survey status
         if (!empty($filters['survey_status'])) {
-            switch ($filters['survey_status']) {
-                case 'pending':
-                    $conditions[] = "(ss.survey_status IS NULL OR ss.survey_status = '')";
-                    break;
-                case 'submitted':
-                    $conditions[] = "ss.survey_status = 'completed'";
-                    break;
-                case 'approved':
-                    $conditions[] = "ss.survey_status = 'approved'";
-                    break;
-                case 'rejected':
-                    $conditions[] = "ss.survey_status = 'rejected'";
-                    break;
+            $survey = "COALESCE(ss_dynamic.survey_status, ss_legacy.survey_status)";
+            
+            if ($filters['survey_status'] === 'pending') {
+                $conditions[] = "($survey IS NULL OR $survey = '')";
+            } else {
+                $conditions[] = "$survey = ?";
+                $params[] = $filters['survey_status'];
             }
         }
-
+           
+        if (!empty($filters['material_status'])) {
+            if ($filters['material_status'] === 'material_dispatched') {
+                $conditions[] = "md_latest.id IS NOT NULL";
+            } elseif ($filters['material_status'] === 'dispatch_pending') {
+                $conditions[] = "mr_latest.id IS NOT NULL AND md_latest.id IS NULL";
+            } elseif ($filters['material_status'] === 'material_requested') {
+                $conditions[] = "mr_latest.id IS NOT NULL";
+            } elseif ($filters['material_status'] === 'not_requested') {
+                $conditions[] = "mr_latest.id IS NULL";
+            } elseif ($filters['material_status'] === 'delivered') {
+                $conditions[] = "md_latest.acknowledgment_status = 'delivered'";
+            } elseif ($filters['material_status'] === 'dispatched_not_delivered') {
+                $conditions[] = "md_latest.id IS NOT NULL AND (md_latest.acknowledgment_status != 'delivered' OR md_latest.acknowledgment_status IS NULL)";
+            } else {
+                $conditions[] = "mr_latest.status = ?";
+                $params[] = $filters['material_status'];
+            }
+        }
+            
+        // Installation filter
+        if (!empty($filters['installation_status'])) {
+            $conditions[] = "id.installation_delegation_status = ?";
+            $params[] = $filters['installation_status'];
+        }
+                
+        if (!empty($filters['site_id'])) {
+            $conditions[] = "LOWER(TRIM(s.site_id)) LIKE LOWER(TRIM(?))";
+            $params[] = "%" . $filters['site_id'] . "%";
+        }
+        
         if (!empty($conditions)) {
             $whereClause = "WHERE " . implode(" AND ", $conditions);
         }
 
-        // Get total count
         $countSql = "SELECT COUNT(DISTINCT s.id) FROM {$this->table} s 
                      LEFT JOIN cities ct ON s.city_id = ct.id 
                      LEFT JOIN states st ON s.state_id = st.id 
@@ -83,15 +313,46 @@ class Site extends BaseModel
                      LEFT JOIN site_delegations sd ON s.id = sd.site_id AND sd.status = 'active'
                      LEFT JOIN vendors v ON sd.vendor_id = v.id
                      LEFT JOIN (
-                         SELECT ss1.site_id, ss1.id, ss1.survey_status, ss1.submitted_date
-                         FROM site_surveys ss1
-                         INNER JOIN (
-                             SELECT site_id, MAX(id) as max_id
-                             FROM site_surveys
-                             GROUP BY site_id
-                         ) ss2 ON ss1.site_id = ss2.site_id AND ss1.id = ss2.max_id
-                     ) ss ON s.id = ss.site_id
-                     LEFT JOIN installation_delegations id ON s.id = id.site_id
+                        SELECT ss1.site_id, ss1.id, ss1.survey_status
+                        FROM site_surveys ss1
+                        INNER JOIN (
+                            SELECT site_id, MAX(id) as max_id
+                            FROM site_surveys
+                            GROUP BY site_id
+                        ) ss2 ON ss1.site_id = ss2.site_id AND ss1.id = ss2.max_id
+                     ) ss_legacy ON s.id = ss_legacy.site_id
+                     LEFT JOIN (
+                        SELECT dr1.site_id, dr1.id, dr1.survey_status
+                        FROM dynamic_survey_responses dr1
+                        INNER JOIN (
+                            SELECT site_id, MAX(id) as max_id
+                            FROM dynamic_survey_responses
+                            GROUP BY site_id
+                        ) dr2 ON dr1.site_id = dr2.site_id AND dr1.id = dr2.max_id
+                     ) ss_dynamic ON s.id = ss_dynamic.site_id
+                     LEFT JOIN (
+                        SELECT id1.site_id, id1.status as installation_delegation_status
+                        FROM installation_delegations id1
+                        INNER JOIN (
+                            SELECT site_id, MAX(id) as max_id
+                            FROM installation_delegations
+                            GROUP BY site_id
+                        ) id2 ON id1.site_id = id2.site_id AND id1.id = id2.max_id
+                     ) id ON s.id = id.site_id
+                     LEFT JOIN (
+                        SELECT mr1.site_id, mr1.id, mr1.status
+                        FROM material_requests mr1
+                        INNER JOIN (
+                            SELECT site_id, MAX(id) as max_id FROM material_requests GROUP BY site_id
+                        ) mr2 ON mr1.site_id = mr2.site_id AND mr1.id = mr2.max_id
+                     ) mr_latest ON s.id = mr_latest.site_id
+                     LEFT JOIN (
+                        SELECT md1.material_request_id, md1.id, md1.acknowledgment_status
+                        FROM material_dispatches md1
+                        INNER JOIN (
+                            SELECT material_request_id, MAX(id) as max_id FROM material_dispatches GROUP BY material_request_id
+                        ) md2 ON md1.material_request_id = md2.material_request_id AND md1.id = md2.max_id
+                     ) md_latest ON mr_latest.id = md_latest.material_request_id
                      $whereClause";
         $stmt = $this->db->prepare($countSql);
         $stmt->execute($params);
@@ -132,6 +393,20 @@ class Site extends BaseModel
                 LEFT JOIN customers cu ON s.customer_id = cu.id 
                 LEFT JOIN site_delegations sd ON s.id = sd.site_id AND sd.status = 'active'
                 LEFT JOIN vendors v ON sd.vendor_id = v.id
+                LEFT JOIN (
+                    SELECT mr1.site_id, mr1.id, mr1.status
+                    FROM material_requests mr1
+                    INNER JOIN (
+                        SELECT site_id, MAX(id) as max_id FROM material_requests GROUP BY site_id
+                    ) mr2 ON mr1.site_id = mr2.site_id AND mr1.id = mr2.max_id
+                ) mr_latest ON s.id = mr_latest.site_id
+                LEFT JOIN (
+                    SELECT md1.material_request_id, md1.id, md1.acknowledgment_status
+                    FROM material_dispatches md1
+                    INNER JOIN (
+                        SELECT material_request_id, MAX(id) as max_id FROM material_dispatches GROUP BY material_request_id
+                    ) md2 ON md1.material_request_id = md2.material_request_id AND md1.id = md2.max_id
+                ) md_latest ON mr_latest.id = md_latest.material_request_id
                 LEFT JOIN banks ON s.bank_id=banks.id
                 LEFT JOIN (
                     SELECT ss1.site_id, ss1.id, ss1.survey_status, ss1.submitted_date, ss1.vendor_id, ss1.created_by
@@ -154,6 +429,7 @@ class Site extends BaseModel
                 LEFT JOIN users lu ON ss_legacy.created_by = lu.id
                 LEFT JOIN users du ON ss_dynamic.surveyor_id = du.id
                 LEFT JOIN vendors sv ON ss_legacy.vendor_id = sv.id
+                
                 LEFT JOIN (
                      SELECT id1.site_id, id1.id as installation_id, id1.status as installation_delegation_status
                      FROM installation_delegations id1
@@ -163,6 +439,7 @@ class Site extends BaseModel
                          GROUP BY site_id
                      ) id2 ON id1.site_id = id2.site_id AND id1.id = id2.max_id
                  ) id ON s.id = id.site_id
+                 
                 $whereClause 
                 ORDER BY s.created_at DESC 
                 LIMIT $limit OFFSET $offset";
@@ -180,6 +457,7 @@ class Site extends BaseModel
             'pages' => ceil($total / $limit)
         ];
     }
+
 
     public function findBySiteId($siteId)
     {
@@ -340,7 +618,135 @@ class Site extends BaseModel
         return $stats;
     }
 
-    public function getOverallStatistics($search = '', $filters = [])
+    // public function getOverallStatistics($search = '', $filters = [])
+    // {
+    //     $whereClause = '';
+    //     $params = [];
+    //     $conditions = [];
+
+    //     // Search functionality
+    //     if (!empty($search)) {
+    //         $conditions[] = "(s.site_id LIKE ? OR s.store_id LIKE ? OR s.location LIKE ? OR ct.name LIKE ? OR cu.name LIKE ? OR s.contact_person_name LIKE ?)";
+    //         $searchTerm = "%$search%";
+    //         $params = array_merge($params, [$searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm, $searchTerm]);
+    //     }
+
+    //     // Filter by city
+    //     if (!empty($filters['city'])) {
+    //         $conditions[] = "ct.name = ?";
+    //         $params[] = $filters['city'];
+    //     }
+
+    //     // Filter by state
+    //     if (!empty($filters['state'])) {
+    //         $conditions[] = "st.name = ?";
+    //         $params[] = $filters['state'];
+    //     }
+
+    //     // Filter by activity status
+    //     if (!empty($filters['activity_status'])) {
+    //         $conditions[] = "s.activity_status = ?";
+    //         $params[] = $filters['activity_status'];
+    //     }
+
+    //     // Filter by vendor
+    //     if (!empty($filters['vendor'])) {
+    //         $conditions[] = "s.vendor = ?";
+    //         $params[] = $filters['vendor'];
+    //     }
+
+    //     // Filter by survey status
+    //     if (!empty($filters['survey_status'])) {
+    //         switch ($filters['survey_status']) {
+    //             case 'pending':
+    //                 $conditions[] = "(ss.survey_status IS NULL OR ss.survey_status = '')";
+    //                 break;
+    //             case 'submitted':
+    //                 $conditions[] = "ss.survey_status = 'completed'";
+    //                 break;
+    //             case 'approved':
+    //                 $conditions[] = "ss.survey_status = 'approved'";
+    //                 break;
+    //             case 'rejected':
+    //                 $conditions[] = "ss.survey_status = 'rejected'";
+    //                 break;
+    //         }
+    //     }
+
+    //     if (!empty($conditions)) {
+    //         $whereClause = "WHERE " . implode(" AND ", $conditions);
+    //     }
+
+    //     $sql = "SELECT 
+    //                 COUNT(DISTINCT s.id) as total_sites,
+    //                 SUM(CASE WHEN sd.status = 'active' THEN 1 ELSE 0 END) as delegation_active,
+    //                 SUM(CASE WHEN (sd.status IS NULL OR sd.status != 'active') THEN 1 ELSE 0 END) as delegation_pending,
+    //                 SUM(CASE WHEN COALESCE(ss_dynamic.survey_status, ss_legacy.survey_status) = 'approved' THEN 1 ELSE 0 END) as survey_approved,
+    //                 SUM(CASE WHEN (ss_legacy.survey_status IS NULL OR ss_legacy.survey_status = '') AND (ss_dynamic.survey_status IS NULL OR ss_dynamic.survey_status = '') THEN 1 ELSE 0 END) as survey_pending,
+    //                 SUM(CASE WHEN COALESCE(ss_dynamic.survey_status, ss_legacy.survey_status) = 'rejected' THEN 1 ELSE 0 END) as survey_rejected,
+    //                 SUM(CASE WHEN s.installation_status = 1 THEN 1 ELSE 0 END) as installation_done,
+    //                 SUM(CASE WHEN s.installation_status = 0 OR s.installation_status IS NULL THEN 1 ELSE 0 END) as installation_pending
+    //             FROM {$this->table} s 
+    //             LEFT JOIN cities ct ON s.city_id = ct.id 
+    //             LEFT JOIN states st ON s.state_id = st.id 
+    //             LEFT JOIN countries co ON s.country_id = co.id 
+    //             LEFT JOIN customers cu ON s.customer_id = cu.id 
+    //             LEFT JOIN site_delegations sd ON s.id = sd.site_id AND sd.status = 'active'
+    //             LEFT JOIN (
+    //                 SELECT ss1.site_id, ss1.id, ss1.survey_status
+    //                 FROM site_surveys ss1
+    //                 INNER JOIN (
+    //                     SELECT site_id, MAX(id) as max_id
+    //                     FROM site_surveys
+    //                     GROUP BY site_id
+    //                 ) ss2 ON ss1.site_id = ss2.site_id AND ss1.id = ss2.max_id
+    //             ) ss_legacy ON s.id = ss_legacy.site_id
+    //             LEFT JOIN (
+    //                 SELECT dr1.site_id, dr1.id, dr1.survey_status
+    //                 FROM dynamic_survey_responses dr1
+    //                 INNER JOIN (
+    //                     SELECT site_id, MAX(id) as max_id
+    //                     FROM dynamic_survey_responses
+    //                     GROUP BY site_id
+    //                 ) dr2 ON dr1.site_id = dr2.site_id AND dr1.id = dr2.max_id
+    //             ) ss_dynamic ON s.id = ss_dynamic.site_id
+    //             $whereClause";
+
+    //     $stmt = $this->db->prepare($sql);
+    //     $stmt->execute($params);
+    //     $stats = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    //     // Get customer-wise count
+    //     $customerSql = "SELECT 
+    //                         COALESCE(cu.name, 'No Customer') as customer_name,
+    //                         COUNT(DISTINCT s.id) as site_count
+    //                     FROM {$this->table} s 
+    //                     LEFT JOIN cities ct ON s.city_id = ct.id 
+    //                     LEFT JOIN states st ON s.state_id = st.id 
+    //                     LEFT JOIN customers cu ON s.customer_id = cu.id 
+    //                     LEFT JOIN site_delegations sd ON s.id = sd.site_id AND sd.status = 'active'
+    //                     LEFT JOIN (
+    //                         SELECT ss1.site_id, ss1.id, ss1.survey_status
+    //                         FROM site_surveys ss1
+    //                         INNER JOIN (
+    //                             SELECT site_id, MAX(id) as max_id
+    //                             FROM site_surveys
+    //                             GROUP BY site_id
+    //                         ) ss2 ON ss1.site_id = ss2.site_id AND ss1.id = ss2.max_id
+    //                     ) ss ON s.id = ss.site_id
+    //                     $whereClause
+    //                     GROUP BY cu.id, cu.name
+    //                     ORDER BY site_count DESC";
+
+    //     $stmt = $this->db->prepare($customerSql);
+    //     $stmt->execute($params);
+    //     $stats['customer_counts'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    //     return $stats;
+    // }
+    
+    
+     public function getOverallStatistics($search = '', $filters = [])
     {
         $whereClause = '';
         $params = [];
@@ -379,20 +785,44 @@ class Site extends BaseModel
 
         // Filter by survey status
         if (!empty($filters['survey_status'])) {
-            switch ($filters['survey_status']) {
-                case 'pending':
-                    $conditions[] = "(ss.survey_status IS NULL OR ss.survey_status = '')";
-                    break;
-                case 'submitted':
-                    $conditions[] = "ss.survey_status = 'completed'";
-                    break;
-                case 'approved':
-                    $conditions[] = "ss.survey_status = 'approved'";
-                    break;
-                case 'rejected':
-                    $conditions[] = "ss.survey_status = 'rejected'";
-                    break;
+            $survey = "COALESCE(ss_dynamic.survey_status, ss_legacy.survey_status)";
+            
+            if ($filters['survey_status'] === 'pending') {
+                $conditions[] = "($survey IS NULL OR $survey = '')";
+            } else {
+                $conditions[] = "$survey = ?";
+                $params[] = $filters['survey_status'];
             }
+        }
+
+        if (!empty($filters['material_status'])) {
+            if ($filters['material_status'] === 'material_dispatched') {
+                $conditions[] = "md_latest.id IS NOT NULL";
+            } elseif ($filters['material_status'] === 'dispatch_pending') {
+                $conditions[] = "mr_latest.id IS NOT NULL AND md_latest.id IS NULL";
+            } elseif ($filters['material_status'] === 'material_requested') {
+                $conditions[] = "mr_latest.id IS NOT NULL";
+            } elseif ($filters['material_status'] === 'not_requested') {
+                $conditions[] = "mr_latest.id IS NULL";
+            } elseif ($filters['material_status'] === 'delivered') {
+                $conditions[] = "md_latest.acknowledgment_status = 'delivered'";
+            } elseif ($filters['material_status'] === 'dispatched_not_delivered') {
+                $conditions[] = "md_latest.id IS NOT NULL AND (md_latest.acknowledgment_status != 'delivered' OR md_latest.acknowledgment_status IS NULL)";
+            } else {
+                $conditions[] = "mr_latest.status = ?";
+                $params[] = $filters['material_status'];
+            }
+        }
+            
+        // Installation filter
+        if (!empty($filters['installation_status'])) {
+            $conditions[] = "id.installation_delegation_status = ?";
+            $params[] = $filters['installation_status'];
+        }
+                
+        if (!empty($filters['site_id'])) {
+            $conditions[] = "LOWER(TRIM(s.site_id)) LIKE LOWER(TRIM(?))";
+            $params[] = "%" . $filters['site_id'] . "%";
         }
 
         if (!empty($conditions)) {
@@ -432,6 +862,29 @@ class Site extends BaseModel
                         GROUP BY site_id
                     ) dr2 ON dr1.site_id = dr2.site_id AND dr1.id = dr2.max_id
                 ) ss_dynamic ON s.id = ss_dynamic.site_id
+                LEFT JOIN (
+                    SELECT id1.site_id, id1.status as installation_delegation_status
+                    FROM installation_delegations id1
+                    INNER JOIN (
+                        SELECT site_id, MAX(id) as max_id
+                        FROM installation_delegations
+                        GROUP BY site_id
+                    ) id2 ON id1.site_id = id2.site_id AND id1.id = id2.max_id
+                 ) id ON s.id = id.site_id
+                 LEFT JOIN (
+                    SELECT mr1.site_id, mr1.id, mr1.status
+                    FROM material_requests mr1
+                    INNER JOIN (
+                        SELECT site_id, MAX(id) as max_id FROM material_requests GROUP BY site_id
+                    ) mr2 ON mr1.site_id = mr2.site_id AND mr1.id = mr2.max_id
+                 ) mr_latest ON s.id = mr_latest.site_id
+                 LEFT JOIN (
+                    SELECT md1.material_request_id, md1.id, md1.acknowledgment_status
+                    FROM material_dispatches md1
+                    INNER JOIN (
+                        SELECT material_request_id, MAX(id) as max_id FROM material_dispatches GROUP BY material_request_id
+                    ) md2 ON md1.material_request_id = md2.material_request_id AND md1.id = md2.max_id
+                 ) md_latest ON mr_latest.id = md_latest.material_request_id
                 $whereClause";
 
         $stmt = $this->db->prepare($sql);
@@ -455,7 +908,39 @@ class Site extends BaseModel
                                 FROM site_surveys
                                 GROUP BY site_id
                             ) ss2 ON ss1.site_id = ss2.site_id AND ss1.id = ss2.max_id
-                        ) ss ON s.id = ss.site_id
+                        ) ss_legacy ON s.id = ss_legacy.site_id
+                        LEFT JOIN (
+                            SELECT dr1.site_id, dr1.id, dr1.survey_status
+                            FROM dynamic_survey_responses dr1
+                            INNER JOIN (
+                                SELECT site_id, MAX(id) as max_id
+                                FROM dynamic_survey_responses
+                                GROUP BY site_id
+                            ) dr2 ON dr1.site_id = dr2.site_id AND dr1.id = dr2.max_id
+                        ) ss_dynamic ON s.id = ss_dynamic.site_id
+                        LEFT JOIN (
+                            SELECT id1.site_id, id1.status as installation_delegation_status
+                            FROM installation_delegations id1
+                            INNER JOIN (
+                                SELECT site_id, MAX(id) as max_id
+                                FROM installation_delegations
+                                GROUP BY site_id
+                            ) id2 ON id1.site_id = id2.site_id AND id1.id = id2.max_id
+                         ) id ON s.id = id.site_id
+                         LEFT JOIN (
+                            SELECT mr1.site_id, mr1.id, mr1.status
+                            FROM material_requests mr1
+                            INNER JOIN (
+                                SELECT site_id, MAX(id) as max_id FROM material_requests GROUP BY site_id
+                            ) mr2 ON mr1.site_id = mr2.site_id AND mr1.id = mr2.max_id
+                         ) mr_latest ON s.id = mr_latest.site_id
+                         LEFT JOIN (
+                            SELECT md1.material_request_id, md1.id, md1.acknowledgment_status
+                            FROM material_dispatches md1
+                            INNER JOIN (
+                                SELECT material_request_id, MAX(id) as max_id FROM material_dispatches GROUP BY material_request_id
+                            ) md2 ON md1.material_request_id = md2.material_request_id AND md1.id = md2.max_id
+                         ) md_latest ON mr_latest.id = md_latest.material_request_id
                         $whereClause
                         GROUP BY cu.id, cu.name
                         ORDER BY site_count DESC";
@@ -466,6 +951,8 @@ class Site extends BaseModel
 
         return $stats;
     }
+    
+    
 
     public function updateSurveyStatus($id, $status, $submissionDate = null)
     {

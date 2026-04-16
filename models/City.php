@@ -64,6 +64,12 @@ class City extends BaseMaster {
     //     ];
     // }
     
+    public function get_all_city(){
+        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE status = 'active' ORDER BY name");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+    
     public function getByState($stateId) {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE state_id = ? AND status = 'active' ORDER BY name");
         $stmt->execute([$stateId]);

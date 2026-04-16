@@ -1,8 +1,15 @@
 <?php
+
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 require_once __DIR__ . '/../../config/auth.php';
 require_once __DIR__ . '/../../models/SiteSurvey.php';
 require_once __DIR__ . '/../../models/Installation.php';
 require_once __DIR__ . '/../../models/Vendor.php';
+require_once __DIR__ . '/../../models/Site.php';
+require_once __DIR__ . '/../../models/City.php';
+require_once __DIR__ . '/../../models/State.php';
 
 // Require admin authentication
 Auth::requireRole(ADMIN_ROLE);
@@ -35,6 +42,17 @@ $stats = [
 $surveys = array_slice($allSurveys, $offset, $perPage);
 
 $activeVendors = $vendorModel->getActiveVendors();
+
+// Fetch all sites for Site ID filter dropdown (uses existing Site model)
+$siteModel = new Site();
+$allSites = $siteModel->getAllSites(); // Returns id, site_id, location etc.
+
+$cityModel = new City();
+$allCitys = $cityModel->get_all_city(); // Returns id, site_id, location etc.
+
+$stateModel = new State();
+$allState = $stateModel->get_all_state(); 
+
 
 $title = 'Legacy Survey';
 ob_start();
@@ -93,8 +111,126 @@ ob_start();
 </div>
 
 <!-- Filters Section -->
+<!--<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">-->
+<!--    <div class="flex flex-wrap items-end gap-4">-->
+<!--        <div class="flex-1 min-w-[200px]">-->
+<!--            <label class="block text-sm font-medium text-gray-700 mb-1">Survey Status</label>-->
+<!--            <select id="filterSurveyStatus" class="form-select w-full">-->
+<!--                <option value="">All Statuses</option>-->
+<!--                <option value="pending">Pending</option>-->
+<!--                <option value="approved">Approved</option>-->
+<!--                <option value="rejected">Rejected</option>-->
+<!--            </select>-->
+<!--        </div>-->
+        
+<!--        <div class="flex-1 min-w-[200px]">-->
+<!--            <label class="block text-sm font-medium text-gray-700 mb-1">Installation Status</label>-->
+<!--            <select id="filterInstallationStatus" class="form-select w-full">-->
+<!--                <option value="">All Statuses</option>-->
+<!--                <option value="not_delegated">Not Delegated</option>-->
+<!--                <option value="delegated">Delegated</option>-->
+<!--                <option value="in_progress">In Progress</option>-->
+<!--                <option value="completed">Completed</option>-->
+<!--            </select>-->
+<!--        </div>-->
+        
+<!--        <div class="flex-1 min-w-[200px]">-->
+<!--            <label class="block text-sm font-medium text-gray-700 mb-1">Date From</label>-->
+<!--            <input type="date" id="filterDateFrom" class="form-input w-full">-->
+<!--        </div>-->
+        
+<!--        <div class="flex-1 min-w-[200px]">-->
+<!--            <label class="block text-sm font-medium text-gray-700 mb-1">Date To</label>-->
+<!--            <input type="date" id="filterDateTo" class="form-input w-full">-->
+<!--        </div>-->
+        
+<!--        <div class="flex gap-2">-->
+<!--            <button onclick="applyFilters()" class="btn btn-primary">-->
+<!--                <svg class="w-4 h-4 mr-2 inline" fill="currentColor" viewBox="0 0 20 20">-->
+<!--                    <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path>-->
+<!--                </svg>-->
+<!--                Filter-->
+<!--            </button>-->
+<!--            <button onclick="clearFilters()" class="btn btn-secondary">-->
+<!--                <svg class="w-4 h-4 mr-2 inline" fill="currentColor" viewBox="0 0 20 20">-->
+<!--                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>-->
+<!--                </svg>-->
+<!--                Clear-->
+<!--            </button>-->
+<!--        </div>-->
+<!--    </div>-->
+    
+    <!-- Color Legend -->
+<!--    <div class="mt-4 pt-4 border-t border-gray-200">-->
+<!--        <p class="text-sm font-medium text-gray-700 mb-2">Undelegated Duration:</p>-->
+<!--        <div class="flex flex-wrap gap-3 text-xs">-->
+<!--            <div class="flex items-center">-->
+<!--                <div class="w-4 h-4 bg-green-100 border border-green-300 rounded mr-2"></div>-->
+<!--                <span class="text-gray-600">0-3 days</span>-->
+<!--            </div>-->
+<!--            <div class="flex items-center">-->
+<!--                <div class="w-4 h-4 bg-yellow-100 border border-yellow-300 rounded mr-2"></div>-->
+<!--                <span class="text-gray-600">4-7 days</span>-->
+<!--            </div>-->
+<!--            <div class="flex items-center">-->
+<!--                <div class="w-4 h-4 bg-orange-100 border border-orange-300 rounded mr-2"></div>-->
+<!--                <span class="text-gray-600">8-14 days</span>-->
+<!--            </div>-->
+<!--            <div class="flex items-center">-->
+<!--                <div class="w-4 h-4 bg-red-100 border border-red-300 rounded mr-2"></div>-->
+<!--                <span class="text-gray-600">15+ days</span>-->
+<!--            </div>-->
+<!--            <div class="flex items-center">-->
+<!--                <div class="w-4 h-4 bg-gray-100 border border-gray-300 rounded mr-2"></div>-->
+<!--                <span class="text-gray-600">Delegated/Not Approved</span>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
     <div class="flex flex-wrap items-end gap-4">
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Site</label>
+            
+            <input list="siteList" id="filterSiteId" class="form-input w-full" placeholder="Search Site...">
+        
+            <datalist id="siteList">
+                <?php foreach ($allSites as $site): ?>
+                    <option value="<?php echo $site['site_id']; ?>">
+                        <?php echo htmlspecialchars($site['site_id']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </datalist>
+        </div>
+        
+        
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+            
+            <input list="cityList" id="filterCityId" class="form-input w-full" placeholder="Search City...">
+        
+            <datalist id="cityList">
+                <?php foreach ($allCitys as $city): ?>
+                   <option value="<?php echo htmlspecialchars($city['name']); ?>">
+                <?php endforeach; ?>
+            </datalist>
+        </div>
+        
+       
+        
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">State</label>
+            
+            <input list="stateList" id="filterStateId" class="form-input w-full" placeholder="Search City...">
+        
+            <datalist id="stateList">
+                <?php foreach ($allState as $state): ?>
+                   <option value="<?php echo htmlspecialchars($state['name']); ?>">
+                <?php endforeach; ?>
+            </datalist>
+        </div>
+        
+
         <div class="flex-1 min-w-[200px]">
             <label class="block text-sm font-medium text-gray-700 mb-1">Survey Status</label>
             <select id="filterSurveyStatus" class="form-select w-full">
@@ -116,6 +252,35 @@ ob_start();
             </select>
         </div>
         
+        
+         <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Created By</label>
+            
+            <select id="filterCreatedBy" class="form-select w-full">
+                <option value="">All Users</option>
+                <?php foreach ($createdByList as $user): ?>
+                    <option value="<?php echo htmlspecialchars(trim($user)); ?>">
+                        <?php echo htmlspecialchars($user); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        
+        
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Created Date</label>
+            
+            <select id="filterCreatedDate" class="form-select w-full">
+                <option value="">All Dates</option>
+                <?php foreach ($createdDateList as $date): ?>
+                    <option value="<?php echo $date; ?>">
+                        <?php echo $date; ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        
+        
         <div class="flex-1 min-w-[200px]">
             <label class="block text-sm font-medium text-gray-700 mb-1">Date From</label>
             <input type="date" id="filterDateFrom" class="form-input w-full">
@@ -125,6 +290,8 @@ ob_start();
             <label class="block text-sm font-medium text-gray-700 mb-1">Date To</label>
             <input type="date" id="filterDateTo" class="form-input w-full">
         </div>
+        
+        
         
         <div class="flex gap-2">
             <button onclick="applyFilters()" class="btn btn-primary">
@@ -236,7 +403,12 @@ ob_start();
                             id="row_<?php echo $survey['id']; ?>"
                             data-survey-status="<?php echo $survey['survey_status']; ?>"
                             data-installation-status="<?php echo $survey['installation_status'] ?? 'not_delegated'; ?>"
-                            data-created-date="<?php echo date('Y-m-d', strtotime($survey['created_at'])); ?>">
+                            data-created-date="<?php echo date('Y-m-d', strtotime($survey['created_at'])); ?>"
+                            data-site-id="<?php echo htmlspecialchars(trim($survey['site_code'])); ?>"
+                            data-city-id="<?php echo htmlspecialchars(trim($survey['city_name'])); ?>"
+                            data-state-id="<?php echo htmlspecialchars(trim($survey['state_name'])); ?>"
+                            data-created-by="<?php echo htmlspecialchars(trim($survey['created_by_name'] ?? '')); ?>">
+                            
                             <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
                                 <?php echo $survey['id']; ?>
                             </td>
@@ -509,44 +681,72 @@ function exportSurveys() {
 
 // Filter functionality
 function applyFilters() {
-    const surveyStatus = document.getElementById('filterSurveyStatus').value;
+    const siteId             = document.getElementById('filterSiteId').value;
+    const cityId            = document.getElementById('filterCityId').value;
+    const stateId           = document.getElementById('filterStateId').value;
+    const surveyStatus       = document.getElementById('filterSurveyStatus').value;
     const installationStatus = document.getElementById('filterInstallationStatus').value;
-    const dateFrom = document.getElementById('filterDateFrom').value;
-    const dateTo = document.getElementById('filterDateTo').value;
+    const dateFrom           = document.getElementById('filterDateFrom').value;
+    const dateTo             = document.getElementById('filterDateTo').value;
     
+    const createdBy   = document.getElementById('filterCreatedBy').value;
+    const createdDate = document.getElementById('filterCreatedDate')?.value;
+    
+    // alert(cityId);
+    // console.log("dfdfsdf",cityId);
+
     const rows = document.querySelectorAll('tbody tr[data-survey-status]');
     let visibleCount = 0;
-    
+
     rows.forEach(row => {
         let show = true;
+
+        // Filter by site id (sites table auto-increment id)
+        if (siteId && row.dataset.siteId !== siteId) {
+            show = false;
+        }
         
+        if (cityId && row.dataset.cityId !== cityId) {
+            show = false;
+        }
+        
+        if (stateId && row.dataset.stateId.trim() !== stateId.trim()) {
+            show = false;
+        }
+
         // Filter by survey status
         if (surveyStatus && row.dataset.surveyStatus !== surveyStatus) {
             show = false;
         }
-        
+
         // Filter by installation status
         if (installationStatus && row.dataset.installationStatus !== installationStatus) {
             show = false;
         }
+
+        // Created By filter
+        if (createdBy && row.dataset.createdBy !== createdBy) {
+            show = false;
+        }
         
+        // Created Date dropdown filter (if using)
+        if (createdDate && row.dataset.createdDate !== createdDate) {
+            show = false;
+        }
+
         // Filter by date range
         const rowDate = row.dataset.createdDate;
-        if (dateFrom && rowDate < dateFrom) {
-            show = false;
-        }
-        if (dateTo && rowDate > dateTo) {
-            show = false;
-        }
-        
+        if (dateFrom && rowDate < dateFrom) show = false;
+        if (dateTo   && rowDate > dateTo)   show = false;
+
         row.style.display = show ? '' : 'none';
         if (show) visibleCount++;
     });
-    
+
     // Show message if no results
     const tbody = document.querySelector('tbody');
     let noResultsRow = document.getElementById('noResultsRow');
-    
+
     if (visibleCount === 0) {
         if (!noResultsRow) {
             noResultsRow = document.createElement('tr');
@@ -565,28 +765,34 @@ function applyFilters() {
     } else if (noResultsRow) {
         noResultsRow.remove();
     }
-    
+
     showAlert(`Showing ${visibleCount} of ${rows.length} surveys`, 'success');
 }
 
+
 function clearFilters() {
-    document.getElementById('filterSurveyStatus').value = '';
+    document.getElementById('filterSiteId').value             = '';
+    document.getElementById('filterCityId').value             = '';
+    document.getElementById('filterStateId').value            = '';
+    document.getElementById('filterSurveyStatus').value       = '';
     document.getElementById('filterInstallationStatus').value = '';
-    document.getElementById('filterDateFrom').value = '';
-    document.getElementById('filterDateTo').value = '';
+    document.getElementById('filterDateFrom').value           = '';
+    document.getElementById('filterDateTo').value             = '';
     
-    const rows = document.querySelectorAll('tbody tr[data-survey-status]');
-    rows.forEach(row => {
-        row.style.display = '';
-    });
-    
+    document.getElementById('filterCreatedBy').value = '';
+    if (document.getElementById('filterCreatedDate')) {
+        document.getElementById('filterCreatedDate').value = '';
+}
+
+    document.querySelectorAll('tbody tr[data-survey-status]')
+        .forEach(row => row.style.display = '');
+
     const noResultsRow = document.getElementById('noResultsRow');
-    if (noResultsRow) {
-        noResultsRow.remove();
-    }
-    
+    if (noResultsRow) noResultsRow.remove();
+
     showAlert('Filters cleared', 'success');
 }
+
 
 // Handle approval/rejection and installation delegation
 document.addEventListener('DOMContentLoaded', function() {

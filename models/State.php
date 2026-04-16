@@ -94,5 +94,13 @@ class State extends BaseMaster {
         
         return $errors;
     }
+    
+    
+    
+    public function get_all_state(){
+        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE status = 'active' ORDER BY name");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
 }
 ?>

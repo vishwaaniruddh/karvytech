@@ -90,6 +90,57 @@ ob_start();
 </div>
 
 <!-- Search and Filters -->
+<!--<div class="card mb-6 shadow-sm border-gray-200">-->
+<!--    <div class="card-body p-4">-->
+<!--        <form id="filterForm" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">-->
+<!--            <div class="sm:col-span-2 lg:col-span-2">-->
+<!--                <div class="relative">-->
+<!--                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">-->
+<!--                        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">-->
+<!--                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>-->
+<!--                        </svg>-->
+<!--                    </div>-->
+<!--                    <input type="text" id="searchInput" name="search"-->
+<!--                        class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"-->
+<!--                        placeholder="Search Site ID, Location, Customer...">-->
+<!--                </div>-->
+<!--            </div>-->
+<!--            <div>-->
+<!--                <select id="cityFilter" name="city"-->
+<!--                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">-->
+<!--                    <option value="">All Cities</option>-->
+<!--                </select>-->
+<!--            </div>-->
+<!--            <div>-->
+<!--                <select id="stateFilter" name="state"-->
+<!--                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">-->
+<!--                    <option value="">All States</option>-->
+<!--                </select>-->
+<!--            </div>-->
+<!--            <div>-->
+<!--                <select id="statusFilter" name="activity_status"-->
+<!--                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">-->
+<!--                    <option value="">Status (All)</option>-->
+<!--                    <option value="pending">Pending</option>-->
+<!--                    <option value="in_progress">In Progress</option>-->
+<!--                    <option value="completed">Completed</option>-->
+<!--                </select>-->
+<!--            </div>-->
+<!--            <div>-->
+<!--                <select id="surveyStatusFilter" name="survey_status"-->
+<!--                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">-->
+<!--                    <option value="">Survey (All)</option>-->
+<!--                    <option value="pending">Pending</option>-->
+<!--                    <option value="submitted">Submitted</option>-->
+<!--                    <option value="approved">Approved</option>-->
+<!--                    <option value="rejected">Rejected</option>-->
+<!--                </select>-->
+<!--            </div>-->
+<!--        </form>-->
+<!--    </div>-->
+<!--</div>-->
+
+
 <div class="card mb-6 shadow-sm border-gray-200">
     <div class="card-body p-4">
         <form id="filterForm" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
@@ -105,18 +156,87 @@ ob_start();
                         placeholder="Search Site ID, Location, Customer...">
                 </div>
             </div>
+
+
+            <!--changes by suman---------------------------------------------------------------------------------------------------------------------------------->
+
+
             <div>
-                <select id="cityFilter" name="city"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">All Cities</option>
-                </select>
+                <!--<select id="siteFilter" name="site_id"-->
+                <!--    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">-->
+                <!--    <option value="">All Sites</option>-->
+                <!--</select>-->
+
+                <input list="siteList" id="siteFilter" name="site_id" placeholder="Search Site"
+                    class="block w-full px-3 py-2 border rounded-lg text-sm">
+
+                <datalist id="siteList"></datalist>
             </div>
+
+
+
+
             <div>
-                <select id="stateFilter" name="state"
-                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">All States</option>
-                </select>
+                <!--<select id="cityFilter" name="city"-->
+                <!--    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">-->
+                <!--    <option value="">All Cities</option>-->
+                <!--</select>-->
+                <input list="cityList" id="cityFilter" name="city" placeholder="Search City"
+                    class="block w-full px-3 py-2 border rounded-lg text-sm">
+
+                <datalist id="cityList"></datalist>
             </div>
+
+
+            <div>
+                <!--<select id="stateFilter" name="state"-->
+                <!--    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">-->
+                <!--    <option value="">All States</option>-->
+                <!--</select>-->
+                <input list="stateList" id="stateFilter" name="state" placeholder="Search State"
+                    class="block w-full px-3 py-2 border rounded-lg text-sm">
+
+                <datalist id="stateList"></datalist>
+            </div>
+
+
+
+            <div>
+                <!--<select id="branchFilter" name="branch"-->
+                <!--    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">-->
+                <!--    <option value="">All Branch</option>-->
+                <!--</select>-->
+                <input list="branchList" id="branchFilter" name="branch" placeholder="Search Branch"
+                    class="block w-full px-3 py-2 border rounded-lg text-sm">
+
+                <datalist id="branchList"></datalist>
+            </div>
+
+
+            <div>
+                <!--<select id="contactFilter" name="contact"-->
+                <!--    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">-->
+                <!--    <option value="">Contact person</option>-->
+                <!--</select>-->
+                <input list="contactList" id="contactFilter" name="contact_person_number" placeholder="Search Contact"
+                    class="block w-full px-3 py-2 border rounded-lg text-sm">
+
+                <datalist id="contactList"></datalist>
+            </div>
+            
+            
+            <div>
+                <!--<select id="contactFilter" name="contact"-->
+                <!--    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">-->
+                <!--    <option value="">Contact person</option>-->
+                <!--</select>-->
+                <input list="createdbyList" id="createdbyFilter" name="created_by" placeholder="Search Adding By"
+                    class="block w-full px-3 py-2 border rounded-lg text-sm">
+
+                <datalist id="createdbyList"></datalist>
+            </div>
+
+
             <div>
                 <select id="statusFilter" name="activity_status"
                     class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
@@ -126,6 +246,8 @@ ob_start();
                     <option value="completed">Completed</option>
                 </select>
             </div>
+            
+            
             <div>
                 <select id="surveyStatusFilter" name="survey_status"
                     class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
@@ -136,9 +258,44 @@ ob_start();
                     <option value="rejected">Rejected</option>
                 </select>
             </div>
+
+
+            <div>
+                <select id="materialStatusFilter" name="material_status"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+
+                    <option value="">Material Status</option>
+
+                    <option value="material_dispatched">Material Dispatched</option>
+                    <option value="dispatch_pending">Dispatch Pending</option>
+                    <option value="material_requested">Material Requested</option>
+                    <option value="not_requested">Material Not Requested</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="dispatched_not_delivered">Dispatched but Not Delivered</option>
+
+                </select>
+            </div>
+
+            <div>
+                <select id="insttallationStatusFilter" name="installation_status"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Installation (All)</option>
+                    <option value="pending">Pending</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+
+
+
+
+
         </form>
     </div>
 </div>
+
+
 
 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
     <div class="flex items-center gap-3">
@@ -264,6 +421,7 @@ ob_start();
     const limit = 20;
 
     document.addEventListener('DOMContentLoaded', () => {
+         loadMasterData(); //added by suman
         loadSites();
         setupEventListeners();
     });
@@ -273,6 +431,16 @@ ob_start();
         filterForm.querySelectorAll('select').forEach(select => {
             select.addEventListener('change', () => { currentPage = 1; loadSites(); });
         });
+
+
+ // 🔥 datalist inputs (city, state, site etc.)
+        filterForm.querySelectorAll('input[list]').forEach(input => {
+            input.addEventListener('input', () => {
+                currentPage = 1;
+                loadSites();
+            });
+        });
+
 
         let searchTimeout;
         document.getElementById('searchInput').addEventListener('input', () => {
@@ -382,6 +550,132 @@ ob_start();
             }
         }
     }
+
+
+ document.getElementById('branchFilter').addEventListener('change', function() {
+        console.log('Selected Branch:', this.value);
+    });
+
+
+    // Added by suman ============================================= 
+
+    async function loadMasterData() {
+        try {
+
+            const city = document.getElementById('cityFilter').value.trim();
+
+            const res = await fetch('api/get-master-data.php');
+            const result = await res.json();
+
+            if (!result.success) return;
+
+            const {
+                sites,
+                cities,
+                states,
+                branches,
+                contacts,
+                activity_status,
+                created_by,
+                installation_status
+            } = result.data;
+
+
+
+            // Sites
+            const siteList = document.getElementById('siteList');
+            sites.forEach(site => {
+                const opt = document.createElement('option');
+                opt.value = site.site_id; // user type karega
+                siteList.appendChild(opt);
+            });
+
+            // Cities
+            const cityList = document.getElementById('cityList');
+            cities.forEach(city => {
+                const opt = document.createElement('option');
+                opt.value = city;
+                cityList.appendChild(opt);
+            });
+
+            // States
+            const stateList = document.getElementById('stateList');
+            states.forEach(state => {
+                const opt = document.createElement('option');
+                opt.value = state;
+                stateList.appendChild(opt);
+            });
+
+            // Contacts (Name + Number 🔥)
+            
+            const contactList = document.getElementById('contactList');
+            // contacts.forEach(contact => {
+            //     const opt = document.createElement('option');
+            //     opt.value = contact.number; // 🔥 only number
+            //     opt.label = `${contact.name} - ${contact.number}`; // display
+            //     contactList.appendChild(opt);
+            // });
+
+                contacts.forEach(contact => {
+                    const opt = document.createElement('option');
+                    opt.value = contact.number; // ✅ only number
+                    opt.label = `${contact.name} - ${contact.number}`;
+                    contactList.appendChild(opt);
+                });
+                
+                
+
+            const branchList = document.getElementById('branchList');
+
+            if (branchList) {
+                branchList.innerHTML = ''; // 🔥 clear old data
+            
+                branches.forEach(branch => {
+                    const opt = document.createElement('option');
+                    opt.value = branch.branch.trim();
+                    branchList.appendChild(opt);
+                });
+            }
+            
+            
+            const createdbyList = document.getElementById('createdbyList');
+
+            if (createdbyList) {
+                createdbyList.innerHTML = '';
+            
+                created_by.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.created_by; // 👈 direct ID
+                    createdbyList.appendChild(opt);
+                });
+            }
+
+            // Activity filter
+            const activityDropdown = document.getElementById('activityFilter');
+            if (activityDropdown) {
+                activity_status.forEach(status => {
+                    const opt = document.createElement('option');
+                    opt.value = status;
+                    opt.textContent = status;
+                    activityDropdown.appendChild(opt);
+                });
+            }
+
+
+        } catch (err) {
+            console.error('Master data load failed', err);
+        }
+    }
+
+
+
+
+    // Added by suman ============================================= 
+
+
+
+
+
 
     function formatDateTime(dateStr) {
         if (!dateStr) return '-';
