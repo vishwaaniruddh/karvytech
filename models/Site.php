@@ -300,6 +300,15 @@ class Site extends BaseModel
             $conditions[] = "LOWER(TRIM(s.site_id)) LIKE LOWER(TRIM(?))";
             $params[] = "%" . $filters['site_id'] . "%";
         }
+
+        // Filter by Requisition ID
+        if (!empty($filters['requisition_id'])) {
+            $reqId = $filters['requisition_id'];
+            // Strip 'REQ-' prefix and leading zeros if present
+            $reqId = preg_replace('/^REQ-0*/i', '', $reqId);
+            $conditions[] = "mr_latest.id = ?";
+            $params[] = $reqId;
+        }
         
         if (!empty($conditions)) {
             $whereClause = "WHERE " . implode(" AND ", $conditions);
@@ -360,6 +369,7 @@ class Site extends BaseModel
 
         // Get paginated results with relationships
         $sql = "SELECT s.*, 
+                       s.location as site_name,
                        ct.name as city, st.name as state, co.name as country,
                        cu.name as customer,
                         banks.name as bank_name,
@@ -476,6 +486,7 @@ class Site extends BaseModel
     public function findWithRelations($id)
     {
         $sql = "SELECT s.*, 
+                       s.location as site_name,
                        ct.name as city_name, st.name as state_name, co.name as country_name,
                        cu.name as customer_name,
                        b.name as bank_name,
@@ -991,6 +1002,7 @@ class Site extends BaseModel
     public function getAllSites()
     {
         $sql = "SELECT s.*, 
+                       s.location as site_name,
                        ct.name as city_name, st.name as state_name
                 FROM {$this->table} s 
                 LEFT JOIN cities ct ON s.city_id = ct.id 

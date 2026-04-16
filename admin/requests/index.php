@@ -1,37 +1,17 @@
 <?php
 require_once __DIR__ . '/../../config/auth.php';
-require_once __DIR__ . '/../../models/MaterialRequest.php';
 require_once __DIR__ . '/../../models/Site.php';
 require_once __DIR__ . '/../../models/Vendor.php';
 
 // Require admin authentication
 Auth::requireRole(ADMIN_ROLE);
 
-$materialRequestModel = new MaterialRequest();
 $siteModel = new Site();
 $vendorModel = new Vendor();
-
-// Handle pagination and filters
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = 20;
-
-$filters = [
-    'status' => $_GET['status'] ?? '',
-    'vendor_id' => $_GET['vendor_id'] ?? '',
-    'site_id' => $_GET['site_id'] ?? ''
-];
-
-// Get material requests with pagination
-$requestsData = $materialRequestModel->getAllWithPagination($page, $limit, $filters);
-$requests = $requestsData['requests'];
-$totalPages = $requestsData['pages'];
 
 // Get sites and vendors for filters
 $sites = $siteModel->getAllSites();
 $vendors = $vendorModel->getAllVendors();
-
-// Get statistics
-$stats = $materialRequestModel->getStats();
 
 $title = 'Material Requests Hub';
 ob_start();
@@ -55,75 +35,70 @@ ob_start();
 </div>
 
 <!-- Statistics Cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-    <?php
-    $statItems = [
-        ['label' => 'Total Volume', 'value' => $stats['total'], 'color' => 'blue', 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'],
-        ['label' => 'Awaiting Review', 'value' => $stats['pending'], 'color' => 'amber', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
-        ['label' => 'Approved Requests', 'value' => $stats['approved'], 'color' => 'emerald', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
-        ['label' => 'Active Dispatches', 'value' => $stats['dispatched'], 'color' => 'indigo', 'icon' => 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4']
-    ];
-    foreach ($statItems as $item): ?>
-    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+<div id="statsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <!-- Skeleton Loaders -->
+    <?php for($i=0; $i<4; $i++): ?>
+    <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm animate-pulse">
         <div class="flex items-center justify-between mb-4">
-            <div class="w-10 h-10 bg-<?php echo $item['color']; ?>-50 rounded-lg flex items-center justify-center text-<?php echo $item['color']; ?>-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<?php echo $item['icon']; ?>"/></svg>
-            </div>
-            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider"><?php echo $item['label']; ?></span>
+            <div class="w-10 h-10 bg-gray-100 rounded-lg"></div>
+            <div class="w-20 h-3 bg-gray-100 rounded"></div>
         </div>
-        <div class="text-3xl font-bold text-gray-900"><?php echo number_format($item['value']); ?></div>
+        <div class="w-16 h-8 bg-gray-100 rounded"></div>
     </div>
-    <?php endforeach; ?>
+    <?php endfor; ?>
 </div>
 
 <!-- Search and Filters -->
 <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <form id="filterForm" class="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div>
             <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lifecycle Status</label>
-            <select id="statusFilter" class="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-blue-500 focus:bg-white outline-none">
+            <select name="status" id="statusFilter" class="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-blue-500 focus:bg-white outline-none">
                 <option value="">All Status</option>
-                <option value="draft" <?php echo $filters['status'] === 'draft' ? 'selected' : ''; ?>>Draft</option>
-                <option value="pending" <?php echo $filters['status'] === 'pending' ? 'selected' : ''; ?>>Pending Review</option>
-                <option value="approved" <?php echo $filters['status'] === 'approved' ? 'selected' : ''; ?>>Approved</option>
-                <option value="dispatched" <?php echo $filters['status'] === 'dispatched' ? 'selected' : ''; ?>>Dispatched</option>
-                <option value="completed" <?php echo $filters['status'] === 'completed' ? 'selected' : ''; ?>>Completed</option>
-                <option value="rejected" <?php echo $filters['status'] === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
+                <option value="draft">Draft</option>
+                <option value="pending">Pending Review</option>
+                <option value="approved">Approved</option>
+                <option value="dispatched">Dispatched</option>
+                <option value="completed">Completed</option>
+                <option value="rejected">Rejected</option>
             </select>
         </div>
         <div>
             <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Assigned Vendor</label>
-            <select id="vendorFilter" class="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-blue-500 focus:bg-white outline-none">
+            <select name="vendor_id" id="vendorFilter" class="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-blue-500 focus:bg-white outline-none">
                 <option value="">All Vendors</option>
                 <?php foreach ($vendors as $vendor): ?>
-                    <option value="<?php echo $vendor['id']; ?>" <?php echo $filters['vendor_id'] == $vendor['id'] ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($vendor['name']); ?>
-                    </option>
+                    <option value="<?php echo $vendor['id']; ?>"><?php echo htmlspecialchars($vendor['name']); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
         <div>
             <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Site Location</label>
-            <select id="siteFilter" class="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-blue-500 focus:bg-white outline-none">
+            <select name="site_id" id="siteFilter" class="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-blue-500 focus:bg-white outline-none">
                 <option value="">All Sites</option>
                 <?php foreach ($sites as $site): ?>
-                    <option value="<?php echo $site['id']; ?>" <?php echo $filters['site_id'] == $site['id'] ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($site['site_id']); ?> - <?php echo htmlspecialchars($site['site_name']); ?>
-                    </option>
+                    <option value="<?php echo $site['id']; ?>"><?php echo htmlspecialchars($site['site_id']); ?> - <?php echo htmlspecialchars($site['site_name']); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
+        <div>
+            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Requisition ID</label>
+            <input type="text" name="request_id" id="requestIdFilter" placeholder="Search REQ#" class="block w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold focus:ring-blue-500 focus:bg-white outline-none">
+        </div>
         <div class="flex items-end">
-            <button onclick="applyFilters()" class="w-full py-2 bg-gray-900 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg shadow-gray-200">
+            <button type="button" onclick="loadRequests()" class="w-full py-2 bg-gray-900 text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-lg shadow-gray-200">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 10.414V17a1 1 0 01-.293.707l-2 2A1 1 0 018 19v-8.586L3.293 6.707A1 1 0 013 6V3z"/></svg>
                 Apply Analysis
             </button>
         </div>
-    </div>
+    </form>
 </div>
 
 <!-- Material Requests Table -->
-<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden relative">
+    <div id="loadingOverlay" class="absolute inset-0 bg-white/60 z-10 flex items-center justify-center hidden">
+        <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+    </div>
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-100">
             <thead class="bg-gray-50/50">
@@ -139,107 +114,195 @@ ob_start();
                     <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Status</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50">
-                <?php if (empty($requests)): ?>
+            <tbody id="requestsTableBody" class="divide-y divide-gray-50 italic text-gray-400">
                 <tr>
-                    <td colspan="7" class="text-center py-20 text-gray-400 font-bold italic">No requisitions match the current criteria</td>
+                    <td colspan="7" class="text-center py-20">Initializing requisitions...</td>
                 </tr>
-                <?php else: ?>
-                    <?php 
-                    $sno = ($page - 1) * $limit + 1;
-                    foreach ($requests as $request): 
-                    ?>
-                    <tr class="hover:bg-gray-50/50 transition-colors group">
-                        <td class="px-6 py-4">
-                            <input type="checkbox" class="request-cb w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" value="<?php echo $request['id']; ?>" onchange="updateBulkActionState()">
-                        </td>
-                        <td class="px-6 py-4 text-xs font-bold text-gray-400"><?php echo $sno++; ?></td>
-                         <td class="px-6 py-4">
-                            <div class="flex items-center gap-2">
-                                <button onclick="viewRequest(<?php echo $request['id']; ?>)" class="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="View Details">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                </button>
-                                <?php if ($request['status'] === 'pending'): ?>
-                                    <button onclick="approveRequest(<?php echo $request['id']; ?>)" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Approve">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                    </button>
-                                    <button onclick="rejectRequest(<?php echo $request['id']; ?>)" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all shadow-sm" title="Reject">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                <?php endif; ?>
-                                <?php if ($request['status'] === 'approved'): ?>
-                                    <button onclick="createDispatch(<?php echo $request['id']; ?>)" class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all shadow-sm" title="Dispatch">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                    </button>
-                                <?php endif; ?>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div>
-                                <div class="text-sm font-bold text-gray-900">REQ#<?php echo $request['id']; ?></div>
-                                <div class="text-[11px] font-medium text-gray-400 uppercase mt-0.5">REQ DT: <?php echo date('d M Y', strtotime($request['request_date'])); ?></div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="max-w-[180px]">
-                                <div class="text-sm font-bold text-gray-900 truncate"><?php echo htmlspecialchars($request['site_code']); ?></div>
-                                <div class="text-[11px] font-medium text-gray-400 truncate mt-0.5"><?php echo htmlspecialchars($request['location']); ?></div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-bold text-gray-900"><?php echo htmlspecialchars($request['vendor_company_name'] ?? $request['vendor_name']); ?></div>
-                            <div class="text-[11px] font-medium text-gray-400 uppercase mt-0.5">Required: <?php echo $request['required_date'] ? date('d M Y', strtotime($request['required_date'])) : 'ASAP'; ?></div>
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <?php
-                            $statusMap = [
-                                'draft' => ['color' => 'gray', 'label' => 'Draft Plan'],
-                                'pending' => ['color' => 'amber', 'label' => 'Pending Review'],
-                                'approved' => ['color' => 'emerald', 'label' => 'Ready for Dispatch'],
-                                'dispatched' => ['color' => 'indigo', 'label' => 'In Transit'],
-                                'completed' => ['color' => 'purple', 'label' => 'Delivery Finalized'],
-                                'rejected' => ['color' => 'rose', 'label' => 'Denied']
-                            ];
-                            $st = $statusMap[$request['status']] ?? ['color' => 'gray', 'label' => $request['status']];
-                            ?>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-<?php echo $st['color']; ?>-50 text-<?php echo $st['color']; ?>-700 border border-<?php echo $st['color']; ?>-100">
-                                <?php echo $st['label']; ?>
-                            </span>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
             </tbody>
         </table>
     </div>
     
-    <?php if ($totalPages > 1): ?>
-    <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
-        <div class="text-[11px] font-bold text-gray-400 uppercase">Page <?php echo $page; ?> of <?php echo $totalPages; ?></div>
-        <div class="flex gap-1">
-            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                <a href="?page=<?php echo $i; ?>&status=<?php echo urlencode($filters['status']); ?>&vendor_id=<?php echo urlencode($filters['vendor_id']); ?>&site_id=<?php echo urlencode($filters['site_id']); ?>" 
-                   class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all <?php echo $i === $page ? 'bg-gray-900 text-white shadow-lg' : 'bg-white border border-gray-200 text-gray-500 hover:border-gray-900 hover:text-gray-900'; ?>">
-                    <?php echo $i; ?>
-                </a>
-            <?php endfor; ?>
-        </div>
+    <!-- Pagination -->
+    <div id="paginationContainer" class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between hidden">
     </div>
-    <?php endif; ?>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function applyFilters() {
-    const status = document.getElementById('statusFilter').value;
-    const vendorId = document.getElementById('vendorFilter').value;
-    const siteId = document.getElementById('siteFilter').value;
-    const url = new URL(window.location);
-    if (status) url.searchParams.set('status', status); else url.searchParams.delete('status');
-    if (vendorId) url.searchParams.set('vendor_id', vendorId); else url.searchParams.delete('vendor_id');
-    if (siteId) url.searchParams.set('site_id', siteId); else url.searchParams.delete('site_id');
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
+let currentPage = 1;
+const limit = 20;
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadRequests();
+    
+    // Auto-reload on filter change
+    document.querySelectorAll('#filterForm select').forEach(select => {
+        select.addEventListener('change', () => { currentPage = 1; loadRequests(); });
+    });
+    
+    let searchTimeout;
+    document.getElementById('requestIdFilter').addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => { currentPage = 1; loadRequests(); }, 500);
+    });
+});
+
+async function loadRequests() {
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.classList.remove('hidden');
+    
+    const formData = new FormData(document.getElementById('filterForm'));
+    const params = new URLSearchParams(formData);
+    params.set('page', currentPage);
+    params.set('limit', limit);
+    
+    try {
+        const response = await fetch(`api/get-requests.php?${params.toString()}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            renderTable(result.requests);
+            renderStats(result.stats);
+            renderPagination(result.pagination);
+        } else {
+            Swal.fire('Error', result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Fetch error:', error);
+    } finally {
+        overlay.classList.add('hidden');
+    }
+}
+
+function renderTable(requests) {
+    const tbody = document.getElementById('requestsTableBody');
+    if (!requests || requests.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-20 text-gray-400 font-bold italic">No requisitions match the current criteria</td></tr>`;
+        return;
+    }
+    
+    const statusMap = {
+        'draft': { color: 'gray', label: 'Draft Plan' },
+        'pending': { color: 'amber', label: 'Pending Review' },
+        'approved': { color: 'emerald', label: 'Ready for Dispatch' },
+        'dispatched': { color: 'indigo', label: 'In Transit' },
+        'completed': { color: 'purple', label: 'Delivery Finalized' },
+        'rejected': { color: 'rose', label: 'Denied' }
+    };
+    
+    const sNoStart = (currentPage - 1) * limit + 1;
+    
+    tbody.innerHTML = requests.map((req, index) => {
+        const st = statusMap[req.status] || { color: 'gray', label: req.status };
+        return `
+            <tr class="hover:bg-gray-50/50 transition-colors group italic-none">
+                <td class="px-6 py-4">
+                    <input type="checkbox" class="request-cb w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" value="${req.id}" onchange="updateBulkActionState()">
+                </td>
+                <td class="px-6 py-4 text-xs font-bold text-gray-400">${sNoStart + index}</td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center gap-2">
+                        <button onclick="viewRequest(${req.id})" class="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="View Details">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                        ${req.status === 'pending' ? `
+                            <button onclick="approveRequest(${req.id})" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Approve">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            </button>
+                            <button onclick="rejectRequest(${req.id})" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all shadow-sm" title="Reject">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        ` : ''}
+                        ${req.status === 'approved' ? `
+                            <button onclick="createDispatch(${req.id})" class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all shadow-sm" title="Dispatch">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            </button>
+                        ` : ''}
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    <div>
+                        <div class="text-sm font-bold text-gray-900">REQ#${req.id}</div>
+                        <div class="text-[11px] font-medium text-gray-400 uppercase mt-0.5">REQ DT: ${formatDate(req.request_date)}</div>
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="max-w-[180px]">
+                        <div class="text-sm font-bold text-gray-900 truncate">${req.site_code || 'N/A'}</div>
+                        <div class="text-[11px] font-medium text-gray-400 truncate mt-0.5">${req.location || 'N/A'}</div>
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="text-sm font-bold text-gray-900">${req.vendor_company_name || req.vendor_name || 'In-house'}</div>
+                    <div class="text-[11px] font-medium text-gray-400 uppercase mt-0.5">Required: ${req.required_date ? formatDate(req.required_date) : 'ASAP'}</div>
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-${st.color}-50 text-${st.color}-700 border border-${st.color}-100">
+                        ${st.label}
+                    </span>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    // Remove italic from table body when data is loaded
+    tbody.classList.remove('italic', 'text-gray-400');
+}
+
+function renderStats(stats) {
+    const statsContainer = document.getElementById('statsContainer');
+    const statItems = [
+        { label: 'Total Volume', value: stats.total, color: 'blue', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
+        { label: 'Awaiting Review', value: stats.pending, color: 'amber', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+        { label: 'Approved Requests', value: stats.approved, color: 'emerald', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+        { label: 'Active Dispatches', value: stats.dispatched, color: 'indigo', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' }
+    ];
+    
+    statsContainer.innerHTML = statItems.map(item => `
+        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 bg-${item.color}-50 rounded-lg flex items-center justify-center text-${item.color}-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${item.icon}"/></svg>
+                </div>
+                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">${item.label}</span>
+            </div>
+            <div class="text-3xl font-bold text-gray-900">${new Intl.NumberFormat().format(item.value)}</div>
+        </div>
+    `).join('');
+}
+
+function renderPagination(pagination) {
+    const container = document.getElementById('paginationContainer');
+    if (pagination.pages <= 1) {
+        container.classList.add('hidden');
+        return;
+    }
+    
+    container.classList.remove('hidden');
+    let html = `<div class="text-[11px] font-bold text-gray-400 uppercase">Page ${pagination.page} of ${pagination.pages}</div>`;
+    html += `<div class="flex gap-1">`;
+    
+    for (let i = 1; i <= pagination.pages; i++) {
+        html += `
+            <button onclick="changePage(${i})" 
+               class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${i === pagination.page ? 'bg-gray-900 text-white shadow-lg' : 'bg-white border border-gray-200 text-gray-500 hover:border-gray-900 hover:text-gray-900'}">
+                ${i}
+            </button>
+        `;
+    }
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+function changePage(page) {
+    currentPage = page;
+    loadRequests();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function viewRequest(id) { window.open(`view-request.php?id=${id}`, '_blank'); }
@@ -264,7 +327,7 @@ function updateRequestStatus(id, status, reason = '') {
     }).then(res => res.json()).then(data => {
         if (data.success) {
             Swal.fire({ icon: 'success', title: 'Task Executed', timer: 1500, showConfirmButton: false });
-            setTimeout(() => location.reload(), 1500);
+            loadRequests();
         }
     });
 }
@@ -274,7 +337,8 @@ function createDispatch(requestId) {
 }
 
 function exportRequests() {
-    const params = new URLSearchParams(window.location.search);
+    const formData = new FormData(document.getElementById('filterForm'));
+    const params = new URLSearchParams(formData);
     window.open(`export-requests.php?${params.toString()}`, '_blank');
 }
 
@@ -309,7 +373,7 @@ function bulkUpdateStatus(status) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ request_ids: selectedIds, status: status })
             }).then(res => res.json()).then(data => {
-                if (data.success) { Swal.fire('Complete', data.message, 'success'); setTimeout(() => location.reload(), 1500); }
+                if (data.success) { Swal.fire('Complete', data.message, 'success'); loadRequests(); updateBulkActionState(); }
             });
         }
     });
@@ -343,6 +407,7 @@ function bulkUpdateStatus(status) {
 <style>
 @keyframes bounce-short { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -8px); } }
 .animate-bounce-short { animation: bounce-short 3s infinite ease-in-out; }
+.italic-none { font-style: normal !important; }
 </style>
 
 <?php

@@ -23,7 +23,8 @@ try {
         'city' => $_GET['city'] ?? '',
         'state' => $_GET['state'] ?? '',
         'activity_status' => $_GET['activity_status'] ?? '',
-        'survey_status' => $_GET['survey_status'] ?? ''
+        'survey_status' => $_GET['survey_status'] ?? '',
+        'requisition_id' => $_GET['requisition_id'] ?? ''
     ];
 
     $result = $siteModel->getAllWithPagination(1, 1000000, $search, $filters);

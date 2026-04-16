@@ -287,6 +287,11 @@ ob_start();
                 </select>
             </div>
 
+            <div>
+                <input type="text" id="requisitionIdFilter" name="requisition_id" placeholder="Search Req #"
+                    class="block w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
 
 
 
@@ -444,6 +449,11 @@ ob_start();
 
         let searchTimeout;
         document.getElementById('searchInput').addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => { currentPage = 1; loadSites(); }, 500);
+        });
+
+        document.getElementById('requisitionIdFilter').addEventListener('input', () => {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => { currentPage = 1; loadSites(); }, 500);
         });

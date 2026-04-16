@@ -26,6 +26,7 @@ $filters = [
     'contact_person_number' => $_GET['contact_person_number'] ?? '',
     'installation_status' => $_GET['installation_status'] ?? '',
     'material_status' => $_GET['material_status'] ?? '',
+    'requisition_id' => $_GET['requisition_id'] ?? '',
 ];
 
 

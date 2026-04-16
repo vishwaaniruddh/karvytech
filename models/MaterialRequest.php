@@ -158,6 +158,14 @@ class MaterialRequest {
             $conditions[] = "mr.site_id = ?";
             $params[] = $filters['site_id'];
         }
+
+        // Search by Request ID
+        if (!empty($filters['request_id'])) {
+            $reqId = $filters['request_id'];
+            $reqId = preg_replace('/^REQ-0*/i', '', $reqId);
+            $conditions[] = "mr.id LIKE ?";
+            $params[] = "%" . $reqId . "%";
+        }
         
         if (!empty($conditions)) {
             $whereClause = "WHERE " . implode(" AND ", $conditions);
