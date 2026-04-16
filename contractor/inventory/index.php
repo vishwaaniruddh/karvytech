@@ -7,286 +7,291 @@ require_once __DIR__ . '/../../models/Inventory.php';
 Auth::requireVendor();
 
 $vendorId = Auth::getVendorId();
+$inventoryModel = new Inventory();
 
-// Handle pagination
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = 20;
-$search = $_GET['search'] ?? '';
-$status = $_GET['status'] ?? '';
+// Get summary statistics (Server-side for initial load)
+$totalDispatches = $inventoryModel->getContractorDispatchCount($vendorId);
+$totalItems = $inventoryModel->getContractorTotalItems($vendorId);
+$pendingConfirmations = $inventoryModel->getContractorPendingConfirmations($vendorId);
 
-try {
-    $inventoryModel = new Inventory();
-    
-    // Get paginated received materials for this contractor
-    $materialsData = $inventoryModel->getContractorReceivedMaterialsPaginated($vendorId, $page, $limit, $search, $status);
-    $receivedMaterials = $materialsData['materials'];
-    $totalPages = $materialsData['pages'];
-    $totalRecords = $materialsData['total'];
-    
-    // Get summary statistics
-    $totalDispatches = $inventoryModel->getContractorDispatchCount($vendorId);
-    $totalItems = $inventoryModel->getContractorTotalItems($vendorId);
-    $pendingConfirmations = $inventoryModel->getContractorPendingConfirmations($vendorId);
-    
-    // Get database connection for additional queries
-    require_once __DIR__ . '/../../config/database.php';
-    $db = Database::getInstance()->getConnection();
-    
-    // Get accepted count (confirmed dispatches)
-    $acceptedSql = "SELECT COUNT(*) FROM inventory_dispatches WHERE vendor_id = ? AND dispatch_status = 'confirmed'";
-    $acceptedStmt = $db->prepare($acceptedSql);
-    $acceptedStmt->execute([$vendorId]);
-    $acceptedCount = $acceptedStmt->fetchColumn();
-    
-    // Get distinct material summary
-    $materialSql = "SELECT 
-                        bi.item_name,
-                        COUNT(DISTINCT id.id) as dispatch_count,
-                        COUNT(idi.id) as total_quantity,
-                        bi.unit
-                    FROM inventory_dispatches id
-                    JOIN inventory_dispatch_items idi ON id.id = idi.dispatch_id
-                    JOIN boq_items bi ON idi.boq_item_id = bi.id
-                    WHERE id.vendor_id = ?
-                    GROUP BY bi.id, bi.item_name, bi.unit
-                    ORDER BY bi.item_name";
-    $materialStmt = $db->prepare($materialSql);
-    $materialStmt->execute([$vendorId]);
-    $materialSummary = $materialStmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // Get all dispatches for the contractor
-    $dispatchSql = "SELECT 
-                        id.*,
-                        s.site_id as site_code,
-                        s.location as site_location
-                    FROM inventory_dispatches id
-                    LEFT JOIN sites s ON id.site_id = s.id
-                    WHERE id.vendor_id = ?
-                    ORDER BY id.dispatch_date DESC, id.id DESC";
-    $dispatchStmt = $db->prepare($dispatchSql);
-    $dispatchStmt->execute([$vendorId]);
-    $allDispatches = $dispatchStmt->fetchAll(PDO::FETCH_ASSOC);
-    
-} catch (Exception $e) {
-    error_log("Error in contractor inventory: " . $e->getMessage());
-    $receivedMaterials = [];
-    $totalPages = 1;
-    $totalRecords = 0;
-    $totalDispatches = 0;
-    $totalItems = 0;
-    $pendingConfirmations = 0;
-    $acceptedCount = 0;
-    $materialSummary = [];
-    $allDispatches = [];
-}
+// Get accepted count
+require_once __DIR__ . '/../../config/database.php';
+$db = Database::getInstance()->getConnection();
+$acceptedCount = $db->query("SELECT COUNT(*) FROM inventory_dispatches WHERE vendor_id = $vendorId AND dispatch_status = 'confirmed'")->fetchColumn();
 
 $title = 'Material Received from Admin';
 ob_start();
 ?>
 
-<style>
-input, textarea, select {
-    border: 1px solid #d1d5db !important;
-}
-</style>
-
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Material Received from Admin</h1>
-            <p class="mt-1 text-sm text-gray-600">Track all materials received from Karvy Admin</p>
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Material Receipts</h1>
+            <p class="mt-1 text-sm text-gray-500 font-medium">Manage and audit all materials dispatched to your organization from Karvy Admin.</p>
         </div>
-        <div class="flex space-x-3">
-            <a href="../dashboard.php" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-                </svg>
+        <div class="flex items-center gap-3">
+            <button onclick="exportToExcel()" class="inline-flex items-center px-4 py-2 bg-emerald-50 text-emerald-700 text-sm font-bold rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-all duration-200">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Export Excel
+            </button>
+            <a href="../dashboard.php" class="inline-flex items-center px-4 py-2 bg-white text-gray-700 text-sm font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-all duration-200 shadow-sm">
                 Back to Dashboard
             </a>
         </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-                            <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a2 2 0 002 2h8a2 2 0 002-2V3a2 2 0 012 2v6h-3a2 2 0 00-2 2v4H6a2 2 0 01-2-2V5zm8 8a2 2 0 012-2h3v4a2 2 0 01-2 2v-1a2 2 0 00-2-2h-1v-1z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8V4a1 1 0 00-1-1H7a1 1 0 00-1 1v1m8 0V4a1 1 0 00-1-1H9a1 1 0 00-1 1v1"></path></svg>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Total Receipts</p>
-                    <p class="text-2xl font-bold text-gray-900"><?php echo $totalDispatches; ?></p>
+                <div>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Receipts</p>
+                    <p class="text-2xl font-black text-gray-900 mt-0.5"><?php echo $totalDispatches; ?></p>
                 </div>
             </div>
         </div>
-
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
+        <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Accepted</p>
-                    <p class="text-2xl font-bold text-gray-900"><?php echo $acceptedCount; ?></p>
+                <div>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Confirmed</p>
+                    <p class="text-2xl font-black text-gray-900 mt-0.5"><?php echo $acceptedCount; ?></p>
                 </div>
             </div>
         </div>
-
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
+        <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Pending</p>
-                    <p class="text-2xl font-bold text-gray-900"><?php echo $pendingConfirmations; ?></p>
+                <div>
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Pending Action</p>
+                    <p class="text-2xl font-black text-gray-900 mt-0.5"><?php echo $pendingConfirmations; ?></p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Material Summary -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Material Summary</h3>
-            <p class="text-sm text-gray-600">Distinct materials received with counts</p>
-        </div>
-        <div class="p-6">
-            <?php if (!empty($materialSummary)): ?>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <?php foreach ($materialSummary as $material): ?>
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <div class="flex-1">
-                                <h4 class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($material['item_name']); ?></h4>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    <?php echo $material['dispatch_count']; ?> dispatch<?php echo $material['dispatch_count'] > 1 ? 'es' : ''; ?>
-                                </p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-lg font-bold text-blue-600"><?php echo number_format($material['total_quantity']); ?></div>
-                                <div class="text-xs text-gray-500"><?php echo htmlspecialchars($material['unit']); ?></div>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
+    <!-- Filters Section -->
+    <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm p-6 mb-10">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Search Dispatch</label>
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="Dispatch # or Site ID..." class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold">
+                    <svg class="w-4 h-4 absolute left-3.5 top-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
-            <?php else: ?>
-                <div class="text-center py-8">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8V4a1 1 0 00-1-1H7a1 1 0 00-1 1v1m8 0V4a1 1 0 00-1-1H9a1 1 0 00-1 1v1"></path>
-                    </svg>
-                    <p class="mt-2 text-sm text-gray-600">No materials received yet</p>
-                </div>
-            <?php endif; ?>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Workflow Status</label>
+                <select id="statusFilter" class="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold">
+                    <option value="">All Statuses</option>
+                    <option value="dispatched">Dispatched</option>
+                    <option value="in_transit">In Transit</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="confirmed">Confirmed</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Date From</label>
+                <input type="date" id="dateFrom" class="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold">
+            </div>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Date To</label>
+                <input type="date" id="dateTo" class="w-full px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 transition-all font-semibold">
+            </div>
         </div>
     </div>
 
-    <!-- All Dispatches -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">All Material Receipts</h3>
-            <p class="text-sm text-gray-600">Complete list of materials received from Karvy Admin</p>
-        </div>
+    <!-- Data Table -->
+    <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden mb-8">
         <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dispatch Number</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dispatch Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50/50">
+                        <th class="px-6 py-4 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.2em]">#</th>
+                        <th class="px-6 py-4 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.2em]">Dispatch Details</th>
+                        <th class="px-6 py-4 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.2em]">Deployment Site</th>
+                        <th class="px-6 py-4 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.2em]">Logistics Info</th>
+                        <th class="px-6 py-4 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.2em]">Status</th>
+                        <th class="px-6 py-4 text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.2em] text-center">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    <?php if (empty($allDispatches)): ?>
-                    <tr>
-                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8V4a1 1 0 00-1-1H7a1 1 0 00-1 1v1m8 0V4a1 1 0 00-1-1H9a1 1 0 00-1 1v1"></path>
-                            </svg>
-                            <p class="text-lg font-medium">No material receipts found</p>
-                            <p class="text-sm">Materials dispatched from admin will appear here</p>
-                        </td>
-                    </tr>
-                    <?php else: ?>
-                        <?php 
-                        $serialNumber = 1;
-                        foreach ($allDispatches as $dispatch): 
-                        ?>
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900"><?php echo $serialNumber++; ?></div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($dispatch['dispatch_number']); ?></div>
-                                <div class="text-xs text-gray-500">ID: <?php echo $dispatch['id']; ?></div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($dispatch['site_code'] ?? 'N/A'); ?></div>
-                                <div class="text-xs text-gray-500"><?php echo htmlspecialchars($dispatch['site_location'] ?? 'N/A'); ?></div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">
-                                    <span class="font-medium">View Details</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <?php echo $dispatch['dispatch_date'] ? date('d M Y', strtotime($dispatch['dispatch_date'])) : 'N/A'; ?>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <?php 
-                                $status = $dispatch['dispatch_status'] ?? 'dispatched';
-                                $statusConfig = [
-                                    'dispatched' => ['bg' => 'bg-orange-100', 'text' => 'text-orange-800', 'label' => 'Dispatched'],
-                                    'in_transit' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'In Transit'],
-                                    'delivered' => ['bg' => 'bg-purple-100', 'text' => 'text-purple-800', 'label' => 'Delivered'],
-                                    'confirmed' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'Confirmed'],
-                                    'partially_delivered' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => 'Partial']
-                                ];
-                                $config = $statusConfig[$status] ?? $statusConfig['dispatched'];
-                                ?>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $config['bg']; ?> <?php echo $config['text']; ?>">
-                                    <?php echo $config['label']; ?>
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div class="flex space-x-2">
-                                    <a href="../material-received-from-admin.php?id=<?php echo $dispatch['id']; ?>" 
-                                       class="text-blue-600 hover:text-blue-900" title="View Details">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
-                                        </svg>
-                                    </a>
-                                   
-                                </div>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                <tbody id="materialsTableBody" class="divide-y divide-gray-50">
+                    <!-- Loaded via JS -->
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        <div class="px-8 py-6 bg-gray-50/50 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-gray-100">
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                Showing <span id="showingStart">0</span> - <span id="showingEnd">0</span> of <span id="totalResults">0</span> Receipts
+            </div>
+            <div class="flex items-center gap-2" id="paginationControls">
+                <!-- Loaded via JS -->
+            </div>
+        </div>
     </div>
 </div>
+
+<template id="materialRowTemplate">
+    <tr class="group hover:bg-blue-50/30 transition-all duration-200">
+        <td class="px-6 py-5 text-xs font-black text-gray-300">#SERIAL#</td>
+        <td class="px-6 py-5">
+            <div class="flex flex-col">
+                <span class="text-sm font-black text-gray-900 uppercase tracking-tight">#DISPATCH_NUMBER#</span>
+                <span class="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-widest">#DATE#</span>
+            </div>
+        </td>
+        <td class="px-6 py-5">
+            <div class="flex flex-col">
+                <span class="text-sm font-bold text-gray-800 uppercase tracking-tight">#SITE_CODE#</span>
+                <span class="text-[10px] font-bold text-gray-400 truncate max-w-[200px] uppercase tracking-widest">#LOCATION#</span>
+            </div>
+        </td>
+        <td class="px-6 py-5">
+             <div class="flex flex-col gap-1">
+                 <div class="flex items-center gap-2">
+                     <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Courier:</span>
+                     <span class="text-[10px] font-bold text-gray-700">#COURIER#</span>
+                 </div>
+                 <div class="flex items-center gap-2">
+                     <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Tracking/LR:</span>
+                     <span class="text-[10px] font-bold text-gray-700">#TRACKING#</span>
+                 </div>
+             </div>
+        </td>
+        <td class="px-6 py-5">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest #STATUS_BG# #STATUS_TEXT# border #STATUS_BORDER#">
+                #STATUS_LABEL#
+            </span>
+        </td>
+        <td class="px-6 py-5">
+            <div class="flex items-center justify-center gap-2">
+                <a href="../material-received-from-admin.php?id=#ID#" class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100" title="View Details">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                </a>
+            </div>
+        </td>
+    </tr>
+</template>
+
+<script>
+let currentPage = 1;
+const limit = 10;
+
+function fetchMaterials(page = 1) {
+    currentPage = page;
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+    
+    const url = `api/get-received-materials.php?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}&status=${status}&date_from=${dateFrom}&date_to=${dateTo}`;
+    
+    // Show skeleton or loading state
+    const tbody = document.getElementById('materialsTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="py-20 text-center"><div class="flex flex-col items-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div><span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Syncing Receipts...</span></div></td></tr>';
+
+    fetch(url)
+        .then(response => response.json())
+        .then(res => {
+            if (res.success) {
+                renderTable(res.data, res.pagination);
+                renderPagination(res.pagination);
+            }
+        });
+}
+
+function renderTable(data, pagination) {
+    const tbody = document.getElementById('materialsTableBody');
+    const template = document.getElementById('materialRowTemplate').innerHTML;
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-20 text-center text-gray-400 font-bold uppercase tracking-widest text-xs">No matching receipts found in archives</td></tr>';
+        return;
+    }
+
+    let html = '';
+    const statusMap = {
+        'dispatched': {bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-100', label: 'Dispatched'},
+        'in_transit': {bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-100', label: 'In Transit'},
+        'delivered': {bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100', label: 'Delivered'},
+        'confirmed': {bg: 'bg-green-50', text: 'text-green-600', border: 'border-green-100', label: 'Confirmed'},
+    };
+
+    data.forEach((row, index) => {
+        const serial = ((pagination.page - 1) * pagination.limit) + index + 1;
+        const status = statusMap[row.dispatch_status] || statusMap['dispatched'];
+        
+        let rowHtml = template
+            .replace('#SERIAL#', serial.toString().padStart(2, '0'))
+            .replace('#DISPATCH_NUMBER#', row.dispatch_number)
+            .replace('#DATE#', row.dispatch_date ? new Date(row.dispatch_date).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'}) : 'N/A')
+            .replace('#SITE_CODE#', row.site_code || 'GNR-MASTER')
+            .replace('#LOCATION#', row.site_location || 'General Warehouse')
+            .replace('#COURIER#', row.courier_name || 'Direct Delivery')
+            .replace('#TRACKING#', row.tracking_number || 'N/A')
+            .replace('#STATUS_BG#', status.bg)
+            .replace('#STATUS_TEXT#', status.text)
+            .replace('#STATUS_BORDER#', status.border)
+            .replace('#STATUS_LABEL#', status.label)
+            .replace('#ID#', row.id);
+            
+        html += rowHtml;
+    });
+
+    tbody.innerHTML = html;
+    
+    document.getElementById('showingStart').innerText = ((pagination.page - 1) * pagination.limit) + 1;
+    document.getElementById('showingEnd').innerText = Math.min(pagination.page * pagination.limit, pagination.total);
+    document.getElementById('totalResults').innerText = pagination.total;
+}
+
+function renderPagination(pagination) {
+    const container = document.getElementById('paginationControls');
+    let html = '';
+    
+    const prevDisabled = pagination.page === 1 ? 'opacity-30 pointer-events-none' : '';
+    html += `<button onclick="fetchMaterials(${pagination.page - 1})" class="p-2 bg-white border border-gray-100 rounded-lg shadow-sm hover:bg-gray-50 transition-colors ${prevDisabled}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>`;
+    
+    for (let i = 1; i <= pagination.pages; i++) {
+        const active = i === pagination.page ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50';
+        html += `<button onclick="fetchMaterials(${i})" class="w-8 h-8 text-[10px] font-bold rounded-lg border transition-all duration-200 ${active}">${i}</button>`;
+    }
+    
+    const nextDisabled = pagination.page === pagination.pages ? 'opacity-30 pointer-events-none' : '';
+    html += `<button onclick="fetchMaterials(${pagination.page + 1})" class="p-2 bg-white border border-gray-100 rounded-lg shadow-sm hover:bg-gray-50 transition-colors ${nextDisabled}"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>`;
+    
+    container.innerHTML = html;
+}
+
+function exportToExcel() {
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+    
+    const url = `api/export-received-materials.php?search=${encodeURIComponent(search)}&status=${status}&date_from=${dateFrom}&date_to=${dateTo}`;
+    window.location.href = url;
+}
+
+// Event Listeners
+document.getElementById('searchInput').addEventListener('input', () => fetchMaterials(1));
+document.getElementById('statusFilter').addEventListener('change', () => fetchMaterials(1));
+document.getElementById('dateFrom').addEventListener('change', () => fetchMaterials(1));
+document.getElementById('dateTo').addEventListener('change', () => fetchMaterials(1));
+
+// Initial Load
+fetchMaterials(1);
+</script>
 
 <?php
 $content = ob_get_clean();

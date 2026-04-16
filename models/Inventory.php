@@ -893,4 +893,120 @@ class Inventory {
             return false;
         }
     }
+    /**
+     * Get paginated received materials (dispatches) for a contractor
+     */
+    public function getContractorReceivedMaterialsPaginated($vendorId, $page = 1, $limit = 20, $search = '', $status = '', $dateFrom = '', $dateTo = '') {
+        $offset = ($page - 1) * $limit;
+        $params = [':vendor_id' => $vendorId];
+        $whereClause = "WHERE vendor_id = :vendor_id";
+
+        if (!empty($search)) {
+            $whereClause .= " AND (dispatch_number LIKE :search)";
+            $params[':search'] = "%$search%";
+        }
+
+        if (!empty($status)) {
+            $whereClause .= " AND dispatch_status = :status";
+            $params[':status'] = $status;
+        }
+
+        if (!empty($dateFrom)) {
+            $whereClause .= " AND dispatch_date >= :date_from";
+            $params[':date_from'] = $dateFrom;
+        }
+
+        if (!empty($dateTo)) {
+            $whereClause .= " AND dispatch_date <= :date_to";
+            $params[':date_to'] = $dateTo;
+        }
+
+        try {
+            // Count total
+            $countSql = "SELECT COUNT(*) FROM inventory_dispatches $whereClause";
+            $stmt = $this->db->prepare($countSql);
+            foreach ($params as $key => $val) {
+                $stmt->bindValue($key, $val);
+            }
+            $stmt->execute();
+            $total = (int)$stmt->fetchColumn();
+
+            // Fetch materials
+            $sql = "SELECT d.*, s.site_id as site_code, s.location as site_location 
+                    FROM inventory_dispatches d
+                    LEFT JOIN sites s ON d.site_id = s.id
+                    $whereClause 
+                    ORDER BY d.dispatch_date DESC, d.id DESC 
+                    LIMIT :limit OFFSET :offset";
+            
+            $stmt = $this->db->prepare($sql);
+            
+            // Bind value params
+            foreach ($params as $key => $val) {
+                $stmt->bindValue($key, $val);
+            }
+            
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return [
+                'materials' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+                'total' => $total,
+                'pages' => ceil($total / $limit)
+            ];
+        } catch (PDOException $e) {
+            error_log("Inventory::getContractorReceivedMaterialsPaginated error: " . $e->getMessage());
+            return ['materials' => [], 'total' => 0, 'pages' => 0];
+        }
+    }
+
+    /**
+     * Get total dispatch count for a contractor
+     */
+    public function getContractorDispatchCount($vendorId) {
+        try {
+            $sql = "SELECT COUNT(*) FROM inventory_dispatches WHERE vendor_id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$vendorId]);
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Inventory::getContractorDispatchCount error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Get total distinct items received by a contractor
+     */
+    public function getContractorTotalItems($vendorId) {
+        try {
+            $sql = "SELECT COUNT(DISTINCT idi.boq_item_id) 
+                    FROM inventory_dispatch_items idi
+                    JOIN inventory_dispatches id ON idi.dispatch_id = id.id
+                    WHERE id.vendor_id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$vendorId]);
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Inventory::getContractorTotalItems error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Get pending confirmations count for a contractor
+     */
+    public function getContractorPendingConfirmations($vendorId) {
+        try {
+            $sql = "SELECT COUNT(*) FROM inventory_dispatches 
+                    WHERE vendor_id = ? AND dispatch_status != 'confirmed'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$vendorId]);
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Inventory::getContractorPendingConfirmations error: " . $e->getMessage());
+            return 0;
+        }
+    }
 }

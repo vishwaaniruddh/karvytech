@@ -295,19 +295,6 @@ ob_start();
                             </svg>
                         </a>
                     </div>
-                        
-                        <div id="surveyDetailsContainer" class="col-span-2 mt-6 hidden animate-fadeIn overflow-hidden">
-                            <div class="p-4 bg-gray-50/50 rounded-xl border border-gray-100" id="surveyDetailsContent">
-                                <div class="flex items-center justify-center py-8">
-                                    <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span class="ml-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Hydrating Manifest...</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             <?php else: ?>
                 <div class="flex flex-col items-center justify-center py-10 opacity-60">
@@ -318,6 +305,19 @@ ob_start();
                     <p class="text-xs font-semibold text-gray-500 mt-2 text-center">Material requisition is blocked until a site<br>survey manifest is verified.</p>
                 </div>
             <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<!-- Survey Expansion (Full Width) -->
+<div id="surveyDetailsContainer" class="mb-8 hidden animate-fadeIn overflow-hidden">
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100/80 p-8" id="surveyDetailsContent">
+        <div class="flex items-center justify-center py-12">
+            <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="ml-4 text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">Hydrating Manifest Intelligence...</span>
         </div>
     </div>
 </div>
