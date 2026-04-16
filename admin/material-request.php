@@ -93,9 +93,18 @@ if (!$siteId) {
     exit;
 }
 
-// Get site details
-$siteModel = new Site();
-$site = $siteModel->find($siteId);
+// Get site details with relationships
+$db = Database::getInstance()->getConnection();
+$stmt = $db->prepare("
+    SELECT s.*, c.name as customer_name, ct.name as city_name, st.name as state_name
+    FROM sites s
+    LEFT JOIN customers c ON s.customer_id = c.id
+    LEFT JOIN cities ct ON s.city_id = ct.id
+    LEFT JOIN states st ON s.state_id = st.id
+    WHERE s.id = ?
+");
+$stmt->execute([$siteId]);
+$site = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$site) {
     header('Location: sites/index.php');
@@ -110,8 +119,10 @@ $survey = $surveyModel->findBySiteAndVendor($siteId, $vendorId);
 if (!$survey) {
     $db = Database::getInstance()->getConnection();
     $stmt = $db->prepare("
-        SELECT dsr.*, 'dynamic' as survey_type, dsr.survey_status, dsr.submitted_date
+        SELECT dsr.*, 'dynamic' as survey_type, dsr.survey_status, dsr.submitted_date, 
+               v.name as surveyor_name
         FROM dynamic_survey_responses dsr
+        LEFT JOIN vendors v ON dsr.surveyor_id = v.id
         WHERE dsr.site_id = ?
         AND dsr.survey_status = 'approved'
         ORDER BY dsr.submitted_date DESC
@@ -143,6 +154,26 @@ $boqItems = $boqModel->getActive();
 // Get BOQ Masters for this customer
 $boqMasterModel = new BoqMaster();
 $availableBoqs = $boqMasterModel->getActiveByCustomerId($site['customer_id']);
+
+// If it's a dynamic survey, fetch field mappings for better data display in the Intelligence Card
+if (isset($survey['survey_type']) && $survey['survey_type'] === 'dynamic') {
+    $stmt = $db->prepare("
+        SELECT id, label, section_id 
+        FROM dynamic_survey_fields 
+        WHERE section_id IN (SELECT id FROM dynamic_survey_sections WHERE survey_id = ?)
+    ");
+    $stmt->execute([$survey['survey_form_id']]);
+    $fieldDefs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $formData = json_decode($survey['form_data'], true) ?? [];
+    $surveyDataMapped = [];
+    foreach ($fieldDefs as $f) {
+        $val = $formData[$f['id']] ?? null;
+        if ($val !== null) {
+            $surveyDataMapped[strtolower(trim($f['label']))] = $val;
+        }
+    }
+}
 
 // Check for existing material requests for this site
 $db = Database::getInstance()->getConnection();
@@ -187,43 +218,105 @@ ob_start();
     </div>
 </div>
 
-<!-- Site Information -->
-<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">Site Information</h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Site ID</label>
-            <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded"><?php echo htmlspecialchars($site['site_id'] ?? 'N/A'); ?></p>
+<!-- Info Grid: Site & Survey Intelligence -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <!-- Site Information Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Site Logistics</h3>
+            <span class="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full border border-blue-100 uppercase tracking-widest">Master Data</span>
         </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
-            <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded"><?php echo htmlspecialchars($site['location'] ?? 'N/A'); ?></p>
+        <div class="p-6">
+            <div class="grid grid-cols-2 gap-y-6 gap-x-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Site Identity</label>
+                    <p class="text-sm font-bold text-gray-900"><?php echo htmlspecialchars($site['site_id'] ?? 'N/A'); ?></p>
+                    <p class="text-[10px] font-semibold text-gray-400 mt-1 uppercase"><?php echo htmlspecialchars($site['store_id'] ?? ''); ?></p>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Client & Brand</label>
+                    <p class="text-sm font-bold text-gray-800"><?php echo htmlspecialchars($site['customer_name'] ?? 'N/A'); ?></p>
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Geo-Location</label>
+                    <p class="text-sm font-bold text-gray-900"><?php echo htmlspecialchars($site['location'] ?? 'N/A'); ?></p>
+                    <p class="text-[10px] font-semibold text-gray-500 mt-1 uppercase"><?php echo htmlspecialchars(($site['city_name'] ?? '') . ', ' . ($site['state_name'] ?? '')); ?></p>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Operational Branch</label>
+                    <p class="text-sm font-bold text-gray-800 tracking-tight"><?php echo htmlspecialchars($site['branch'] ?? 'N/A'); ?></p>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Current Status</label>
+                    <span class="inline-flex px-2 py-0.5 bg-green-50 text-green-700 text-[10px] font-bold rounded-md border border-green-100 uppercase tracking-tight">Active Project</span>
+                </div>
+            </div>
         </div>
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Survey Status</label>
+    </div>
+
+    <!-- Survey Intelligence Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Survey Intelligence</h3>
             <?php if ($survey): ?>
-                <?php if (isset($survey['survey_type']) && $survey['survey_type'] === 'dynamic'): ?>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        Dynamic Survey Completed
-                    </span>
-                <?php else: ?>
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        </svg>
-                        Legacy Survey Completed
-                    </span>
-                <?php endif; ?>
+                <span class="px-3 py-1 bg-green-50 text-green-600 text-[10px] font-bold rounded-full border border-green-100 uppercase tracking-widest">Survey Verified</span>
             <?php else: ?>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                    </svg>
-                    No Survey Found
-                </span>
+                <span class="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-bold rounded-full border border-amber-100 uppercase tracking-widest">Action Required</span>
+            <?php endif; ?>
+        </div>
+        <div class="p-6">
+            <?php if ($survey): ?>
+                <div class="grid grid-cols-2 gap-y-6 gap-x-4">
+                    <div class="col-span-2 flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-xl mb-2">
+                        <div>
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Survey Status</p>
+                            <p class="text-sm font-bold text-gray-900 mt-1">Assessment Completed</p>
+                            <p class="text-[9px] font-bold text-blue-500 uppercase tracking-wider mt-1 opacity-80"><?php echo htmlspecialchars($survey['surveyor_name'] ?? 'Vendor Assigned'); ?></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Submission Date</p>
+                            <p class="text-xs font-bold text-gray-700 mt-1"><?php echo date('d M Y, h:i A', strtotime($survey['submitted_date'])); ?></p>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="col-span-2 mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                        <button type="button" onclick="toggleSurveyDetails('<?php echo $siteId; ?>', '<?php echo $survey['survey_type'] ?? 'legacy'; ?>')" class="inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors uppercase tracking-widest group">
+                            <span id="toggleText">Expand Detailed Technical Manifest</span>
+                            <svg id="toggleIcon" class="w-4 h-4 ml-2 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        
+                        <a href="<?php echo (isset($survey['survey_type']) && $survey['survey_type'] === 'dynamic') ? '../shared/view-survey2.php?id=' . $survey['id'] : '../shared/view-survey.php?id=' . $survey['id']; ?>" target="_blank" class="inline-flex items-center text-[10px] font-bold text-gray-400 hover:text-blue-600 transition-colors uppercase tracking-widest group">
+                            Open in New Tab
+                            <svg class="w-3.5 h-3.5 ml-1.5 opacity-60 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                        </a>
+                    </div>
+                        
+                        <div id="surveyDetailsContainer" class="col-span-2 mt-6 hidden animate-fadeIn overflow-hidden">
+                            <div class="p-4 bg-gray-50/50 rounded-xl border border-gray-100" id="surveyDetailsContent">
+                                <div class="flex items-center justify-center py-8">
+                                    <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span class="ml-3 text-xs font-bold text-gray-500 uppercase tracking-widest">Hydrating Manifest...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="flex flex-col items-center justify-center py-10 opacity-60">
+                    <div class="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                    <p class="text-sm font-bold text-gray-800 uppercase tracking-widest">No Intelligence Data</p>
+                    <p class="text-xs font-semibold text-gray-500 mt-2 text-center">Material requisition is blocked until a site<br>survey manifest is verified.</p>
+                </div>
             <?php endif; ?>
         </div>
     </div>
@@ -451,6 +544,38 @@ ob_start();
 </div> <!-- End materialRequestFormContainer -->
 
 <script>
+let surveyLoaded = false;
+
+function toggleSurveyDetails(siteId, type) {
+    const container = document.getElementById('surveyDetailsContainer');
+    const content = document.getElementById('surveyDetailsContent');
+    const text = document.getElementById('toggleText');
+    const icon = document.getElementById('toggleIcon');
+    
+    if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        text.innerText = 'Collapse Technical Manifest';
+        icon.classList.add('rotate-180');
+        
+        if (!surveyLoaded) {
+            fetch(`api/get-survey-details-html.php?site_id=${siteId}&type=${type}`)
+                .then(response => response.text())
+                .then(html => {
+                    content.innerHTML = html;
+                    surveyLoaded = true;
+                })
+                .catch(error => {
+                    content.innerHTML = '<p class="text-xs text-red-500 font-bold uppercase tracking-widest">Error fetching manifest intelligence.</p>';
+                    console.error('Error:', error);
+                });
+        }
+    } else {
+        container.classList.add('hidden');
+        text.innerText = 'Expand Detailed Technical Manifest';
+        icon.classList.remove('rotate-180');
+    }
+}
+
 let itemCounter = 0;
 const boqItems = <?php echo json_encode($boqItems); ?>;
 

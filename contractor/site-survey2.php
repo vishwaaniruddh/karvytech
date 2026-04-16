@@ -67,9 +67,9 @@ if (!$surveyFormId) {
     }
 }
 
-// Check if survey already exists for this delegation
-$stmt = $db->prepare("SELECT id, survey_status, submitted_date FROM dynamic_survey_responses WHERE delegation_id = ? ORDER BY id DESC LIMIT 1");
-$stmt->execute([$delegationId]);
+// Check if survey already exists for this delegation or site
+$stmt = $db->prepare("SELECT id, survey_status, submitted_date FROM dynamic_survey_responses WHERE delegation_id = ? OR site_id = ? ORDER BY id DESC LIMIT 1");
+$stmt->execute([$delegationId, $siteId]);
 $existingSurvey = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // If survey exists, redirect to view page (if we have a shared view page)

@@ -1,771 +1,390 @@
 <?php 
 require_once __DIR__ . '/../../config/auth.php';
-require_once __DIR__ . '/../../models/Site.php';
-require_once __DIR__ . '/../../models/SiteDelegation.php';
-
-// Require vendor authentication and permission
-// Auth::requireVendorPermission('view_sites');
-
-$vendorId = Auth::getVendorId();
-$siteModel = new Site();
-$delegationModel = new SiteDelegation();
-
-// Get vendor's delegated sites
-$delegatedSites = $delegationModel->getVendorDelegations($vendorId, 'active');
-$completedSites = $delegationModel->getVendorDelegations($vendorId, 'completed');
-
-// Combine and format for display
-$sites = [];
-foreach ($delegatedSites as $site) {
-    $site['delegation_status'] = 'active';
-    $sites[] = $site;
-}
-foreach ($completedSites as $site) {
-    $site['delegation_status'] = 'completed';
-    $sites[] = $site;
-}
-
-$title = 'My Sites';
+// Require vendor authentication
+Auth::requireVendor();
+$title = 'Site Operations';
 ob_start();
 ?>
 
-<!-- Enhanced Header -->
-<div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg p-6 mb-8">
-    <div class="flex justify-between items-center">
-        <div class="text-white">
-            <h1 class="text-3xl font-bold">My Sites</h1>
-            <p class="mt-2 text-blue-100">Professional Site Management Dashboard</p>
-            <p class="text-sm text-blue-200 mt-1">Manage your delegated installation projects efficiently</p>
+<!-- Minimalist Toolbelt -->
+<div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex items-center space-x-4">
+        <h1 class="text-2xl font-bold text-gray-800 tracking-tight">Project Hub</h1>
+        <div class="flex p-1 bg-gray-100 rounded-xl border border-gray-200/50">
+            <button onclick="setStatus('all')" class="status-btn active px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all" data-status="all">All</button>
+            <button onclick="setStatus('active')" class="status-btn px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all" data-status="active">Active</button>
+            <button onclick="setStatus('completed')" class="status-btn px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all" data-status="completed">Done</button>
         </div>
-        <div class="flex items-center space-x-4">
-            <!-- Stats Cards -->
-            <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 text-center min-w-24">
-                <div class="text-2xl font-bold text-white"><?php echo count($delegatedSites); ?></div>
-                <div class="text-xs text-blue-100 uppercase tracking-wide">Active</div>
-            </div>
-            <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 text-center min-w-24">
-                <div class="text-2xl font-bold text-white"><?php echo count($completedSites); ?></div>
-                <div class="text-xs text-blue-100 uppercase tracking-wide">Completed</div>
-            </div>
-            <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 text-center min-w-24">
-                <div class="text-2xl font-bold text-white"><?php echo count($sites); ?></div>
-                <div class="text-xs text-blue-100 uppercase tracking-wide">Total</div>
-            </div>
+    </div>
+    
+    <div class="flex items-center space-x-3">
+        <div class="relative group">
+            <input type="text" id="globalSearch" oninput="debounceSearch()" placeholder="Search sites..." class="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all w-64">
+            <svg class="w-4 h-4 text-gray-400 absolute left-3.5 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <button onclick="exportData()" class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span>Export</span>
+        </button>
+    </div>
+</div>
+
+<!-- Intelligent Data Grid -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative min-h-[400px]">
+    <div id="loadingOverlay" class="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="flex flex-col items-center">
+            <div class="w-10 h-10 border-4 border-blue-500/20 border-t-blue-600 rounded-full animate-spin"></div>
+            <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-4">Syncing Operations</p>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-gray-50/50 border-b border-gray-100">
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest w-12 text-center">#</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-widest">Site Identity</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-widest">Client & Geography</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-widest">Operation Status</th>
+                    <th class="px-6 py-4 text-[11px] font-bold text-gray-500 uppercase tracking-widest text-center">Insights</th>
+                    <th class="px-6 py-4 text-right text-[11px] font-bold text-gray-500 uppercase tracking-widest">Action</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-gray-50">
+                <!-- Data cells injected here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Context -->
+    <div class="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest" id="pageInfo">Showing 0 of 0 Sites</div>
+        <div class="flex items-center space-x-2">
+            <button onclick="prevPage()" id="prevBtn" class="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:pointer-events-none transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div id="pageNumbers" class="flex items-center space-x-1"></div>
+            <button onclick="nextPage()" id="nextBtn" class="p-2 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:pointer-events-none transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
         </div>
     </div>
 </div>
 
-<!-- Enhanced Filter Tabs -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
-    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-            <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd"></path>
-            </svg>
-            Filter Sites
-        </h3>
-    </div>
-    <div class="p-6">
-        <nav class="flex space-x-1 bg-gray-100 rounded-lg p-1">
-            <button onclick="filterSites('all')" id="tab-all" class="tab-button active flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200">
-                <div class="flex items-center justify-center space-x-2">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span>All Sites</span>
-                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full"><?php echo count($sites); ?></span>
-                </div>
+<!-- Multi-Insight Modal Overlay -->
+<div id="intelModal" class="fixed inset-0 z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closeIntelModal()"></div>
+    <div class="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300" id="modalContainer">
+        <div class="p-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+            <div>
+                <h3 class="text-xl font-bold text-gray-900" id="intelTitle">Operational Insight</h3>
+                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1" id="intelSubtitle">Details Manifest</p>
+            </div>
+            <button onclick="closeIntelModal()" class="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-400 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
-            <button onclick="filterSites('active')" id="tab-active" class="tab-button flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200">
-                <div class="flex items-center justify-center space-x-2">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span>Active</span>
-                    <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full"><?php echo count($delegatedSites); ?></span>
-                </div>
-            </button>
-            <button onclick="filterSites('completed')" id="tab-completed" class="tab-button flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all duration-200">
-                <div class="flex items-center justify-center space-x-2">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span>Completed</span>
-                    <span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full"><?php echo count($completedSites); ?></span>
-                </div>
-            </button>
-        </nav>
-    </div>
-</div>
-
-<!-- Sites Table -->
-<div class="professional-table bg-white">
-    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-        <div>
-            <h3 class="text-lg font-semibold text-gray-900">Site Assignments</h3>
-            <p class="text-sm text-gray-500 mt-1">Manage your delegated installation projects</p>
         </div>
-    </div>
-    <div class="p-6">
-        <?php if (empty($sites)): ?>
-            <div class="text-center py-12">
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No sites assigned</h3>
-                <p class="mt-1 text-sm text-gray-500">You don't have any sites assigned to you yet.</p>
-            </div>
-        <?php else: ?>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200" id="sitesTable">
-                    <thead class="table-header">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site Details</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <?php foreach ($sites as $site): ?>
-                        <tr class="site-row hover:bg-gray-50 transition-colors" data-status="<?php echo $site['delegation_status']; ?>">
-                            <td class="px-6 py-4">
-                                <div class="flex items-start">
-                                    <div class="flex-shrink-0 h-12 w-12">
-                                        <div class="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-                                            <svg class="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <div class="ml-4 flex-1 min-w-0">
-                                        <div class="flex items-center space-x-2 mb-1">
-                                            <h4 class="text-sm font-semibold text-gray-900"><?php echo htmlspecialchars($site['site_id']); ?></h4>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                Site
-                                            </span>
-                                        </div>
-                                        <div class="text-sm text-gray-600 break-words max-w-xs" title="<?php echo htmlspecialchars($site['location']); ?>">
-                                            <?php 
-                                            $location = $site['location'];
-                                            if (strlen($location) > 60) {
-                                                echo htmlspecialchars(substr($location, 0, 60)) . '...';
-                                            } else {
-                                                echo htmlspecialchars($location);
-                                            }
-                                            ?>
-                                        </div>
-                                        <?php if (!empty($site['notes'])): ?>
-                                            <div class="text-xs text-amber-600 mt-2 flex items-center bg-amber-50 px-2 py-1 rounded-md">
-                                                <svg class="w-3 h-3 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                <span class="truncate">Special instructions</span>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
-                                            <svg class="h-4 w-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <div class="ml-3">
-                                        <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($site['city'] . ', ' . $site['state']); ?></div>
-                                        <div class="text-xs text-gray-500 flex items-center">
-                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a3 3 0 01-3-3V6z" clip-rule="evenodd"></path>
-                                            </svg>
-                                            <?php echo htmlspecialchars($site['country']); ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                                            <svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <div class="ml-3 flex-1 min-w-0">
-                                        <div class="text-sm font-medium text-gray-900 truncate" title="<?php echo htmlspecialchars($site['customer'] ?? 'N/A'); ?>">
-                                            <?php echo htmlspecialchars($site['customer'] ?? 'N/A'); ?>
-                                        </div>
-                                        <div class="text-xs text-gray-500">
-                                            Customer
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex flex-col space-y-2">
-                                    <div class="flex items-center">
-                                        <?php if ($site['delegation_status'] === 'active'): ?>
-                                            <div class="h-2 w-2 bg-yellow-400 rounded-full mr-2 animate-pulse"></div>
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border border-yellow-300">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                Active
-                                            </span>
-                                        <?php else: ?>
-                                            <div class="h-2 w-2 bg-green-400 rounded-full mr-2"></div>
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300">
-                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                Completed
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="text-xs text-gray-500 flex items-center">
-                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        Since <?php echo date('M d, Y', strtotime($site['delegation_date'])); ?>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="space-y-3">
-                                    <!-- Survey Progress -->
-                                    <div class="flex items-center space-x-3">
-                                        <div class="flex-shrink-0">
-                                            <?php if ($site['survey_status'] ?? false): ?>
-                                                <div class="h-6 w-6 rounded-full bg-green-500 flex items-center justify-center">
-                                                    <svg class="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                </div>
-                                            <?php else: ?>
-                                                <div class="h-6 w-6 rounded-full bg-yellow-400 flex items-center justify-center">
-                                                    <svg class="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="text-xs font-medium text-gray-900">Survey</div>
-                                            <div class="text-xs">
-                                                <?php 
-                                                $surveyStatus = $site['survey_status'] ?? 'pending';
-                                                $statusColors = [
-                                                    'pending' => 'text-yellow-600',
-                                                    'submitted' => 'text-blue-600', 
-                                                    'approved' => 'text-green-600',
-                                                    'rejected' => 'text-red-600'
-                                                ];
-                                                $colorClass = $statusColors[$surveyStatus] ?? 'text-gray-500';
-                                                ?>
-                                                <span class="<?php echo $colorClass; ?> font-medium">
-                                                    <?php echo ucfirst($surveyStatus); ?>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Installation Progress -->
-                                    <div class="flex items-center space-x-3">
-                                        <div class="flex-shrink-0">
-                                            <?php if ($site['installation_status'] ?? false): ?>
-                                                <div class="h-6 w-6 rounded-full bg-green-500 flex items-center justify-center">
-                                                    <svg class="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                </div>
-                                            <?php else: ?>
-                                                <div class="h-6 w-6 rounded-full bg-gray-300 flex items-center justify-center">
-                                                    <svg class="h-3 w-3 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M9.504 1.132a1 1 0 01.992 0l1.75 1a1 1 0 11-.992 1.736L10 3.152l-1.254.716a1 1 0 11-.992-1.736l1.75-1zM5.618 4.504a1 1 0 01-.372 1.364L5.016 6l.23.132a1 1 0 11-.992 1.736L3 7.723V8a1 1 0 01-2 0V6a.996.996 0 01.52-.878l1.734-.99a1 1 0 011.364.372zm8.764 0a1 1 0 011.364-.372l1.734.99A.996.996 0 0118 6v2a1 1 0 11-2 0v-.277l-1.254.145a1 1 0 11-.992-1.736L14.984 6l-.23-.132a1 1 0 01-.372-1.364zm-7 4a1 1 0 011.364-.372L10 8.848l1.254-.716a1 1 0 11.992 1.736L11 10.723V12a1 1 0 11-2 0v-1.277l-1.246-.855a1 1 0 01-.372-1.364zM3 11a1 1 0 011 1v1.277l1.246.855a1 1 0 11-.992 1.736l-1.75-1A1 1 0 012 14v-2a1 1 0 011-1zm14 0a1 1 0 011 1v2a1 1 0 01-.504.868l-1.75 1a1 1 0 11-.992-1.736L16 13.277V12a1 1 0 011-1zm-9.618 5.504a1 1 0 011.364-.372l.254.145V16a1 1 0 112 0v.277l.254-.145a1 1 0 11.992 1.736l-1.75 1a.996.996 0 01-.992 0l-1.75-1a1 1 0 01-.372-1.364z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="text-xs font-medium text-gray-900">Installation</div>
-                                            <div class="text-xs text-gray-500">
-                                                <?php echo ($site['installation_status'] ?? false) ? 'Completed' : 'Pending'; ?>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <div class="flex items-center justify-end space-x-2">
-                                    <!-- View Details Button -->
-                                    <button onclick="viewSiteDetails(<?php echo $site['id']; ?>, '<?php echo htmlspecialchars($site['site_id']); ?>')" 
-                                            class="group relative inline-flex items-center justify-center p-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200" 
-                                            title="View Details">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
-                                        </svg>
-                                    </button>
-                                    
-                                    <?php if ($site['delegation_status'] === 'active' || $site['delegation_status'] === 'completed'): ?>
-
-                                            <!-- Survey Button -->
-                                            <button onclick="conductSurvey(<?php echo $site['id']; ?>)" 
-                                                    class="group relative inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-lg hover:shadow-xl transition-all duration-200" 
-                                                    title="Conduct Site Survey">
-                                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                Survey
-                                            </button>
-
-                                            <!-- Material Request Button -->
-                                            <!-- <button onclick="generateMaterialRequest(<?php echo $site['id']; ?>)" 
-                                                    class="group relative inline-flex items-center justify-center px-4 py-2 border border-blue-300 text-sm font-medium rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200" 
-                                                    title="Generate Material Request">
-                                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zM8 6a2 2 0 114 0v1H8V6zM6 9a1 1 0 012 0v1a1 1 0 11-2 0V9zm8 0a1 1 0 012 0v1a1 1 0 11-2 0V9z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                Materials
-                                            </button> -->
-                                        
-
-                                    <?php endif; ?>
-                                </div>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
-    </div>
-</div>
-
-<!-- Site Details Modal -->
-<div id="siteDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 hidden">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between pb-4 border-b">
-                <h3 class="text-lg font-semibold text-gray-900" id="modalSiteId">Site Details</h3>
-                <button onclick="closeSiteModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            
-            <!-- Modal Content -->
-            <div id="modalContent" class="mt-4">
-                <div class="flex justify-center items-center py-8">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span class="ml-2 text-gray-600">Loading site details...</span>
-                </div>
-            </div>
-            
-            <!-- Modal Footer -->
-            <div class="flex justify-end pt-4 border-t mt-6 space-x-2">
-                <button onclick="closeSiteModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
-                    Close
-                </button>
-                <button id="modalActionButton" onclick="" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors hidden">
-                    Take Action
-                </button>
-            </div>
+        <div class="p-8 max-h-[70vh] overflow-y-auto" id="intelContent">
+            <!-- Modal data injected here -->
         </div>
     </div>
 </div>
 
 <script>
-// Tab filtering
-function filterSites(status) {
-    const rows = document.querySelectorAll('.site-row');
-    const tabs = document.querySelectorAll('.tab-button');
-    
-    // Update tab styles
-    tabs.forEach(tab => tab.classList.remove('active'));
-    document.getElementById(`tab-${status}`).classList.add('active');
-    
-    // Filter rows
-    rows.forEach(row => {
-        if (status === 'all') {
-            row.style.display = '';
-        } else {
-            const rowStatus = row.getAttribute('data-status');
-            row.style.display = rowStatus === status ? '' : 'none';
-        }
+let currentPage = 1;
+let filters = { search: '', status: 'all', limit: 10 };
+let searchDebounce = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetchData();
+});
+
+function debounceSearch() {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+        filters.search = document.getElementById('globalSearch').value;
+        currentPage = 1;
+        fetchData();
+    }, 400);
+}
+
+function setStatus(status) {
+    filters.status = status;
+    document.querySelectorAll('.status-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.status === status);
     });
+    currentPage = 1;
+    fetchData();
 }
 
-// Navigation functions
-const BASE_URL = '<?php echo BASE_URL; ?>';
-
-function viewSiteDetails(id, siteId) {
-    // Show modal and load site details
-    const modal = document.getElementById('siteDetailsModal');
-    const modalContent = document.getElementById('modalContent');
-    const modalSiteId = document.getElementById('modalSiteId');
-    
-    // Show modal
-    modal.classList.remove('hidden');
-    modalSiteId.textContent = `Site Details - ${siteId}`;
-    
-    // Show loading state
-    modalContent.innerHTML = `
-        <div class="flex justify-center items-center py-8">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span class="ml-2 text-gray-600">Loading site details...</span>
-        </div>
-    `;
-    
-    // Fetch site details using the database ID
-    fetch(`get-site-details.php?id=${encodeURIComponent(id)}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.text();
-        })
-        .then(text => {
-            try {
-                const data = JSON.parse(text);
-                console.log('Site data received:', data);
-                if (data.success) {
-                    console.log('Layout files count:', data.site.layout_files ? data.site.layout_files.length : 0);
-                    displaySiteDetails(data.site);
-                } else {
-                    modalContent.innerHTML = `
-                        <div class="text-center py-8">
-                            <svg class="w-12 h-12 mx-auto text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <p class="text-red-600">${data.message || 'Failed to load site details'}</p>
-                        </div>
-                    `;
-                }
-            } catch (parseError) {
-                console.error('JSON Parse Error:', parseError);
-                console.error('Response text:', text);
-                modalContent.innerHTML = `
-                    <div class="text-center py-8">
-                        <svg class="w-12 h-12 mx-auto text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <p class="text-red-600">Invalid response format</p>
-                        <p class="text-xs text-gray-500 mt-2">Check console for details</p>
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Fetch Error:', error);
-            modalContent.innerHTML = `
-                <div class="text-center py-8">
-                    <svg class="w-12 h-12 mx-auto text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <p class="text-red-600">Network error loading site details</p>
-                </div>
-            `;
-        });
-}
-
-// Helper functions for survey status
-function getSurveyStatusClass(status) {
-    const statusClasses = {
-        'pending': 'bg-yellow-100 text-yellow-800',
-        'submitted': 'bg-blue-100 text-blue-800',
-        'approved': 'bg-green-100 text-green-800',
-        'rejected': 'bg-red-100 text-red-800'
-    };
-    return statusClasses[status] || 'bg-gray-100 text-gray-800';
-}
-
-function getSurveyStatusText(status) {
-    if (!status) return 'Pending';
-    return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
-function displaySiteDetails(site) {
-    const modalContent = document.getElementById('modalContent');
-    const actionButton = document.getElementById('modalActionButton');
-    
-    modalContent.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Basic Information -->
-            <div class="space-y-4">
-                <h4 class="font-semibold text-gray-900 border-b pb-2">Basic Information</h4>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Site ID</label>
-                        <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded">${site.site_id || 'N/A'}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Store ID</label>
-                        <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded">${site.store_id || 'N/A'}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Location</label>
-                        <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded">${site.location || 'N/A'}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Branch</label>
-                        <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded">${site.branch || 'N/A'}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Location Details -->
-            <div class="space-y-4">
-                <h4 class="font-semibold text-gray-900 border-b pb-2">Location Details</h4>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">City</label>
-                        <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded">${site.city || 'N/A'}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">State</label>
-                        <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded">${site.state || 'N/A'}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Country</label>
-                        <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded">${site.country || 'N/A'}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Client Information -->
-            <div class="space-y-4">
-                <h4 class="font-semibold text-gray-900 border-b pb-2">Client Information</h4>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Customer</label>
-                        <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded">${site.customer || 'N/A'}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Progress Status -->
-            <div class="space-y-4">
-                <h4 class="font-semibold text-gray-900 border-b pb-2">Progress Status</h4>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Survey Status</label>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSurveyStatusClass(site.survey_status)}">
-                            ${getSurveyStatusText(site.survey_status)}
-                        </span>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Installation Status</label>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${site.installation_status ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
-                            ${site.installation_status ? 'Completed' : 'Pending'}
-                        </span>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Delegation Date</label>
-                        <p class="text-sm text-gray-900 bg-gray-50 p-2 rounded">${site.delegation_date ? new Date(site.delegation_date).toLocaleDateString() : 'N/A'}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+async function fetchData() {
+    toggleLoading(true);
+    try {
+        const query = new URLSearchParams({ page: currentPage, ...filters }).toString();
+        const response = await fetch(`api/get-sites.php?${query}`);
+        const result = await response.json();
         
-        ${site.notes ? `
-        <div class="mt-6 pt-4 border-t">
-            <h4 class="font-semibold text-gray-900 mb-2">Special Instructions</h4>
-            <div class="text-sm text-gray-900 bg-blue-50 p-3 rounded border-l-4 border-blue-400">
-                ${site.notes}
-            </div>
-        </div>
-        ` : ''}
-        
-        ${site.remarks ? `
-        <div class="mt-4">
-            <h4 class="font-semibold text-gray-900 mb-2">Remarks</h4>
-            <div class="text-sm text-gray-900 bg-gray-50 p-3 rounded">
-                ${site.remarks}
-            </div>
-        </div>
-        ` : ''}
-        
-        ${site.layout_files && site.layout_files.length > 0 ? `
-        <div class="mt-6 pt-4 border-t">
-            <h4 class="font-semibold text-gray-900 mb-3">Layout Files</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                ${site.layout_files.map(layout => {
-                    const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(layout.file_type.toLowerCase());
-                    const fileSize = formatFileSize(layout.file_size);
-                    const uploadDate = new Date(layout.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                    
-                    return `
-                        <div class="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
-                            <div class="flex items-start space-x-3">
-                                ${isImage ? `
-                                    <img src="../../admin/sites/${layout.file_path}" 
-                                         alt="Layout" 
-                                         class="h-20 w-20 object-cover rounded cursor-pointer"
-                                         onclick="window.open('../../admin/sites/${layout.file_path}', '_blank')">
-                                ` : `
-                                    <div class="h-20 w-20 flex items-center justify-center bg-gray-100 rounded">
-                                        ${getFileIcon(layout.file_type)}
-                                    </div>
-                                `}
-                                
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-medium text-gray-900 truncate" title="${layout.original_filename}">
-                                        ${layout.original_filename}
-                                    </p>
-                                    <p class="text-xs text-gray-500 mt-1">${fileSize}</p>
-                                    <p class="text-xs text-gray-500">${uploadDate}</p>
-                                    ${layout.remarks ? `
-                                        <p class="text-xs text-gray-600 mt-2 italic">"${layout.remarks}"</p>
-                                    ` : ''}
-                                    <a href="../../admin/sites/${layout.file_path}" 
-                                       download 
-                                       class="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 mt-2">
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        Download
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        </div>
-        ` : ''}
-    `;
-    
-    // Show action button if needed
-    if (site.delegation_status === 'active' && !site.survey_status) {
-        actionButton.classList.remove('hidden');
-        actionButton.textContent = 'Conduct Survey';
-        actionButton.onclick = () => conductSurvey(site.delegation_id);
-    } else {
-        actionButton.classList.add('hidden');
-    }
-}
-
-// Helper function to format file size
-function formatFileSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
-    return (bytes / 1048576).toFixed(2) + ' MB';
-}
-
-// Helper function to get file icon
-function getFileIcon(fileType) {
-    const type = fileType.toLowerCase();
-    if (type === 'pdf') {
-        return '<svg class="w-10 h-10 text-red-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 18h12V6h-4V2H4v16zm-2 1V0h12l4 4v16H2v-1z"></path></svg>';
-    } else if (type === 'xls' || type === 'xlsx') {
-        return '<svg class="w-10 h-10 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 2h12l4 4v12H4V2zm1 1v14h10V7h-4V3H5z"></path></svg>';
-    } else if (type === 'doc' || type === 'docx') {
-        return '<svg class="w-10 h-10 text-blue-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 2h12l4 4v12H4V2zm1 1v14h10V7h-4V3H5z"></path></svg>';
-    }
-    return '<svg class="w-10 h-10 text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path d="M4 2h12l4 4v12H4V2zm1 1v14h10V7h-4V3H5z"></path></svg>';
-}
-
-function closeSiteModal() {
-    document.getElementById('siteDetailsModal').classList.add('hidden');
-}
-
-
-
-function conductSurvey(delegationId) {
-    window.location.href = `${BASE_URL}/contractor/site-survey2.php?delegation_id=${delegationId}`;
-}
-
-function generateMaterialRequest(siteId) {
-    window.location.href = `${BASE_URL}/contractor/material-request.php?site_id=${siteId}`;
-}
-
-// Add CSS for tabs and modal
-const style = document.createElement('style');
-style.textContent = `
-    .tab-button {
-        color: #6b7280;
-        background-color: transparent;
-        border: none;
-        cursor: pointer;
-    }
-    .tab-button:hover {
-        color: #374151;
-        background-color: rgba(255, 255, 255, 0.5);
-    }
-    .tab-button.active {
-        color: #1f2937;
-        background-color: white;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-    }
-    
-    /* Modal animations */
-    #siteDetailsModal {
-        animation: fadeIn 0.3s ease-out;
-    }
-    
-    #siteDetailsModal > div {
-        animation: slideIn 0.3s ease-out;
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    
-    @keyframes slideIn {
-        from { transform: translateY(-20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    
-    /* Badge styles */
-    .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 500;
-    }
-    
-    .badge-warning {
-        background-color: #fef3c7;
-        color: #92400e;
-    }
-    
-    .badge-success {
-        background-color: #d1fae5;
-        color: #065f46;
-    }
-`;
-document.head.appendChild(style);
-
-// Close modal when clicking outside
-document.addEventListener('click', function(event) {
-    const modal = document.getElementById('siteDetailsModal');
-    if (event.target === modal) {
-        closeSiteModal();
-    }
-});
-
-// Close modal with Escape key
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        const modal = document.getElementById('siteDetailsModal');
-        if (!modal.classList.contains('hidden')) {
-            closeSiteModal();
+        if (result.success) {
+            renderTable(result.data, result.pagination);
+            renderPagination(result.pagination);
         }
+    } catch (e) {
+        console.error("Fetch Error:", e);
+    } finally {
+        toggleLoading(false);
     }
-});
+}
+
+function toggleLoading(show) {
+    const loader = document.getElementById('loadingOverlay');
+    if (show) {
+        loader.classList.remove('pointer-events-none', 'opacity-0');
+        loader.classList.add('opacity-100');
+    } else {
+        loader.classList.add('opacity-0', 'pointer-events-none');
+        loader.classList.remove('opacity-100');
+    }
+}
+
+function renderTable(data, pagination) {
+    const tbody = document.getElementById('tableBody');
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-20 text-center text-gray-400 text-xs font-bold uppercase tracking-widest">No site records found</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = data.map((site, index) => {
+        const serial = (pagination.page - 1) * pagination.limit + index + 1;
+        return `
+            <tr class="hover:bg-gray-50/50 transition-colors group">
+                <td class="px-6 py-5 text-center text-xs font-bold text-gray-400">${serial}</td>
+                <td class="px-6 py-5">
+                    <div class="flex flex-col">
+                        <span class="text-sm font-semibold text-gray-800">${site.site_code}</span>
+                        <span class="text-[10px] font-medium text-gray-400 uppercase tracking-tight truncate max-w-[150px] mt-0.5">${site.location}</span>
+                    </div>
+                </td>
+                <td class="px-6 py-5">
+                    <div class="flex flex-col">
+                        <span class="text-xs font-semibold text-gray-700">${site.customer_name || 'N/A'}</span>
+                        <span class="text-[10px] text-gray-400 font-medium mt-0.5">${site.city_name || site.state_name}</span>
+                    </div>
+                </td>
+                <td class="px-6 py-5">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex flex-col">
+                            <span class="text-[9px] font-bold text-gray-400 uppercase">Survey</span>
+                            <span class="text-xs font-bold ${getStatusColor(site.survey_status)}">${site.survey_status || 'Pending'}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[9px] font-bold text-gray-400 uppercase">Installation</span>
+                            <span class="text-xs font-bold ${getStatusColor(site.installation_status)}">${site.installation_status || 'Pending'}</span>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-5">
+                    <div class="flex items-center justify-center space-x-1.5 context-icons">
+                        <button onclick="openIntel('boq', ${site.site_id}, '${site.site_code}')" title="View BOQ" class="p-1.5 hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-lg transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        </button>
+                        <button onclick="openIntel('survey', ${site.site_id}, '${site.site_code}')" title="Survey Details" class="p-1.5 hover:bg-amber-50 text-gray-400 hover:text-amber-600 rounded-lg transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </button>
+                        <button onclick="openIntel('installation', ${site.site_id}, '${site.site_code}')" title="Install Logic" class="p-1.5 hover:bg-purple-50 text-gray-400 hover:text-purple-600 rounded-lg transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        </button>
+                        <button onclick="openIntel('material', ${site.site_id}, '${site.site_code}')" title="Material Manifest" class="p-1.5 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-lg transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                        </button>
+                    </div>
+                </td>
+                <td class="px-6 py-5 text-right">
+                    ${(site.survey_status === 'approved' || site.survey_status === 'completed') 
+                        ? `<a href="${site.survey_source === 'dynamic' ? `../../shared/view-survey2.php?id=${site.survey_id}` : `../../shared/view-survey.php?id=${site.survey_id}`}" target="_blank" class="inline-flex items-center px-5 py-2.5 bg-gray-50 border border-gray-200 hover:border-blue-600 hover:text-blue-700 text-gray-600 text-[11px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-sm">View Result</a>`
+                        : `<a href="../site-survey2.php?delegation_id=${site.delegation_id}" class="inline-flex items-center px-5 py-2.5 bg-gray-800 hover:bg-black text-white text-[11px] font-bold uppercase tracking-widest rounded-xl transition-all shadow-sm">Execute</a>`
+                    }
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function getStatusColor(status) {
+    if (!status || status === 'pending') return 'text-amber-500';
+    if (status === 'completed' || status === 'approved' || status === 'delivered') return 'text-emerald-500';
+    if (status === 'rejected') return 'text-rose-500';
+    return 'text-blue-500';
+}
+
+function renderPagination(p) {
+    document.getElementById('pageInfo').innerText = `Page ${p.page} of ${p.pages} (${p.total} total items)`;
+    document.getElementById('prevBtn').disabled = p.page === 1;
+    document.getElementById('nextBtn').disabled = p.page === p.pages;
+
+    const nums = document.getElementById('pageNumbers');
+    nums.innerHTML = '';
+    
+    // Generate simple page numbers
+    const start = Math.max(1, p.page - 2);
+    const end = Math.min(p.pages, start + 4);
+    
+    for (let i = start; i <= end; i++) {
+        nums.innerHTML += `
+            <button onclick="goToPage(${i})" class="w-8 h-8 rounded-lg text-xs font-bold transition-all ${i === p.page ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-400 hover:text-blue-600'}">${i}</button>
+        `;
+    }
+}
+
+function goToPage(p) {
+    currentPage = p;
+    fetchData();
+}
+
+function nextPage() { currentPage++; fetchData(); }
+function prevPage() { currentPage--; fetchData(); }
+
+// Modal Logic
+async function openIntel(type, siteId, siteCode) {
+    const modal = document.getElementById('intelModal');
+    const container = document.getElementById('modalContainer');
+    const content = document.getElementById('intelContent');
+    const title = document.getElementById('intelTitle');
+    const subtitle = document.getElementById('intelSubtitle');
+
+    const titles = {
+        boq: 'Bill of Quantities',
+        survey: 'Survey Protocol',
+        installation: 'Installation Brief',
+        material: 'Material Logistics'
+    };
+
+    title.innerText = titles[type];
+    subtitle.innerText = `Site Context: ${siteCode}`;
+    
+    content.innerHTML = `<div class="py-12 flex justify-center"><div class="w-8 h-8 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div></div>`;
+    
+    modal.classList.remove('pointer-events-none', 'opacity-0');
+    modal.classList.add('opacity-100');
+    container.classList.remove('scale-95');
+    container.classList.add('scale-100');
+
+    try {
+        const response = await fetch(`api/get-site-intel.php?site_id=${siteId}&type=${type}`);
+        const result = await response.json();
+        if (result.success) renderIntel(type, result.data[type]);
+    } catch (e) {
+        content.innerHTML = `<p class="text-rose-500 text-center font-bold">Extraction Failed</p>`;
+    }
+}
+
+function renderIntel(type, data) {
+    const content = document.getElementById('intelContent');
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+        content.innerHTML = `<div class="py-8 text-center text-gray-400 font-bold uppercase text-[10px]">No data available for this phase</div>`;
+        return;
+    }
+
+    let html = '';
+    if (type === 'boq') {
+        html = `
+            <div class="space-y-4">
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-xs font-bold text-gray-500 uppercase">Master Data: ${data.customer_name}</span>
+                    <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-bold">Rev: ${data.id}</span>
+                </div>
+                <table class="w-full text-left">
+                    <thead><tr class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b"><th class="py-2">Item Descriptions</th><th class="py-2 text-right">Qty</th></tr></thead>
+                    <tbody class="divide-y divide-gray-50">
+                        ${data.items.map(it => `<tr class="text-xs"><td class="py-3 font-medium">${it.item_name}</td><td class="py-3 text-right font-bold">${it.quantity} ${it.unit}</td></tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+    } else if (type === 'survey') {
+        html = `
+            <div class="grid grid-cols-2 gap-6">
+                <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase mb-1">Delegation Date</div>
+                    <div class="text-sm font-bold text-gray-900">${new Date(data.survey_delegation_date).toLocaleDateString()}</div>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase mb-1">Current Status</div>
+                    <div class="text-sm font-bold ${getStatusColor(data.status)} uppercase">${data.status || 'Pending'}</div>
+                </div>
+                <div class="col-span-2 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                    <div class="text-[10px] font-bold text-blue-500 uppercase mb-2">Instructions</div>
+                    <div class="text-xs text-blue-700 leading-relaxed font-medium">${data.survey_notes || 'No specific technical instructions provided.'}</div>
+                </div>
+            </div>`;
+    } else if (type === 'installation') {
+        html = `
+            <div class="space-y-6">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 border border-purple-100">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold text-gray-900">Assigned by ${data.assigned_by}</div>
+                        <div class="text-xs text-gray-400 font-medium">${new Date(data.delegation_date).toLocaleDateString()}</div>
+                    </div>
+                </div>
+                <div class="p-5 bg-white border border-gray-100 rounded-3xl shadow-sm">
+                    <div class="text-[10px] font-bold text-gray-400 uppercase mb-3">Install Directives</div>
+                    <div class="text-sm text-gray-700 leading-relaxed">${data.notes || 'Proceed with standard installation protocol.'}</div>
+                </div>
+            </div>`;
+    } else if (type === 'material') {
+        html = `
+            <div class="space-y-4">
+                ${data.map(m => `
+                    <div class="p-5 bg-white border border-gray-100 rounded-3xl shadow-sm hover:border-emerald-500 transition-all">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <div class="text-sm font-bold text-gray-900">REQ-${m.id.toString().padStart(5, '0')}</div>
+                                <div class="text-[10px] text-gray-400 font-bold uppercase">${new Date(m.created_date).toDateString()}</div>
+                            </div>
+                            <span class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold uppercase">${m.status}</span>
+                        </div>
+                        ${m.dispatch_number ? `
+                            <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-50">
+                                <div><div class="text-[9px] font-bold text-gray-400 uppercase mb-1">Docket #</div><div class="text-xs font-bold text-gray-700">${m.dispatch_number}</div></div>
+                                <div><div class="text-[9px] font-bold text-gray-400 uppercase mb-1">Status</div><div class="text-xs font-bold text-blue-600 uppercase">${m.dispatch_status}</div></div>
+                            </div>
+                        ` : '<div class="text-[10px] text-amber-500 font-bold uppercase mt-4">Awaiting Dispatch</div>'}
+                    </div>
+                `).join('')}
+            </div>`;
+    }
+    content.innerHTML = html;
+}
+
+function closeIntelModal() {
+    const modal = document.getElementById('intelModal');
+    const container = document.getElementById('modalContainer');
+    modal.classList.add('pointer-events-none', 'opacity-0');
+    modal.classList.remove('opacity-100');
+    container.classList.add('scale-95');
+    container.classList.remove('scale-100');
+}
+
+function exportData() {
+    const query = new URLSearchParams(filters).toString();
+    window.location.href = `api/export-sites.php?${query}`;
+}
 </script>
+
+<style>
+.status-btn.active {
+    background-color: white;
+    color: #2563eb;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.status-btn:not(.active) {
+    color: #94a3b8;
+}
+.context-icons button:hover {
+    transform: translateY(-2px);
+}
+</style>
 
 <?php
 $content = ob_get_clean();

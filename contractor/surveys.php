@@ -1,198 +1,254 @@
-<?php
+<?php 
 require_once __DIR__ . '/../config/auth.php';
-require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../models/SiteSurvey.php';
-
 // Require vendor authentication
 Auth::requireVendor();
-
-$vendorId = Auth::getVendorId();
-$db = Database::getInstance()->getConnection();
-
-// 1. Get legacy surveys
-$surveyModel = new SiteSurvey();
-$legacySurveys = $surveyModel->getVendorSurveys($vendorId);
-
-// 2. Get dynamic surveys
-$stmt = $db->prepare("
-    SELECT dsr.id, dsr.site_id as site_db_id, dsr.survey_form_id, dsr.survey_status, 
-           dsr.submitted_date as created_at, s.site_id as site_code, s.location,
-           ds.title as survey_title, 'dynamic' as source
-    FROM dynamic_survey_responses dsr
-    LEFT JOIN sites s ON dsr.site_id = s.id
-    LEFT JOIN dynamic_surveys ds ON dsr.survey_form_id = ds.id
-    WHERE dsr.surveyor_id = ?
-    ORDER BY dsr.submitted_date DESC
-");
-$stmt->execute([$_SESSION['user_id']]);
-$dynamicSurveys = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Map legacy surveys to a consistent format
-$formattedLegacy = array_map(function($s) {
-    return [
-        'id' => $s['id'],
-        'site_code' => $s['site_code'],
-        'location' => $s['location'],
-        'survey_status' => $s['survey_status'],
-        'created_at' => $s['created_at'],
-        'survey_title' => 'Legacy Survey',
-        'source' => 'legacy',
-        'site_id' => $s['site_id']
-    ];
-}, $legacySurveys);
-
-// Map dynamic surveys
-$formattedDynamic = array_map(function($s) {
-    return [
-        'id' => $s['id'],
-        'site_code' => $s['site_code'],
-        'location' => $s['location'],
-        'survey_status' => $s['survey_status'],
-        'created_at' => $s['created_at'],
-        'survey_title' => $s['survey_title'] ?? 'Dynamic Survey',
-        'source' => 'dynamic',
-        'site_id' => $s['site_db_id']
-    ];
-}, $dynamicSurveys);
-
-// Combine all surveys
-$allSurveys = array_merge($formattedDynamic, $formattedLegacy);
-
-// Sort by date descending
-usort($allSurveys, function($a, $b) {
-    return strtotime($b['created_at']) - strtotime($a['created_at']);
-});
-
-$title = 'My Surveys';
+$title = 'Survey Intelligence';
 ob_start();
 ?>
 
-<!-- Enhanced Header -->
-<div class="bg-gradient-to-r from-green-600 to-green-700 rounded-xl shadow-lg p-6 mb-8">
-    <div class="flex justify-between items-center">
-        <div class="text-white">
-            <h1 class="text-3xl font-bold">Site Surveys</h1>
-            <p class="mt-2 text-green-100">Modern Site Assessment Dashboard</p>
-            <p class="text-sm text-green-200 mt-1">Manage all your submitted surveys in one place</p>
+<!-- Enhanced Header Section -->
+<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div class="flex items-center space-x-5">
+        <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl shadow-lg shadow-green-100 flex items-center justify-center text-white">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
         </div>
-        <div class="flex items-center space-x-4">
-            <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 text-center min-w-24">
-                <div class="text-2xl font-bold text-white"><?php echo count(array_filter($allSurveys, fn($s) => $s['survey_status'] === 'submitted' || $s['survey_status'] === 'pending')); ?></div>
-                <div class="text-xs text-green-100 uppercase tracking-wide">Pending</div>
-            </div>
-            <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 text-center min-w-24">
-                <div class="text-2xl font-bold text-white"><?php echo count(array_filter($allSurveys, fn($s) => $s['survey_status'] === 'approved')); ?></div>
-                <div class="text-xs text-green-100 uppercase tracking-wide">Approved</div>
-            </div>
-            <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 text-center min-w-24">
-                <div class="text-2xl font-bold text-white"><?php echo count($allSurveys); ?></div>
-                <div class="text-xs text-green-100 uppercase tracking-wide">Total</div>
-            </div>
+        <div>
+            <h2 class="text-xl font-bold text-gray-800 tracking-tight">Intelligence Dashboard</h2>
+            <p class="text-gray-500 text-xs mt-1 font-medium">Unified assessment tracking & operational analytics</p>
+        </div>
+    </div>
+    
+    <div class="flex items-center space-x-3">
+        <div class="bg-gray-100 p-1 rounded-xl flex border border-gray-200/50">
+            <button onclick="setStatus('all')" class="status-btn active px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all" data-status="all">All</button>
+            <button onclick="setStatus('pending')" class="status-btn px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all" data-status="pending">Pending</button>
+            <button onclick="setStatus('approved')" class="status-btn px-4 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all" data-status="approved">Approved</button>
         </div>
     </div>
 </div>
 
-<!-- Surveys Table -->
-<div class="professional-table bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-        <div>
-            <h3 class="text-lg font-semibold text-gray-900">Survey History</h3>
-            <p class="text-sm text-gray-500 mt-1">Unified view of legacy and dynamic surveys</p>
+<!-- Search & Statistics -->
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+    <div class="lg:col-span-3">
+        <div class="relative group">
+            <input type="text" id="globalSearch" oninput="debounceSearch()" placeholder="Search site ID, location or survey type..." class="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-medium shadow-sm focus:ring-4 focus:ring-green-500/5 focus:border-green-500 outline-none transition-all placeholder:text-gray-400">
+            <svg class="w-5 h-5 text-gray-400 absolute left-4 top-4.5 group-focus-within:text-green-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
     </div>
-    <div class="p-6">
-        <?php if (empty($allSurveys)): ?>
-            <div class="text-center py-12">
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">No surveys found</h3>
-                <p class="mt-1 text-sm text-gray-500">You haven't submitted any site surveys yet.</p>
-                <div class="mt-6">
-                    <a href="sites/" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors">
-                        View Sites
-                    </a>
-                </div>
-            </div>
-        <?php else: ?>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="table-header bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Survey Type</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site Information</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted On</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <?php foreach ($allSurveys as $survey): ?>
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10">
-                                        <?php if ($survey['source'] === 'dynamic'): ?>
-                                            <div class="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                                                <svg class="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path>
-                                                    <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            </div>
-                                        <?php else: ?>
-                                            <div class="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                                                <svg class="h-5 w-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($survey['survey_title']); ?></div>
-                                        <div class="text-xs text-gray-500"><?php echo $survey['source'] === 'dynamic' ? 'New Dynamic Form' : 'Legacy Form'; ?></div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($survey['site_code']); ?></div>
-                                <div class="text-xs text-gray-500 truncate max-w-xs" title="<?php echo htmlspecialchars($survey['location']); ?>"><?php echo htmlspecialchars($survey['location']); ?></div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <?php
-                                $status = $survey['survey_status'];
-                                $badgeClass = match($status) {
-                                    'approved' => 'bg-green-100 text-green-800',
-                                    'rejected' => 'bg-red-100 text-red-800',
-                                    'submitted', 'pending' => 'bg-yellow-100 text-yellow-800',
-                                    default => 'bg-gray-100 text-gray-800'
-                                };
-                                ?>
-                                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium <?php echo $badgeClass; ?>">
-                                    <?php echo ucfirst($status); ?>
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-500">
-                                <?php echo date('M d, Y H:i', strtotime($survey['created_at'])); ?>
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <?php if ($survey['source'] === 'dynamic'): ?>
-                                    <a href="../shared/view-survey2.php?id=<?php echo $survey['id']; ?>" class="inline-flex items-center px-3 py-1.5 border border-blue-600 text-xs font-medium rounded text-blue-600 hover:bg-blue-600 hover:text-white transition-colors">
-                                        View Survey
-                                    </a>
-                                <?php else: ?>
-                                    <a href="../shared/view-survey.php?id=<?php echo $survey['id']; ?>" class="inline-flex items-center px-3 py-1.5 border border-gray-600 text-xs font-medium rounded text-gray-600 hover:bg-gray-600 hover:text-white transition-colors">
-                                        View (Old)
-                                    </a>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
+    <div class="bg-white rounded-2xl border border-gray-100 p-4 flex items-center justify-between shadow-sm">
+        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Reports</span>
+        <span id="recordCount" class="text-xl font-bold text-gray-800">0</span>
     </div>
 </div>
+
+<!-- Intelligent Survey Grid -->
+<div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden relative min-h-[500px]">
+    <div id="loadingOverlay" class="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="flex flex-col items-center">
+            <div class="w-12 h-12 border-4 border-green-500/20 border-t-green-600 rounded-full animate-spin"></div>
+            <p class="text-[10px] font-black text-green-600 uppercase tracking-widest mt-4">Analyzing Records</p>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="bg-gray-50/50 border-b border-gray-100">
+                    <th class="px-8 py-5 text-[11px] font-bold text-gray-400 uppercase tracking-widest w-16 text-center">#</th>
+                    <th class="px-8 py-5 text-[11px] font-bold text-gray-500 uppercase tracking-widest">Project Identity</th>
+                    <th class="px-8 py-5 text-[11px] font-bold text-gray-500 uppercase tracking-widest">Date Submitted</th>
+                    <th class="px-8 py-5 text-[11px] font-bold text-gray-500 uppercase tracking-widest text-center">Status</th>
+                    <th class="px-8 py-5 text-right text-[11px] font-bold text-gray-500 uppercase tracking-widest">Manifest</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-gray-50">
+                <!-- Records injected here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Context -->
+    <div class="px-8 py-5 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest" id="pageInfo">Showing 0 of 0 Records</div>
+        <div class="flex items-center space-x-2">
+            <button onclick="prevPage()" id="prevBtn" class="p-2.5 bg-white border border-gray-100 rounded-xl text-gray-400 hover:text-green-600 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div id="pageNumbers" class="flex items-center space-x-1.5"></div>
+            <button onclick="nextPage()" id="nextBtn" class="p-2.5 bg-white border border-gray-100 rounded-xl text-gray-400 hover:text-green-600 disabled:opacity-50 disabled:pointer-events-none transition-all shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+let filters = { search: '', status: 'all', limit: 12 };
+let searchDebounce = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetchData();
+});
+
+function debounceSearch() {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+        filters.search = document.getElementById('globalSearch').value;
+        currentPage = 1;
+        fetchData();
+    }, 400);
+}
+
+function setStatus(status) {
+    filters.status = status;
+    document.querySelectorAll('.status-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.status === status);
+    });
+    currentPage = 1;
+    fetchData();
+}
+
+async function fetchData() {
+    toggleLoading(true);
+    try {
+        const query = new URLSearchParams({ page: currentPage, ...filters }).toString();
+        const response = await fetch(`surveys/api/get-surveys.php?${query}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            renderTable(result.data, result.pagination);
+            renderPagination(result.pagination);
+            document.getElementById('recordCount').innerText = result.pagination.total;
+        }
+    } catch (e) {
+        console.error("Survey Hub Fetch Error:", e);
+    } finally {
+        toggleLoading(false);
+    }
+}
+
+function toggleLoading(show) {
+    const loader = document.getElementById('loadingOverlay');
+    if (show) {
+        loader.classList.remove('pointer-events-none', 'opacity-0');
+        loader.classList.add('opacity-100');
+    } else {
+        loader.classList.add('opacity-0', 'pointer-events-none');
+        loader.classList.remove('opacity-100');
+    }
+}
+
+function renderTable(data, pagination) {
+    const tbody = document.getElementById('tableBody');
+    if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-32 text-center text-gray-400 text-[10px] font-black uppercase tracking-[0.2em]">No survey records match your parameters</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = data.map((survey, index) => {
+        const serial = (pagination.page - 1) * pagination.limit + index + 1;
+        const viewLink = survey.source === 'dynamic' 
+            ? `../shared/view-survey2.php?id=${survey.id}` 
+            : `../shared/view-survey.php?id=${survey.id}`;
+
+        return `
+            <tr class="hover:bg-gray-50/50 transition-colors group">
+                <td class="px-8 py-6 text-center text-sm font-bold text-gray-400">#${serial}</td>
+                <td class="px-8 py-6">
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-blue-600 tracking-wide uppercase">${survey.site_code}</span>
+                        <span class="text-base font-bold text-gray-800 line-clamp-1 mt-1">${survey.survey_title}</span>
+                        <span class="text-xs font-semibold text-gray-500 truncate max-w-[300px] mt-1.5">${survey.location}</span>
+                    </div>
+                </td>
+                <td class="px-8 py-6">
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-gray-700">${formatDate(survey.submitted_date)}</span>
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-tighter mt-1">${formatTime(survey.submitted_date)}</span>
+                    </div>
+                </td>
+                <td class="px-8 py-6 text-center">
+                    <span class="inline-flex px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest ${getStatusColor(survey.survey_status)} border border-current opacity-90">
+                        ${survey.survey_status || 'Submitted'}
+                    </span>
+                </td>
+                <td class="px-8 py-6 text-right">
+                    <a href="${viewLink}" target="_blank" class="inline-flex items-center px-5 py-2.5 bg-gray-50 border border-gray-200 hover:border-green-600 hover:text-green-700 text-gray-600 text-xs font-bold uppercase tracking-widest rounded-xl transition-all shadow-sm">
+                        Review Result
+                    </a>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function getStatusColor(status) {
+    if (!status) return 'bg-gray-50 text-gray-400';
+    status = status.toLowerCase();
+    if (status === 'approved' || status === 'completed') return 'bg-green-50 text-green-600';
+    if (status === 'rejected') return 'bg-red-50 text-red-600';
+    if (status === 'submitted' || status === 'pending') return 'bg-amber-50 text-amber-600';
+    return 'bg-blue-50 text-blue-600';
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '---';
+    return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatTime(dateStr) {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderPagination(p) {
+    document.getElementById('pageInfo').innerText = `Syncing Offset ${((p.page-1)*p.limit)+1} - ${Math.min(p.page*p.limit, p.total)} of ${p.total}`;
+    document.getElementById('prevBtn').disabled = p.page === 1;
+    document.getElementById('nextBtn').disabled = p.page === p.pages;
+
+    const nums = document.getElementById('pageNumbers');
+    nums.innerHTML = '';
+    
+    const start = Math.max(1, p.page - 1);
+    const end = Math.min(p.pages, start + 3);
+    
+    for (let i = start; i <= end; i++) {
+        nums.innerHTML += `
+            <button onclick="goToPage(${i})" class="w-10 h-10 rounded-xl text-[10px] font-black transition-all ${i === p.page ? 'bg-green-600 text-white shadow-lg shadow-green-100' : 'bg-white text-gray-400 hover:text-green-600'}">${i}</button>
+        `;
+    }
+}
+
+function goToPage(p) {
+    currentPage = p;
+    fetchData();
+}
+
+function nextPage() { currentPage++; fetchData(); }
+function prevPage() { currentPage--; fetchData(); }
+</script>
+
+<style>
+.status-btn.active {
+    background-color: white;
+    color: #059669;
+    box-shadow: 0 4px 12px -2px rgba(5, 150, 105, 0.15);
+}
+.status-btn:not(.active) {
+    color: #94a3b8;
+}
+.status-btn:hover:not(.active) {
+    color: #475569;
+}
+#tableBody tr {
+    animation: slideIn 0.3s ease-out forwards;
+}
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-5px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+</style>
 
 <?php
 $content = ob_get_clean();
