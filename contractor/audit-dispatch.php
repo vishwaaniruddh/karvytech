@@ -40,26 +40,15 @@ $title = ($isAudited ? 'Audit Summary' : 'Authoritative Audit') . ' - ' . ($disp
 ob_start();
 ?>
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
     :root {
         --font-main: 'Inter', sans-serif;
-        --font-heading: 'Outfit', sans-serif;
-    }
-
-    body {
-        font-family: var(--font-main);
-        letter-spacing: -0.011em;
-        background-color: #f8fafc;
-    }
-
-    h1, h2, h3, h4, .font-heading {
-        font-family: var(--font-heading) !important;
-        letter-spacing: -0.02em;
     }
 
     .audit-row {
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .audit-row:hover {
+        background: linear-gradient(90deg, #f0f9ff 0%, #f8fafc 100%) !important;
     }
     
     .input-error {
@@ -78,6 +67,41 @@ ob_start();
         box-shadow: none !important;
     }
 
+    /* Premium Sidebar Panels */
+    .audit-sidebar-panel {
+        background: #ffffff;
+        border: 1px solid #f1f5f9;
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .audit-sidebar-panel:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    }
+
+    /* Table Enhancements */
+    .audit-table-header th {
+        background: #f8fafc !important;
+        font-size: 9px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.14em !important;
+        text-transform: uppercase;
+        color: #94a3b8 !important;
+        padding: 14px 16px !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        white-space: nowrap;
+    }
+    
+    /* Input Focus States */
+    .audit-input {
+        transition: all 0.2s ease;
+    }
+    .audit-input:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.08) !important;
+        background: #ffffff !important;
+    }
+
     /* Premium Toast */
     #audit-toast {
         transform: translateY(100%);
@@ -87,6 +111,30 @@ ob_start();
     #audit-toast.show {
         transform: translateY(0);
         opacity: 1;
+    }
+
+    /* Skeleton Loader */
+    .audit-skeleton {
+        background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+        background-size: 200% 100%;
+        animation: audit-shimmer 1.5s infinite;
+        border-radius: 8px;
+    }
+    @keyframes audit-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* Submit Button */
+    .audit-submit-btn {
+        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        box-shadow: 0 4px 16px rgba(37,99,235,0.25) !important;
+        transition: all 0.25s ease !important;
+    }
+    .audit-submit-btn:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+        box-shadow: 0 8px 24px rgba(37,99,235,0.35) !important;
+        transform: translateY(-1px) !important;
     }
 </style>
 
@@ -127,42 +175,42 @@ ob_start();
         <div class="lg:col-span-4 space-y-6">
             <!-- Chain of Custody (Sender Info) -->
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                <h3 class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-slate-400">Chain of Custody (Sender)</h3>
+                <h3 class="text-[10px] font-bold uppercase tracking-[0.15em] mb-4 text-slate-400">Chain of Custody (Sender)</h3>
                 <div class="flex items-center gap-4 mb-6">
                     <div class="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-500">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                     </div>
                     <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dispatched By</p>
-                        <p class="text-sm font-black text-slate-900"><?php echo htmlspecialchars($dispatch['dispatched_by_name'] ?: 'Corporate Admin'); ?></p>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Dispatched By</p>
+                        <p class="text-sm font-bold text-slate-900"><?php echo htmlspecialchars($dispatch['dispatched_by_name'] ?: 'Corporate Admin'); ?></p>
                         <p class="text-[10px] font-bold text-blue-600 mt-0.5"><?php echo date('d M Y, h:i A', strtotime($dispatch['created_at'])); ?></p>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
                     <div>
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Manifest ID</p>
-                        <p class="text-sm font-black text-slate-900 whitespace-nowrap"><?php echo htmlspecialchars($dispatch['dispatch_number']); ?></p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Manifest ID</p>
+                        <p class="text-sm font-bold text-slate-900 whitespace-nowrap"><?php echo htmlspecialchars($dispatch['dispatch_number']); ?></p>
                     </div>
                     <div>
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-right">Site Code</p>
-                        <p class="text-sm font-black text-slate-900 text-right"><?php echo htmlspecialchars($dispatch['site_code']); ?></p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 text-right">Site Code</p>
+                        <p class="text-sm font-bold text-slate-900 text-right"><?php echo htmlspecialchars($dispatch['site_code']); ?></p>
                     </div>
                 </div>
                 
                 <div class="mt-4 flex items-center justify-between border-b border-slate-50 pb-4">
                     <div>
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Logistics / Courier</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Logistics / Courier</p>
                         <p class="text-xs font-bold text-slate-700"><?php echo htmlspecialchars($dispatch['courier_name'] ?: '--'); ?></p>
                     </div>
                     <div class="text-right">
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tracking ID</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tracking ID</p>
                         <p class="text-xs font-mono font-bold text-slate-700"><?php echo htmlspecialchars($dispatch['tracking_number'] ?: '--'); ?></p>
                     </div>
                 </div>
 
                 <div class="mt-4">
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Destination Location</p>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Destination Location</p>
                     <p class="text-[11px] font-bold text-slate-600 leading-normal"><?php echo htmlspecialchars($dispatch['site_name'] ?: 'Vendor Operational Site'); ?></p>
                 </div>
             </div>
@@ -171,7 +219,7 @@ ob_start();
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                 <div class="flex items-center gap-2 mb-6">
                     <div class="w-1.5 h-6 bg-blue-600 rounded-full"></div>
-                    <h3 class="text-sm font-black uppercase tracking-widest text-slate-900">Acceptance Record</h3>
+                    <h3 class="text-sm font-bold uppercase tracking-widest text-slate-900">Acceptance Record</h3>
                 </div>
                 
                 <div class="space-y-4">
@@ -290,95 +338,30 @@ ob_start();
             <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                 <div class="px-6 py-4 bg-slate-50/50 border-b border-slate-100 flex justify-between items-center">
                     <div>
-                        <h2 class="text-sm font-black text-slate-900 uppercase tracking-widest font-heading">Material Audit Records</h2>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1"><?php echo count($dispatch['items']); ?> items reconciled</p>
+                        <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Material Audit Records</h2>
+                        <p id="item-count-label" class="text-[10px] text-slate-400 font-semibold uppercase tracking-wide mt-1">Initializing Ledger...</p>
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto min-h-[300px] relative">
+                    <!-- Loading Overlay -->
+                    <div id="table-loader" class="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center gap-3 transition-opacity duration-300">
+                        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <p class="text-[9px] font-bold text-blue-600 uppercase tracking-[0.15em] animate-pulse">Fetching Manifest Data</p>
+                    </div>
+
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-white border-b border-slate-50">
-                                <th class="px-4 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest w-12 text-center">#</th>
-                                <th class="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Material Item & Code</th>
-                                <th class="px-4 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center w-24">Sent</th>
-                                <th class="px-4 py-4 text-[9px] font-black text-blue-500 uppercase tracking-widest text-center w-32">Received</th>
-                                <th class="px-6 py-4 text-[9px] font-black text-rose-500 uppercase tracking-widest text-center w-32">Damaged</th>
+                                <th class="px-4 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-wide w-12 text-center">#</th>
+                                <th class="px-6 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-wide">Material Item & Code</th>
+                                <th class="px-4 py-4 text-[9px] font-bold text-slate-400 uppercase tracking-wide text-center w-24">Sent</th>
+                                <th class="px-4 py-4 text-[9px] font-bold text-blue-500 uppercase tracking-wide text-center w-32">Received</th>
+                                <th class="px-6 py-4 text-[9px] font-bold text-rose-500 uppercase tracking-wide text-center w-32">Damaged</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-50">
-                            <?php foreach ($dispatch['items'] as $index => $item): 
-                                // In summary mode, we try to match the item by boq_item_id in confirmations
-                                $confirm = null;
-                                if ($isAudited) {
-                                    foreach ($confirmations as $c) {
-                                        if (isset($c['boq_item_id']) && $c['boq_item_id'] == $item['boq_item_id']) {
-                                            $confirm = $c;
-                                            break;
-                                        }
-                                    }
-                                }
-                                
-                                // Robust value extraction for legacy vs new formats
-                                if ($isAudited) {
-                                    $qtyRecv = $confirm['quantity_received'] ?? ($confirm['received_quantity'] ?? 0);
-                                    $qtyDmg = $confirm['quantity_damaged'] ?? ($confirm['damaged_quantity'] ?? 0);
-                                } else {
-                                    $qtyRecv = $item['quantity_dispatched'];
-                                    $qtyDmg = 0;
-                                }
-                            ?>
-                            <tr class="audit-row <?php echo $isAudited ? 'bg-slate-50/20' : 'hover:bg-slate-50/50'; ?> transition-all" 
-                                data-item-id="<?php echo $item['boq_item_id']; ?>" 
-                                data-dispatch-qty="<?php echo $item['quantity_dispatched']; ?>">
-                                <td class="px-4 py-3 text-center text-[10px] font-black text-slate-300">
-                                    <?php echo str_pad($index + 1, 2, '0', STR_PAD_LEFT); ?>
-                                </td>
-                                <td class="px-6 py-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 shrink-0">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                                        </div>
-                                        <div class="min-w-0">
-                                            <p class="text-xs font-black text-slate-800 truncate uppercase tracking-tight"><?php echo htmlspecialchars($item['item_name']); ?></p>
-                                            <p class="text-[9px] font-bold text-slate-400 font-mono mt-0.5"><?php echo htmlspecialchars($item['item_code']); ?> <span class="text-slate-200">|</span> <span class="text-blue-500 uppercase"><?php echo htmlspecialchars($item['unit']); ?></span></p>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Missing Alert (Visible if shortage exists) -->
-                                    <?php 
-                                        $missing = (float)$item['quantity_dispatched'] - (float)$qtyRecv - (float)$qtyDmg;
-                                    ?>
-                                    <div id="missing-alert-<?php echo $index; ?>" class="<?php echo ($missing > 0) ? '' : 'hidden'; ?> mt-2">
-                                        <div class="bg-rose-50 px-2 py-1 rounded-md inline-flex items-center gap-1.5 border border-rose-100">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                                            <span class="text-[8px] font-black text-rose-600 uppercase">Shortage: <span class="val-missing"><?php echo $missing; ?></span></span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 text-center">
-                                    <span class="text-xs font-black text-slate-500"><?php echo number_format($item['quantity_dispatched']); ?></span>
-                                </td>
-                                <td class="px-4 py-3">
-                                    <input type="number" 
-                                           class="w-full h-8 bg-white border border-slate-200 rounded-lg text-center font-black text-blue-900 text-xs focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all input-recv <?php echo $isAudited ? 'readonly-input' : ''; ?>" 
-                                           value="<?php echo $qtyRecv; ?>"
-                                           min="0"
-                                           max="<?php echo (int)$item['quantity_dispatched']; ?>"
-                                           data-index="<?php echo $index; ?>"
-                                           <?php echo $isAudited ? 'disabled' : ''; ?>>
-                                </td>
-                                <td class="px-6 py-3 text-right">
-                                    <input type="number" 
-                                           class="w-full h-8 bg-white border border-slate-200 rounded-lg text-center font-black text-rose-900 text-xs focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all input-faulty <?php echo $isAudited ? 'readonly-input' : ''; ?>" 
-                                           value="<?php echo $qtyDmg; ?>"
-                                           min="0"
-                                           max="<?php echo (int)$item['quantity_dispatched']; ?>"
-                                           data-index="<?php echo $index; ?>"
-                                           <?php echo $isAudited ? 'disabled' : ''; ?>>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
+                        <tbody id="audit-items-body" class="divide-y divide-slate-50">
+                            <!-- Items injected via API -->
                         </tbody>
                     </table>
                 </div>
@@ -386,20 +369,20 @@ ob_start();
                 <!-- Footer Summary / Action -->
                 <div class="px-6 py-6 bg-slate-900 border-t border-slate-800 flex items-center justify-between mt-auto">
                     <div>
-                        <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wide leading-relaxed">
                             <?php echo $isAudited ? 'Authoritative Audit Ledger' : 'Secured Audit Submission'; ?>
                         </p>
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">
-                            <?php echo $isAudited ? 'This record is immutable and verified.' : 'Cross-Check against physical LR Copy required.'; ?>
+                        <p class="text-[10px] font-medium text-slate-500 mt-1">
+                            <?php echo $isAudited ? 'This record is immutable and verified.' : 'Cross-check against physical LR Copy required.'; ?>
                         </p>
                     </div>
                     <?php if (!$isAudited): ?>
-                    <button id="final-submit-btn" onclick="submitAudit()" class="px-10 py-3.5 bg-emerald-600 text-white text-[10px] font-black rounded-xl hover:bg-emerald-700 transition-all shadow-xl hover:shadow-emerald-900 active:scale-95 flex items-center gap-3 uppercase tracking-widest group">
+                    <button id="final-submit-btn" onclick="submitAudit()" class="audit-submit-btn px-10 py-3.5 text-white text-[10px] font-bold rounded-xl active:scale-95 flex items-center gap-3 uppercase tracking-wide group">
                         Confirm & Close Manifest
                         <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                     </button>
                     <?php else: ?>
-                    <a href="material-received.php" class="px-10 py-3.5 bg-slate-800 text-white text-[10px] font-black rounded-xl hover:bg-slate-700 transition-all flex items-center gap-3 uppercase tracking-widest group border border-slate-700">
+                    <a href="material-received.php" class="px-10 py-3.5 bg-slate-800 text-white text-[10px] font-bold rounded-xl hover:bg-slate-700 transition-all flex items-center gap-3 uppercase tracking-wide group border border-slate-700">
                         Exit Summary
                         <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     </a>
@@ -411,6 +394,114 @@ ob_start();
 </div>
 
 <script>
+// Global Configuration from PHP
+const AUDIT_CONFIG = {
+    dispatchId: '<?php echo $dispatchId; ?>',
+    isAudited: <?php echo $isAudited ? 'true' : 'false'; ?>,
+    confirmations: <?php echo json_encode($confirmations); ?>
+};
+
+async function loadAuditItems() {
+    const tableBody = document.getElementById('audit-items-body');
+    const loader = document.getElementById('table-loader');
+    const countLabel = document.getElementById('item-count-label');
+
+    try {
+        const response = await fetch(`v2/get-dispatch-items.php?dispatch_id=${AUDIT_CONFIG.dispatchId}`);
+        const result = await response.json();
+
+        if (!result.success) throw new Error(result.message);
+
+        const items = result.data;
+        countLabel.textContent = `${items.length} Items Reconciled`;
+        
+        tableBody.innerHTML = '';
+        
+        items.forEach((item, index) => {
+            // Find existing confirmation if audited
+            let confirm = null;
+            if (AUDIT_CONFIG.isAudited) {
+                confirm = AUDIT_CONFIG.confirmations.find(c => c.boq_item_id == (item.boq_item_id || item.id));
+            }
+
+            let qtyRecv, qtyDmg;
+            if (AUDIT_CONFIG.isAudited) {
+                qtyRecv = confirm ? (confirm.quantity_received ?? confirm.received_quantity ?? 0) : 0;
+                qtyDmg = confirm ? (confirm.quantity_damaged ?? confirm.damaged_quantity ?? 0) : 0;
+            } else {
+                qtyRecv = item.quantity_dispatched;
+                qtyDmg = 0;
+            }
+
+            const missing = parseFloat(item.quantity_dispatched) - parseFloat(qtyRecv) - parseFloat(qtyDmg);
+            const rowClass = AUDIT_CONFIG.isAudited ? 'bg-slate-50/20' : 'hover:bg-slate-50/50';
+            const readonlyClass = AUDIT_CONFIG.isAudited ? 'readonly-input' : '';
+            const disabledAttr = AUDIT_CONFIG.isAudited ? 'disabled' : '';
+
+            const rowHtml = `
+                <tr class="audit-row ${rowClass} transition-all" 
+                    data-item-id="${item.boq_item_id}" 
+                    data-dispatch-qty="${item.quantity_dispatched}">
+                    <td class="px-4 py-3 text-center text-[10px] font-semibold text-slate-300">
+                        ${String(index + 1).padStart(2, '0')}
+                    </td>
+                    <td class="px-6 py-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold text-slate-800 truncate">${item.item_name}</p>
+                                <p class="text-[9px] font-medium text-slate-400 font-mono mt-0.5">${item.item_code} <span class="text-slate-200">|</span> <span class="text-blue-500 uppercase">${item.unit}</span></p>
+                            </div>
+                        </div>
+                        <div id="missing-alert-${index}" class="${missing > 0 ? '' : 'hidden'} mt-2">
+                            <div class="bg-rose-50 px-2 py-1 rounded-md inline-flex items-center gap-1.5 border border-rose-100">
+                                <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                <span class="text-[8px] font-bold text-rose-600 uppercase">Shortage: <span class="val-missing">${missing.toFixed(2)}</span></span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <span class="text-xs font-semibold text-slate-500">${item.quantity_dispatched}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="number" 
+                               class="w-full h-8 bg-white border border-slate-200 rounded-lg text-center font-semibold text-blue-900 text-xs focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all input-recv ${readonlyClass}" 
+                               value="${qtyRecv}"
+                               min="0"
+                               max="${item.quantity_dispatched}"
+                               data-index="${index}"
+                               ${disabledAttr}>
+                    </td>
+                    <td class="px-6 py-3 text-right">
+                        <input type="number" 
+                               class="w-full h-8 bg-white border border-slate-200 rounded-lg text-center font-semibold text-rose-900 text-xs focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all input-faulty ${readonlyClass}" 
+                               value="${qtyDmg}"
+                               min="0"
+                               max="${item.quantity_dispatched}"
+                               data-index="${index}"
+                               ${disabledAttr}>
+                    </td>
+                </tr>
+            `;
+            tableBody.insertAdjacentHTML('beforeend', rowHtml);
+        });
+
+        // Initialize listeners if editing
+        if (!AUDIT_CONFIG.isAudited) initAuditListeners();
+
+        // Hide loader
+        loader.style.opacity = '0';
+        setTimeout(() => loader.classList.add('hidden'), 300);
+
+    } catch (error) {
+        console.error('Audit Load Error:', error);
+        tableBody.innerHTML = `<tr><td colspan="5" class="py-20 text-center"><p class="text-xs font-black text-rose-500 uppercase tracking-widest">Master Data Synchronization Failed</p></td></tr>`;
+        loader.classList.add('hidden');
+    }
+}
+
 function showAuditToast(msg, type = 'error') {
     const toast = document.getElementById('audit-toast');
     const toastMsg = document.getElementById('toast-msg');
@@ -430,7 +521,13 @@ function showAuditToast(msg, type = 'error') {
     setTimeout(() => toast.classList.remove('show'), 4000);
 }
 
+// Initial load call
+document.addEventListener('DOMContentLoaded', loadAuditItems);
+
 <?php if (!$isAudited): ?>
+/**
+ * AUDIT EDIT MODE LOGIC
+ */
 function updateFileName(input, labelId) {
     const label = document.getElementById(labelId);
     if (input.files && input.files[0]) {
@@ -457,76 +554,79 @@ const phoneError = document.getElementById('phone-error');
     }
 });
 
-phoneInput.addEventListener('input', (e) => {
-    e.target.value = e.target.value.replace(/[^0-9]/g, '');
-    const val = e.target.value;
-    if (val.length > 0 && val.length !== 10) {
-        phoneInput.classList.add('!border-rose-400', 'bg-rose-50');
-        phoneError.classList.remove('hidden');
-    } else {
-        phoneInput.classList.remove('!border-rose-400', 'bg-rose-50');
-        phoneError.classList.add('hidden');
-    }
-    validateForm();
-});
-
-document.querySelectorAll('.input-recv, .input-faulty').forEach(input => {
-    input.addEventListener('input', (e) => {
-        const row = e.target.closest('.audit-row');
-        const index = e.target.dataset.index;
-        const dispatched = parseFloat(row.dataset.dispatchQty);
-        
-        let recvVal = parseFloat(row.querySelector('.input-recv').value) || 0;
-        let faultyVal = parseFloat(row.querySelector('.input-faulty').value) || 0;
-
-        if (recvVal < 0) { row.querySelector('.input-recv').value = 0; recvVal = 0; }
-        if (faultyVal < 0) { row.querySelector('.input-faulty').value = 0; faultyVal = 0; }
-
-        const total = recvVal + faultyVal;
-        const missing = dispatched - total;
-        const alertBox = document.getElementById(`missing-alert-${index}`);
-
-        if (missing > 0) {
-            alertBox.classList.remove('hidden');
-            alertBox.querySelector('.val-missing').textContent = missing.toFixed(2);
+if (phoneInput) {
+    phoneInput.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        const val = e.target.value;
+        if (val.length > 0 && val.length !== 10) {
+            phoneInput.classList.add('!border-rose-400', 'bg-rose-50');
+            phoneError.classList.remove('hidden');
         } else {
-            alertBox.classList.add('hidden');
-        }
-
-        if (total > dispatched) {
-            row.querySelector('.input-recv').classList.add('input-error');
-            row.querySelector('.input-faulty').classList.add('input-error');
-        } else {
-            row.querySelector('.input-recv').classList.remove('input-error');
-            row.querySelector('.input-faulty').classList.remove('input-error');
+            phoneInput.classList.remove('!border-rose-400', 'bg-rose-50');
+            phoneError.classList.add('hidden');
         }
         validateForm();
     });
+}
 
-    input.addEventListener('blur', (e) => {
-        const row = e.target.closest('.audit-row');
-        const dispatched = parseFloat(row.dataset.dispatchQty);
-        let recvInput = row.querySelector('.input-recv');
-        let faultyInput = row.querySelector('.input-faulty');
-        
-        let rv = parseFloat(recvInput.value) || 0;
-        let fv = parseFloat(faultyInput.value) || 0;
+function initAuditListeners() {
+    document.querySelectorAll('.input-recv, .input-faulty').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const row = e.target.closest('.audit-row');
+            const index = e.target.dataset.index;
+            const dispatched = parseFloat(row.dataset.dispatchQty);
+            
+            let recvVal = parseFloat(row.querySelector('.input-recv').value) || 0;
+            let faultyVal = parseFloat(row.querySelector('.input-faulty').value) || 0;
 
-        if (rv + fv > dispatched) {
-            if (e.target === recvInput) {
-                recvInput.value = (dispatched - fv).toFixed(2);
+            if (recvVal < 0) { row.querySelector('.input-recv').value = 0; recvVal = 0; }
+            if (faultyVal < 0) { row.querySelector('.input-faulty').value = 0; faultyVal = 0; }
+
+            const total = recvVal + faultyVal;
+            const missing = dispatched - total;
+            const alertBox = document.getElementById(`missing-alert-${index}`);
+
+            if (missing > 0) {
+                alertBox.classList.remove('hidden');
+                alertBox.querySelector('.val-missing').textContent = missing.toFixed(2);
             } else {
-                faultyInput.value = (dispatched - rv).toFixed(2);
+                alertBox.classList.add('hidden');
             }
-            e.target.dispatchEvent(new Event('input'));
-        }
+
+            if (total > dispatched) {
+                row.querySelector('.input-recv').classList.add('input-error');
+                row.querySelector('.input-faulty').classList.add('input-error');
+            } else {
+                row.querySelector('.input-recv').classList.remove('input-error');
+                row.querySelector('.input-faulty').classList.remove('input-error');
+            }
+            validateForm();
+        });
+
+        input.addEventListener('blur', (e) => {
+            const row = e.target.closest('.audit-row');
+            const dispatched = parseFloat(row.dataset.dispatchQty);
+            let recvInput = row.querySelector('.input-recv');
+            let faultyInput = row.querySelector('.input-faulty');
+            
+            let rv = parseFloat(recvInput.value) || 0;
+            let fv = parseFloat(faultyInput.value) || 0;
+
+            if (rv + fv > dispatched) {
+                if (e.target === recvInput) {
+                    recvInput.value = (dispatched - fv).toFixed(2);
+                } else {
+                    faultyInput.value = (dispatched - rv).toFixed(2);
+                }
+                e.target.dispatchEvent(new Event('input'));
+            }
+        });
     });
-});
+}
 
 function validateForm() {
-    // Only disable button if there are hard quantity errors (over-receiving)
     const quantityErrors = document.querySelectorAll('.input-recv.input-error, .input-faulty.input-error');
-    const phoneVal = phoneInput.value;
+    const phoneVal = phoneInput ? phoneInput.value : '';
     const isPhoneValid = phoneVal.length === 0 || phoneVal.length === 10;
     
     const submitBtn = document.getElementById('final-submit-btn');
@@ -534,7 +634,6 @@ function validateForm() {
     
     const hasCriticalError = quantityErrors.length > 0;
     const hasFormError = !isPhoneValid;
-    
     const isDisabled = hasCriticalError || hasFormError;
     
     submitBtn.disabled = isDisabled;
@@ -546,14 +645,13 @@ async function submitAudit() {
     const rDateInput = document.getElementById('receipt-date');
     const rTimeInput = document.getElementById('receipt-time');
     const rByInput = document.getElementById('received-by');
-    const rPhone = phoneInput.value;
+    const rPhone = phoneInput ? phoneInput.value : '';
     const rByNotes = document.getElementById('receipt-notes').value.trim();
     const lrCopyInput = document.getElementById('lr-copy');
     const lrLabel = document.getElementById('lr-label');
     const addDocsInput = document.getElementById('additional-docs');
 
-    // Remove old errors
-    [rDateInput, rTimeInput, rByInput, lrLabel].forEach(el => el.classList.remove('input-error'));
+    [rDateInput, rTimeInput, rByInput, lrLabel].forEach(el => el && el.classList.remove('input-error'));
 
     let hasErrors = false;
     if (!rDateInput.value) { rDateInput.classList.add('input-error'); hasErrors = true; }
@@ -588,7 +686,7 @@ async function submitAudit() {
     
     try {
         const formData = new FormData();
-        formData.append('dispatch_id', '<?php echo $dispatchId; ?>');
+        formData.append('dispatch_id', AUDIT_CONFIG.dispatchId);
         formData.append('receipt_date', rDateInput.value);
         formData.append('receipt_time', rTimeInput.value);
         formData.append('received_by', rByInput.value);

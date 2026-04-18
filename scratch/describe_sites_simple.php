@@ -1,6 +1,0 @@
-<?php
-require_once __DIR__ . '/../config/database.php';
-$db = Database::getInstance()->getConnection();
-$stmt = $db->query("DESCRIBE sites");
-$fields = $stmt->fetchAll(PDO::FETCH_COLUMN);
-echo implode(", ", $fields) . "\n";

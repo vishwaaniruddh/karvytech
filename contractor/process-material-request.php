@@ -99,6 +99,7 @@ try {
             if (!empty($item['boq_item_id']) && !empty($item['quantity'])) {
                 $items[] = [
                     'boq_item_id' => (int)$item['boq_item_id'],
+                    'material_name' => $item['material_name'] ?? 'Unknown Item',
                     'item_code' => $item['item_code'] ?? '',
                     'quantity' => (int)$item['quantity'],
                     'unit' => $item['unit'] ?? '',

@@ -265,8 +265,7 @@ class Inventory {
             // Get dispatches
             $sql = "SELECT disp.*, COALESCE(s.site_id, 'N/A') as site_code, COALESCE(s.location, 'Unknown Location') as site_name, 
                     v.company_name as vendor_company_name,
-                    (SELECT COUNT(*) FROM inventory_dispatch_items WHERE dispatch_id = disp.id) as total_items,
-                    (SELECT SUM(unit_cost) FROM inventory_dispatch_items WHERE dispatch_id = disp.id) as total_value
+                    (SELECT COUNT(*) FROM inventory_dispatch_items WHERE dispatch_id = disp.id) as linked_items_count
                     FROM inventory_dispatches disp
                     LEFT JOIN sites s ON disp.site_id = s.id
                     LEFT JOIN vendors v ON disp.vendor_id = v.id
@@ -282,6 +281,15 @@ class Inventory {
             $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
             $stmt->execute();
             $dispatches = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Post-process to handle 0 linked items (fallback cases)
+            foreach ($dispatches as &$d) {
+                if ((int)$d['linked_items_count'] === 0 && (int)$d['total_items'] > 0) {
+                    // Use the stored total_items if no physical records exist
+                } else {
+                    $d['total_items'] = $d['linked_items_count'];
+                }
+            }
 
             return [
                 'dispatches' => $dispatches,
@@ -339,10 +347,31 @@ class Inventory {
                         $mrItems = json_decode($mrItemsJson, true);
                         if (is_array($mrItems)) {
                             $reqTotalCount = 0;
+                            
+                            // Batch fetch item names if they are missing in JSON
+                            $boqItemIds = [];
                             foreach ($mrItems as $mItem) {
+                                if (empty($mItem['material_name']) && !empty($mItem['boq_item_id'])) {
+                                    $boqItemIds[] = $mItem['boq_item_id'];
+                                }
+                            }
+                            
+                            $idToNameMap = [];
+                            if (!empty($boqItemIds)) {
+                                $placeholders = implode(',', array_fill(0, count($boqItemIds), '?'));
+                                $stmtBi = $this->db->prepare("SELECT id, item_name FROM boq_items WHERE id IN ($placeholders)");
+                                $stmtBi->execute($boqItemIds);
+                                $idToNameMap = $stmtBi->fetchAll(PDO::FETCH_KEY_PAIR);
+                            }
+
+                            foreach ($mrItems as $mItem) {
+                                $boqId = $mItem['boq_item_id'] ?? null;
+                                $itemName = $mItem['material_name'] ?? ($idToNameMap[$boqId] ?? 'Unknown Material');
+
                                 // Map Material Request item format to Manifest format
                                 $dispatch['items'][] = [
-                                    'item_name' => $mItem['material_name'] ?? 'Unknown Material',
+                                    'boq_item_id' => $boqId,
+                                    'item_name' => $itemName,
                                     'item_code' => $mItem['item_code'] ?? 'N/A',
                                     'item_condition' => 'standard', 
                                     'quantity_dispatched' => $mItem['quantity'] ?? 0,
@@ -1098,8 +1127,31 @@ class Inventory {
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
             
+            $dispatches = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Post-process to handle legacy dispatches with 0 actual_item_count
+            foreach ($dispatches as &$row) {
+                if ((int)$row['actual_item_count'] === 0 && !empty($row['material_request_id'])) {
+                    $mrStmt = $this->db->prepare("SELECT items FROM material_requests WHERE id = ?");
+                    $mrStmt->execute([$row['material_request_id']]);
+                    $jsonStr = $mrStmt->fetchColumn();
+                    if ($jsonStr) {
+                        $mrItems = json_decode($jsonStr, true);
+                        if (is_array($mrItems)) {
+                            // Deduplicate by boq_item_id or id to match the summary logic
+                            $uniqueIds = [];
+                            foreach ($mrItems as $item) {
+                                $id = $item['boq_item_id'] ?? $item['id'] ?? null;
+                                if ($id) $uniqueIds[$id] = true;
+                            }
+                            $row['actual_item_count'] = count($uniqueIds) > 0 ? count($uniqueIds) : count($mrItems);
+                        }
+                    }
+                }
+            }
+
             return [
-                'data' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+                'data' => $dispatches,
                 'total' => $totalRecords,
                 'page' => $page,
                 'limit' => $limit,
@@ -1122,6 +1174,7 @@ class Inventory {
      */
     public function getDispatchItemsSummary($dispatchId) {
         try {
+            // 1. Try to fetch from tracked items table
             $sql = "SELECT idi.boq_item_id, bi.item_name, bi.item_code, bi.unit, bi.category,
                            COUNT(*) as quantity_dispatched,
                            idi.item_condition, idi.batch_number, idi.dispatch_notes, idi.warranty_period
@@ -1132,7 +1185,55 @@ class Inventory {
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':dispatch_id', $dispatchId, PDO::PARAM_INT);
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // 2. If empty, fallback to Material Request items
+            if (empty($items)) {
+                $sqlMr = "SELECT mr.items, d.material_request_id 
+                         FROM inventory_dispatches d
+                         JOIN material_requests mr ON d.material_request_id = mr.id
+                         WHERE d.id = ?";
+                $stmtMr = $this->db->prepare($sqlMr);
+                $stmtMr->execute([$dispatchId]);
+                $mrData = $stmtMr->fetch(PDO::FETCH_ASSOC);
+
+                if ($mrData && $mrData['items']) {
+                    $mrItems = json_decode($mrData['items'], true);
+                    
+                    // Pre-fetch missing item names/codes if needed
+                    $boqIds = array_filter(array_column($mrItems, 'boq_item_id'));
+                    $namesMap = [];
+                    if (!empty($boqIds)) {
+                        $placeholders = implode(',', array_fill(0, count($boqIds), '?'));
+                        $stmtBi = $this->db->prepare("SELECT id, item_name, item_code, unit, category FROM boq_items WHERE id IN ($placeholders)");
+                        $stmtBi->execute(array_values($boqIds));
+                        while ($row = $stmtBi->fetch(PDO::FETCH_ASSOC)) {
+                            $namesMap[$row['id']] = $row;
+                        }
+                    }
+
+                    foreach ($mrItems as $mItem) {
+                        $boqId = $mItem['boq_item_id'] ?? null;
+                        $master = $namesMap[$boqId] ?? null;
+
+                        $items[] = [
+                            'boq_item_id' => $boqId,
+                            'item_name' => $master['item_name'] ?? $mItem['material_name'] ?? 'Unknown Item',
+                            'item_code' => $master['item_code'] ?? $mItem['item_code'] ?? 'N/A',
+                            'unit' => $master['unit'] ?? $mItem['unit'] ?? 'units',
+                            'category' => $master['category'] ?? 'General',
+                            'quantity_dispatched' => (float)($mItem['quantity'] ?? 0),
+                            'item_condition' => 'standard',
+                            'batch_number' => null,
+                            'dispatch_notes' => $mItem['notes'] ?? '--',
+                            'warranty_period' => null,
+                            'is_fallback' => true
+                        ];
+                    }
+                }
+            }
+
+            return $items;
         } catch (PDOException $e) {
             error_log("Inventory::getDispatchItemsSummary error: " . $e->getMessage());
             return [];

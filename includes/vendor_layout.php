@@ -57,40 +57,33 @@ if (!function_exists('url')) {
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo url('/assets/css/admin.css'); ?>">
     <style>
+        * { font-family: 'Inter', sans-serif; }
+
         .vendor-sidebar {
-            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(180deg, #0a0e1a 0%, #0f172a 50%, #131c31 100%);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+            border-right: 1px solid rgba(255,255,255,0.04);
         }
         
         /* Karvy Brand Styling */
         .karvy-brand {
-            font-family: 'Playfair Display', serif;
-            font-weight: 700;
-            font-size: 1.125rem;
-            background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: 0.5px;
-        }
-        
-        /* Fallback for browsers that don't support background-clip */
-        @supports not (-webkit-background-clip: text) {
-            .karvy-brand {
-                color: #ffffff;
-                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-            }
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #ffffff;
+            letter-spacing: -0.02em;
         }
         
         .karvy-subtitle {
             font-family: 'Inter', sans-serif;
-            font-weight: 300;
-            font-size: 0.75rem;
-            color: #e0e7ff;
-            letter-spacing: 1px;
+            font-weight: 500;
+            font-size: 0.625rem;
+            color: rgba(148, 163, 184, 0.6);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
         }
         
         /* Enhanced Form Styles */
@@ -284,72 +277,113 @@ if (!function_exists('url')) {
             color: #6b7280;
         }
         .vendor-badge {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
         }
         .sidebar-item {
             display: flex;
             align-items: center;
-            padding: 12px 16px;
-            margin: 4px 0;
-            border-radius: 8px;
-            transition: all 0.2s ease;
+            padding: 10px 14px;
+            margin: 2px 0;
+            border-radius: 10px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(148, 163, 184, 0.8);
+            position: relative;
         }
         .sidebar-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            transform: translateX(4px);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
         }
         .sidebar-item.active {
-            background-color: rgba(255, 255, 255, 0.15);
-            border-left: 4px solid #f59e0b;
+            background: linear-gradient(135deg, rgba(59,130,246,0.12) 0%, rgba(99,102,241,0.08) 100%);
+            color: #60a5fa;
+            border-left: none;
+        }
+        .sidebar-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 20px;
+            background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+            border-radius: 0 4px 4px 0;
+        }
+        .sidebar-item svg {
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        .sidebar-item:hover svg,
+        .sidebar-item.active svg {
+            opacity: 1;
         }
         
         .sidebar-subitem {
             display: flex;
             align-items: center;
-            padding: 0.5rem 1rem;
+            padding: 8px 12px;
             text-decoration: none;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            color: rgba(148, 163, 184, 0.6);
             transition: all 0.2s;
         }
-        
         .sidebar-subitem:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            transform: translateX(2px);
+            background: rgba(255, 255, 255, 0.04);
+            color: #e2e8f0;
         }
+        .sidebar-subitem svg {
+            opacity: 0.4;
+        }
+        .sidebar-subitem:hover svg {
+            opacity: 0.8;
+        }
+
+        .sidebar-section-label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(148, 163, 184, 0.3);
+            padding: 16px 16px 6px;
+        }
+
         .vendor-header {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
         }
         .stats-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            transition: all 0.2s ease;
+            background: #ffffff;
+            border: 1px solid #f1f5f9;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .stats-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
         }
         .stats-icon {
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
         }
         .professional-table {
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         }
         .table-header {
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            font-weight: 600;
+            background: #f8fafc;
+            font-weight: 700;
             text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            color: #94a3b8;
         }
         .mobile-responsive {
             display: none;
@@ -386,105 +420,93 @@ if (!function_exists('url')) {
 <body class="bg-gray-50">
     <div class="flex h-screen bg-gray-50">
         <!-- Sidebar -->
-        <div class="vendor-sidebar w-64 shadow-lg">
+        <div class="vendor-sidebar w-64">
             <div class="flex flex-col h-full">
                 <!-- Logo -->
-                <div class="flex items-center justify-between px-6 py-4 border-b border-blue-800">
-                    <a href="<?php echo url('/contractor/'); ?>" class="flex items-center hover:opacity-80 transition-opacity">
-                        <div class="sidebar-text">
-                            <h1 class="text-lg font-bold text-white karvy-brand">Karvy Technologies</h1>
-                            <p class="text-xs text-gray-300 karvy-subtitle">Pvt Ltd</p>
+                <div class="flex items-center gap-3 px-5 py-5" style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                    <a href="<?php echo url('/contractor/'); ?>" class="flex items-center gap-3 hover:opacity-90 transition-opacity">
+                        <div style="width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,#3b82f6,#6366f1); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(99,102,241,0.3);">
+                            <span style="font-weight:900; font-size:13px; color:#fff; letter-spacing:-0.03em;">KT</span>
+                        </div>
+                        <div>
+                            <h1 class="karvy-brand">Karvy Technologies</h1>
+                            <p class="karvy-subtitle">Contractor Portal</p>
                         </div>
                     </a>
                 </div>
                 
-              
-
+                <div style="overflow-y:auto; flex:1;">
                 <!-- Navigation -->
-                <nav class="flex-1 px-4 py-4 space-y-2">
-                    <a href="<?php echo url('/contractor/'); ?>" class="sidebar-item text-white hover:bg-blue-800">
-                        <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
-                        </svg>
+                <div class="sidebar-section-label">Main</div>
+                <nav class="px-3 space-y-1">
+                    <a href="<?php echo url('/contractor/'); ?>" class="sidebar-item">
+                        <svg class="w-[18px] h-[18px] mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z"/></svg>
                         Dashboard
                     </a>
                     
                     <?php if ($vendorPermissions['view_my_sites'] ?? false): ?>
-                    <a href="<?php echo url('/contractor/sites/'); ?>" class="sidebar-item text-white hover:bg-blue-800">
-                        <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z" clip-rule="evenodd"></path>
-                        </svg>
+                    <a href="<?php echo url('/contractor/sites/'); ?>" class="sidebar-item">
+                        <svg class="w-[18px] h-[18px] mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         My Sites
                     </a>
                     <?php endif; ?>
                     
                     <?php if ($vendorPermissions['view_site_surveys'] ?? false): ?>
-                    <a href="<?php echo url('/contractor/surveys.php'); ?>" class="sidebar-item text-white hover:bg-blue-800">
-                        <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
-                        </svg>
+                    <a href="<?php echo url('/contractor/surveys.php'); ?>" class="sidebar-item">
+                        <svg class="w-[18px] h-[18px] mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                         Site Surveys
                     </a>
                     <?php endif; ?>
                     
                     <?php if ($vendorPermissions['view_installations'] ?? false): ?>
-                    <a href="<?php echo url('/contractor/installations.php'); ?>" class="sidebar-item text-white hover:bg-blue-800">
-                        <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M9.504 1.132a1 1 0 01.992 0l1.75 1a1 1 0 11-.992 1.736L10 3.152l-1.254.716a1 1 0 11-.992-1.736l1.75-1zM5.618 4.504a1 1 0 01-.372 1.364L5.016 6l.23.132a1 1 0 11-.992 1.736L3 7.723V8a1 1 0 01-2 0V6a.996.996 0 01.52-.878l1.734-.99a1 1 0 011.364.372zm8.764 0a1 1 0 011.364-.372l1.734.99A.996.996 0 0118 6v2a1 1 0 11-2 0v-.277l-1.254.145a1 1 0 11-.992-1.736L14.984 6l-.23-.132a1 1 0 01-.372-1.364zm-7 4a1 1 0 011.364-.372L10 8.848l1.254-.716a1 1 0 11.992 1.736L11 10.723V12a1 1 0 11-2 0v-1.277l-1.246-.855a1 1 0 01-.372-1.364zM3 11a1 1 0 011 1v1.277l1.246.855a1 1 0 11-.992 1.736l-1.75-1A1 1 0 012 14v-2a1 1 0 011-1zm14 0a1 1 0 011 1v2a1 1 0 01-.504.868l-1.75 1a1 1 0 11-.992-1.736L16 13.277V12a1 1 0 011-1zm-9.618 5.504a1 1 0 011.364-.372l.254.145V16a1 1 0 112 0v.277l.254-.145a1 1 0 11.992 1.736l-1.75 1a.996.996 0 01-.992 0l-1.75-1a1 1 0 01-.372-1.364z" clip-rule="evenodd"></path>
-                        </svg>
+                    <a href="<?php echo url('/contractor/installations.php'); ?>" class="sidebar-item">
+                        <svg class="w-[18px] h-[18px] mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         Installations
                     </a>
                     <?php endif; ?>
                     
                     <?php if ($vendorPermissions['view_inventory'] ?? true): ?>
+                    </nav>
+                    <div class="sidebar-section-label">Supply Chain</div>
+                    <nav class="px-3 space-y-1">
                     <!-- Inventory Main Menu with Dropdown -->
                     <div class="relative">
-                        <button onclick="toggleInventoryMenu()" class="sidebar-item text-white hover:bg-blue-800 w-full flex items-center justify-between">
+                        <button onclick="toggleInventoryMenu()" class="sidebar-item w-full flex items-center justify-between">
                             <div class="flex items-center">
-                                <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM8 15a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-                                </svg>
+                                <svg class="w-[18px] h-[18px] mr-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
                                 Inventory
                             </div>
-                            <svg id="inventory-arrow" class="w-4 h-4 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            <svg id="inventory-arrow" class="w-3.5 h-3.5 transition-transform duration-200" style="opacity:0.4;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                             </svg>
                         </button>
                         
                         <!-- Inventory Submenu -->
-                        <div id="inventory-submenu" class="hidden ml-8 mt-2 space-y-1">
+                        <div id="inventory-submenu" class="hidden ml-7 mt-1 space-y-0.5" style="border-left:1px solid rgba(255,255,255,0.06); padding-left:12px;">
                             <?php if ($vendorPermissions['view_inventory_overview'] ?? false): ?>
-                            <a href="<?php echo url('/contractor/inventory/'); ?>" class="sidebar-subitem text-gray-300 hover:text-white hover:bg-blue-800">
-                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
-                                </svg>
+                            <a href="<?php echo url('/contractor/inventory/'); ?>" class="sidebar-subitem">
+                                <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
                                 Inventory Overview
                             </a>
                             <?php endif; ?>
                             
                             <?php if ($vendorPermissions['view_material_requests'] ?? false): ?>
-                            <a href="<?php echo url('/contractor/material-requests-list.php'); ?>" class="sidebar-subitem text-gray-300 hover:text-white hover:bg-blue-800">
-                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                                </svg>
+                            <a href="<?php echo url('/contractor/material-requests-list.php'); ?>" class="sidebar-subitem">
+                                <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                 Material Requests
                             </a>
                             <?php endif; ?>
                             
                             <?php if ($vendorPermissions['view_material_received'] ?? false): ?>
-                            <a href="<?php echo url('/contractor/material-received.php'); ?>" class="sidebar-subitem text-gray-300 hover:text-white hover:bg-blue-800">
-                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                </svg>
+                            <a href="<?php echo url('/contractor/material-received.php'); ?>" class="sidebar-subitem">
+                                <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
                                 Material Received
                             </a>
                             <?php endif; ?>
                             
                             <?php if ($vendorPermissions['view_material_dispatches'] ?? false): ?>
-                            <a href="<?php echo url('/contractor/material-dispatches.php'); ?>" class="sidebar-subitem text-gray-300 hover:text-white hover:bg-blue-800">
-                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                </svg>
+                            <a href="<?php echo url('/contractor/material-dispatches.php'); ?>" class="sidebar-subitem">
+                                <svg class="w-3.5 h-3.5 mr-2" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12"/></svg>
                                 Material Dispatches
                             </a>
                             <?php endif; ?>
@@ -492,6 +514,7 @@ if (!function_exists('url')) {
                     </div>
                     <?php endif; ?>
                 </nav>
+                </div>
 
 
             </div>
@@ -509,7 +532,7 @@ if (!function_exists('url')) {
                             </svg>
                         </button>
                         <div class="ml-2">
-                            <h1 class="text-xl font-semibold text-gray-900"><?php echo $title ?? 'Contractor Portal'; ?></h1>
+                            <h1 style="font-size:15px; font-weight:700; color:#0f172a; letter-spacing:-0.01em;"><?php echo $title ?? 'Contractor Portal'; ?></h1>
                         </div>
                     </div>
                     

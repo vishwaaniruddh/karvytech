@@ -41,6 +41,8 @@ try {
         'courier_name' => $_POST['courier_name'] ?? null,
         'tracking_number' => $_POST['tracking_number'] ?? null,
         'expected_delivery_date' => $_POST['expected_delivery_date'] ?? null,
+        'dispatch_status' => $_POST['dispatch_status'] ?? 'prepared',
+        'dispatched_by' => Auth::getUserId(),
         'delivery_remarks' => $_POST['delivery_remarks'] ?? null
     ];
     
