@@ -26,7 +26,7 @@ ob_start();
         background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
         background-size: 200% 100%;
         animation: skeleton-loading 1.5s infinite;
-        border-radius: 0.5rem;
+        border-radius: 1rem;
     }
 
     @keyframes skeleton-loading {
@@ -37,12 +37,12 @@ ob_start();
     .status-stage {
         flex: 1;
         text-align: center;
-        padding: 1rem 0.5rem;
+        padding: 1.25rem 0.75rem;
         position: relative;
-        font-weight: 600;
-        font-size: 0.75rem;
+        font-weight: 800;
+        font-size: 0.625rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.1em;
         color: #94a3b8;
         transition: all 0.3s ease;
     }
@@ -53,17 +53,47 @@ ob_start();
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 4px;
+        height: 3px;
         background: #e2e8f0;
-        border-radius: 4px;
+        border-radius: 3px;
     }
 
-    .status-stage.active { color: var(--primary); }
+    .status-stage.active { color: var(--primary); font-weight: 900; }
     .status-stage.active::after { background: var(--primary); }
-    .status-stage.completed { color: var(--success); }
+    .status-stage.completed { color: var(--success); font-weight: 900; }
     .status-stage.completed::after { background: var(--success); }
-    .status-stage.rejected { color: var(--danger); }
+    .status-stage.rejected { color: var(--danger); font-weight: 900; }
     .status-stage.rejected::after { background: var(--danger); }
+
+    .premium-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 1.25rem;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .premium-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .label-meta {
+        font-size: 0.625rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #94a3b8;
+    }
+
+    .status-badge {
+        font-size: 0.625rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.075em;
+        padding: 0.375rem 0.875rem;
+        border-radius: 9999px;
+    }
 </style>
 
 <div id="dispatchApp" class="px-4 py-6" data-dispatch-id="<?php echo $dispatchId; ?>">

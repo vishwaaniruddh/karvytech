@@ -584,53 +584,61 @@ ob_start();
             <?php endfor; // End repeat loop ?>
             
             <!-- Cumulative Summary for Repeatable Sections -->
+            <!-- Cumulative Summary for Repeatable Sections -->
             <?php if ($isRepeatable && $repeatCount > 0): ?>
-                <div class="mb-8 p-6 bg-blue-50 rounded-xl border-2 border-blue-100">
-                    <h4 class="text-sm font-bold text-blue-800 uppercase tracking-widest mb-4">Cumulative Summary</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <?php foreach ($section['fields'] as $field): ?>
-                            <?php if ($field['field_type'] === 'number'): ?>
-                                <?php
-                                // Calculate sum across all repeats
-                                $sum = 0;
-                                for ($i = 1; $i <= $repeatCount; $i++) {
-                                    $fieldKey = getFieldKey($field['id'], $i, $section);
-                                    $value = floatval($formData[$fieldKey] ?? 0);
-                                    $sum += $value;
-                                }
-                                ?>
-                                <div class="bg-white p-4 rounded-lg shadow-sm border border-blue-200">
-                                    <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">
-                                        Total <?php echo htmlspecialchars($field['label']); ?>
-                                    </p>
-                                    <p class="text-2xl font-bold text-blue-900"><?php echo number_format($sum); ?></p>
-                                </div>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
+                <?php
+                $hardwareGrandTotal = 0;
+                $summaryCards = [];
+                
+                // Collect and calculate for all fields
+                $allFieldsForSum = $section['fields'];
+                if (!empty($section['subsections'])) {
+                    foreach ($section['subsections'] as $sub) {
+                        $allFieldsForSum = array_merge($allFieldsForSum, $sub['fields']);
+                    }
+                }
+
+                foreach ($allFieldsForSum as $field) {
+                    if ($field['field_type'] === 'number') {
+                        $sum = 0;
+                        for ($i = 1; $i <= $repeatCount; $i++) {
+                            $fieldKey = getFieldKey($field['id'], $i, $section);
+                            $sum += floatval($formData[$fieldKey] ?? 0);
+                        }
                         
-                        <?php // Also process subsection fields ?>
-                        <?php if (!empty($section['subsections'])): ?>
-                            <?php foreach ($section['subsections'] as $subsection): ?>
-                                <?php foreach ($subsection['fields'] as $field): ?>
-                                    <?php if ($field['field_type'] === 'number'): ?>
-                                        <?php
-                                        $sum = 0;
-                                        for ($i = 1; $i <= $repeatCount; $i++) {
-                                            $fieldKey = getFieldKey($field['id'], $i, $section);
-                                            $value = floatval($formData[$fieldKey] ?? 0);
-                                            $sum += $value;
-                                        }
-                                        ?>
-                                        <div class="bg-white p-4 rounded-lg shadow-sm border border-blue-200">
-                                            <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">
-                                                Total <?php echo htmlspecialchars($field['label']); ?>
-                                            </p>
-                                            <p class="text-2xl font-bold text-blue-900"><?php echo number_format($sum); ?></p>
-                                        </div>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                        $summaryCards[] = ['label' => $field['label'], 'sum' => $sum];
+                        $lbl = strtolower($field['label']);
+                        if (strpos($lbl, 'slp camera') !== false || strpos($lbl, 'analytical camera') !== false || strpos($lbl, 'blind spot') !== false) {
+                            $hardwareGrandTotal += $sum;
+                        }
+                    }
+                }
+                ?>
+                <div class="mb-8 p-8 bg-blue-50/50 rounded-2xl border-2 border-blue-100 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h4 class="text-sm font-black text-blue-900 uppercase tracking-[0.2em]">Deployment Summary</h4>
+                            <p class="text-xs text-blue-600 mt-1 font-medium italic">Hardware consolidation across <?php echo $repeatCount; ?> floor(s)</p>
+                        </div>
+                        <div class="bg-blue-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-4">
+                            <div>
+                                <p class="text-[10px] font-bold uppercase tracking-widest opacity-80 leading-none">Overall Hardware Total</p>
+                                <p class="text-xs font-medium opacity-70">(SLP + Analytical + Blind Spot)</p>
+                            </div>
+                            <span class="text-3xl font-black tabular-nums border-l border-white/20 pl-4"><?php echo number_format($hardwareGrandTotal); ?></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <?php foreach ($summaryCards as $card): ?>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-blue-100">
+                                <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Total <?php echo htmlspecialchars($card['label']); ?></p>
+                                <div class="flex items-baseline justify-between">
+                                    <p class="text-2xl font-bold text-blue-900"><?php echo number_format($card['sum']); ?></p>
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase">Qty</span>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             <?php endif; ?>

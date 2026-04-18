@@ -372,6 +372,41 @@ class Inventory {
         }
     }
 
+    public function getDispatchById($dispatchId) {
+        try {
+            $sql = "SELECT * FROM inventory_dispatches WHERE id = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$dispatchId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Inventory::getDispatchById error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function updateDispatchStatus($dispatchId, $data) {
+        try {
+            $fields = [];
+            $params = [];
+            
+            foreach ($data as $key => $value) {
+                $fields[] = "$key = ?";
+                $params[] = $value;
+            }
+            
+            if (empty($fields)) return false;
+            
+            $sql = "UPDATE inventory_dispatches SET " . implode(", ", $fields) . ", updated_at = NOW() WHERE id = ?";
+            $params[] = $dispatchId;
+            
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            error_log("Inventory::updateDispatchStatus error: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function generateDispatchNumber() {
         try {
             $year = date('Y');
@@ -1007,6 +1042,100 @@ class Inventory {
         } catch (PDOException $e) {
             error_log("Inventory::getContractorPendingConfirmations error: " . $e->getMessage());
             return 0;
+        }
+    }
+    /**
+     * Get all received materials (dispatches) for a specific vendor
+     */
+    public function getReceivedMaterialsForVendor($vendorId, $page = 1, $limit = 10, $search = '', $statusFilter = '') {
+        try {
+            $offset = ($page - 1) * $limit;
+            
+            // Build WHERE clause
+            $whereConditions = ["id.vendor_id = :vendor_id"];
+            $params = [':vendor_id' => $vendorId];
+            
+            // Add search filter
+            if (!empty($search)) {
+                $whereConditions[] = "(s.site_id LIKE :search OR id.dispatch_number LIKE :search OR id.courier_name LIKE :search OR id.tracking_number LIKE :search)";
+                $params[':search'] = '%' . $search . '%';
+            }
+            
+            // Add status filter
+            if (!empty($statusFilter)) {
+                $whereConditions[] = "id.dispatch_status = :status";
+                $params[':status'] = $statusFilter;
+            }
+            
+            $whereClause = implode(' AND ', $whereConditions);
+            
+            // Get total count
+            $countSql = "SELECT COUNT(*) as total 
+                        FROM inventory_dispatches id
+                        LEFT JOIN sites s ON id.site_id = s.id
+                        WHERE $whereClause";
+            $countStmt = $this->db->prepare($countSql);
+            foreach ($params as $key => $value) {
+                $countStmt->bindValue($key, $value);
+            }
+            $countStmt->execute();
+            $totalRecords = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+            
+            // Get paginated data
+            $sql = "SELECT id.*, s.site_id as site_code, s.location as site_location,
+                    (SELECT COUNT(DISTINCT boq_item_id) FROM inventory_dispatch_items WHERE dispatch_id = id.id) as actual_item_count
+                    FROM inventory_dispatches id
+                    LEFT JOIN sites s ON id.site_id = s.id
+                    WHERE $whereClause
+                    ORDER BY id.dispatch_date DESC, id.id DESC
+                    LIMIT :limit OFFSET :offset";
+            
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return [
+                'data' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+                'total' => $totalRecords,
+                'page' => $page,
+                'limit' => $limit,
+                'totalPages' => ceil($totalRecords / $limit)
+            ];
+        } catch (PDOException $e) {
+            error_log("Inventory::getReceivedMaterialsForVendor error: " . $e->getMessage());
+            return [
+                'data' => [],
+                'total' => 0,
+                'page' => 1,
+                'limit' => $limit,
+                'totalPages' => 0
+            ];
+        }
+    }
+
+    /**
+     * Get items summary for a specific dispatch
+     */
+    public function getDispatchItemsSummary($dispatchId) {
+        try {
+            $sql = "SELECT idi.boq_item_id, bi.item_name, bi.item_code, bi.unit, bi.category,
+                           COUNT(*) as quantity_dispatched,
+                           idi.item_condition, idi.batch_number, idi.dispatch_notes, idi.warranty_period
+                    FROM inventory_dispatch_items idi
+                    JOIN boq_items bi ON idi.boq_item_id = bi.id
+                    WHERE idi.dispatch_id = :dispatch_id
+                    GROUP BY idi.boq_item_id, idi.item_condition, idi.batch_number";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':dispatch_id', $dispatchId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Inventory::getDispatchItemsSummary error: " . $e->getMessage());
+            return [];
         }
     }
 }

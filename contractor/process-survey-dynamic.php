@@ -26,6 +26,8 @@ try {
     $surveyFormId = $_POST['survey_form_id'] ?? null;
     $formDataJson = $_POST['form_data'] ?? null;
     $siteMaster = $_POST['site_master'] ?? [];
+    $isDraft = isset($_POST['is_draft']) ? ($_POST['is_draft'] === 'true' || $_POST['is_draft'] === '1') : false;
+    $existingResponseId = $_POST['response_id'] ?? null;
     
     if (!$siteId || !$delegationId || !$surveyFormId || !$formDataJson) {
         throw new Exception('Missing required fields');
@@ -110,9 +112,8 @@ try {
     }
     
     // Merge uploaded files info into form data
-    foreach ($uploadedFiles as $fieldId => $filesArray) {
-        if (empty($filesArray)) continue;
-        $formData[$fieldId] = $filesArray;
+    foreach ($uploadedFiles as $fieldId => $fileInfo) {
+        $formData[$fieldId] = $fileInfo;
     }
     
     // Prepare survey data
@@ -121,44 +122,69 @@ try {
         'delegation_id' => $delegationId,
         'survey_form_id' => $surveyFormId,
         'surveyor_id' => $_SESSION['user_id'] ?? null,
-        'survey_status' => 'submitted',
-        'submitted_date' => date('Y-m-d H:i:s'),
+        'survey_status' => $isDraft ? 'draft' : 'submitted',
+        'submitted_date' => $isDraft ? ($existingResponseId ? null : date('Y-m-d H:i:s')) : date('Y-m-d H:i:s'),
         'form_data' => json_encode($formData),
         'site_master_data' => json_encode($siteMaster)
     ];
     
-    // Insert survey response
-    $stmt = $db->prepare("INSERT INTO dynamic_survey_responses 
-        (site_id, delegation_id, survey_form_id, surveyor_id, survey_status, submitted_date, form_data, site_master_data) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    
-    $stmt->execute([
-        $surveyData['site_id'],
-        $surveyData['delegation_id'],
-        $surveyData['survey_form_id'],
-        $surveyData['surveyor_id'],
-        $surveyData['survey_status'],
-        $surveyData['submitted_date'],
-        $surveyData['form_data'],
-        $surveyData['site_master_data']
-    ]);
-    
-    $responseId = $db->lastInsertId();
+    if ($existingResponseId) {
+        // Update existing response
+        $stmt = $db->prepare("UPDATE dynamic_survey_responses SET 
+            survey_status = ?, 
+            submitted_date = COALESCE(submitted_date, ?),
+            form_data = ?, 
+            site_master_data = ?,
+            is_draft = ?
+            WHERE id = ?");
+        
+        $stmt->execute([
+            $surveyData['survey_status'],
+            $surveyData['submitted_date'],
+            $surveyData['form_data'],
+            $surveyData['site_master_data'],
+            $isDraft ? 1 : 0,
+            $existingResponseId
+        ]);
+        $responseId = $existingResponseId;
+    } else {
+        // Insert survey response
+        $stmt = $db->prepare("INSERT INTO dynamic_survey_responses 
+            (site_id, delegation_id, survey_form_id, surveyor_id, survey_status, submitted_date, form_data, site_master_data, is_draft) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        
+        $stmt->execute([
+            $surveyData['site_id'],
+            $surveyData['delegation_id'],
+            $surveyData['survey_form_id'],
+            $surveyData['surveyor_id'],
+            $surveyData['survey_status'],
+            $surveyData['submitted_date'],
+            $surveyData['form_data'],
+            $surveyData['site_master_data'],
+            $isDraft ? 1 : 0
+        ]);
+        $responseId = $db->lastInsertId();
+    }
 
-    // Create initial revision record
-    $stmt = $db->prepare("INSERT INTO dynamic_survey_revisions 
-                          (response_id, revision_number, form_data, site_master_data, updated_by, change_summary) 
-                          VALUES (?, 1, ?, ?, ?, 'Initial Submission')");
-    $stmt->execute([
-        $responseId,
-        $surveyData['form_data'],
-        $surveyData['site_master_data'],
-        $surveyData['surveyor_id']
-    ]);
-    
-    // Update site master survey status for visibility
-    $stmt = $db->prepare("UPDATE sites SET survey_status = 'submitted', survey_submission_date = ? WHERE id = ?");
-    $stmt->execute([$surveyData['submitted_date'], $siteId]);
+    if (!$isDraft) {
+        // Create revision record only on final submission or explicit save
+        $stmt = $db->prepare("INSERT INTO dynamic_survey_revisions 
+                              (response_id, revision_number, form_data, site_master_data, updated_by, change_summary) 
+                              SELECT ?, COALESCE(MAX(revision_number), 0) + 1, ?, ?, ?, 'Consolidated Submission'
+                              FROM dynamic_survey_revisions WHERE response_id = ?");
+        $stmt->execute([
+            $responseId,
+            $surveyData['form_data'],
+            $surveyData['site_master_data'],
+            $surveyData['surveyor_id'],
+            $responseId
+        ]);
+        
+        // Update site master survey status for visibility
+        $stmt = $db->prepare("UPDATE sites SET survey_status = 'submitted', survey_submission_date = ? WHERE id = ?");
+        $stmt->execute([$surveyData['submitted_date'], $siteId]);
+    }
     
     $db->commit();
     
