@@ -8,7 +8,7 @@ require_once __DIR__ . '/image_watermark.php';
 
 
 
-Auth::requireRole(ADMIN_ROLE);
+// Auth::requireRole(ADMIN_ROLE);
 
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
@@ -52,7 +52,7 @@ try {
     $watermarkText = implode("\n", $lines);
 
     $userSetFontSize = isset($_POST['font_size']) && is_numeric($_POST['font_size']);
-    $fontSize  = $userSetFontSize ? (int)$_POST['font_size'] : 28;
+    $fontSize = $userSetFontSize ? (int) $_POST['font_size'] : 20;
     $autoScale = !$userSetFontSize;
 
     $fontPath = __DIR__ . '/../arial.ttf';
@@ -83,7 +83,7 @@ try {
             'status' => 'success',
             'message' => 'Watermark applied successfully',
             'saved_at' => '/uploads/geotag_images/' . $fileName,
-            'image_url' => 'https://karvy.sarsspl.com/uploads/geotag_images/'. $fileName,
+            'image_url' => 'https://karvy.sarsspl.com/uploads/geotag_images/' . $fileName,
         ]);
     } else {
         throw new Exception('Watermark process failed');
