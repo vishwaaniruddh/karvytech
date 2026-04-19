@@ -100,27 +100,30 @@ ob_start();
 </div>
 
 <!-- Dispatches Table Content -->
-<div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-[400px]">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-100">
-            <thead class="bg-gray-50/50">
+<div class="v-table-wrap mb-8 relative">
+    <div id="loadingOverlay" class="v-table-loading">
+        <div class="spinner"></div>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="v-table">
+            <thead>
                 <tr>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left w-12">#</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Actions</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Manifest ID</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Request</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Destination Context</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Timeline</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left text-right">Value</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Status</th>
+                    <th style="width: 50px;">#</th>
+                    <th style="width: 140px;">Actions</th>
+                    <th>Manifest ID</th>
+                    <th>Request</th>
+                    <th>Destination Context</th>
+                    <th>Timeline</th>
+                    <th style="text-align: right;">Value</th>
+                    <th style="text-align: right;">Status</th>
                 </tr>
             </thead>
-            <tbody id="dispatchesTableBody" class="divide-y divide-gray-50">
+            <tbody id="dispatchesTableBody">
                 <!-- Data injected by JS -->
             </tbody>
         </table>
     </div>
-    <div id="pagination" class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+    <div id="pagination" class="v-pag hidden">
         <!-- Pagination injected by JS -->
     </div>
 </div>
@@ -345,70 +348,72 @@ async function fetchDispatches(page = 1) {
 function renderTable(data, pagination) {
     const body = document.getElementById('dispatchesTableBody');
     if (data.length === 0) {
-        body.innerHTML = `<tr><td colspan="8" class="text-center py-24 text-gray-400 font-bold italic">No outbound manifests match your parameters</td></tr>`;
+        body.innerHTML = `<tr><td colspan="8" style="padding: 48px; text-align: center; color: #94a3b8; font-weight: 500;">No outbound manifests match your parameters.</td></tr>`;
         renderPagination(pagination);
         return;
     }
 
+    const pillMap = {
+        'prepared': { c: 'v-pill-warning', l: 'Awaiting Pickup' },
+        'dispatched': { c: 'v-pill-active', l: 'Sent to Courier' },
+        'in_transit': { c: 'v-pill-active', l: 'In Transit' },
+        'delivered': { c: 'v-pill-active', l: 'Delivered' },
+        'returned': { c: 'v-pill-critical', l: 'Returned' }
+    };
+
     body.innerHTML = data.map((d, i) => {
         const sno = (pagination.page - 1) * pagination.limit + i + 1;
-        const st = statusMap[d.dispatch_status] || { color: 'gray', label: d.dispatch_status };
+        const st = pillMap[d.dispatch_status] || { c: '', l: d.dispatch_status };
         const date = new Date(d.dispatch_date);
         
         return `
-            <tr class="hover:bg-gray-50/50 transition-colors group">
-                <td class="px-6 py-4 text-xs font-bold text-gray-300 whitespace-nowrap">#${sno}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="flex items-center gap-1.5">
-                        <button onclick="viewDispatch(${d.id})" class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-white border border-transparent hover:border-blue-100 transition-all shadow-sm" title="View Manifest">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            <tr>
+                <td><span class="v-row-num">${sno}</span></td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <button onclick="viewDispatch(${d.id})" class="v-act-btn v-view" data-tip="View Manifest">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         </button>
                         ${d.dispatch_status !== 'delivered' ? `
-                            <button onclick="updateDispatchStatus(${d.id})" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Update Route Milestone">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            <button onclick="updateDispatchStatus(${d.id})" style="color:#059669;background:#ecfdf5;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='#10b981';this.style.color='#fff';" onmouseout="this.style.background='#ecfdf5';this.style.color='#059669';" title="Update Milestone">
+                                <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                             </button>
                         ` : ''}
-                        <button onclick="viewChallan(${d.id})" class="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-indigo-100 transition-all shadow-sm" title="Print Delivery Challan">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <button onclick="viewChallan(${d.id})" style="color:#4f46e5;background:#e0e7ff;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='#6366f1';this.style.color='#fff';" onmouseout="this.style.background='#e0e7ff';this.style.color='#4f46e5';" title="Print Delivery Challan">
+                            <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         </button>
                     </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div>
-                        <div class="text-sm font-bold text-gray-900">${d.dispatch_number}</div>
-                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">${d.courier_name || 'Hand Carry/Internal'}</div>
-                        ${d.tracking_number ? `
-                            <div class="mt-1 flex items-center gap-1.5">
-                                <span class="text-[9px] font-black text-blue-600 tracking-tighter uppercase font-mono bg-blue-50 px-1.5 rounded">${d.tracking_number}</span>
-                            </div>
-                        ` : ''}
-                    </div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    ${d.material_request_id ? `
-                        <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">
-                            <span class="text-[10px] font-bold uppercase tracking-tighter">REQ-${String(d.material_request_id).padStart(6, '0')}</span>
+                <td>
+                    <div class="v-name" style="font-size:14px;">${d.dispatch_number}</div>
+                    <div class="v-code" style="margin-top:4px;">${d.courier_name || 'Hand Carry/Internal'}</div>
+                    ${d.tracking_number ? `
+                        <div style="margin-top:4px;display:inline-flex;align-items:center;padding:2px 6px;background:#eff6ff;color:#2563eb;font-size:10px;font-weight:700;border-radius:4px;letter-spacing:0.04em;">
+                            TRACK: ${d.tracking_number}
                         </div>
-                    ` : '<span class="text-xs text-gray-300 font-bold italic">N/A</span>'}
+                    ` : ''}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="max-w-[200px]">
-                        <div class="text-sm font-bold text-gray-900">${d.site_code}</div>
-                        ${d.vendor_company_name ? `<div class="text-[10px] font-bold text-indigo-500 uppercase mt-0.5 truncate tracking-wide">${d.vendor_company_name}</div>` : ''}
-                        <div class="text-[10px] text-gray-400 leading-tight mt-1 line-clamp-1 italic">${d.delivery_address}</div>
-                    </div>
+                <td>
+                    ${d.material_request_id ? `
+                        <div style="font-size:11px;font-weight:800;color:#64748b;background:#f1f5f9;display:inline-flex;padding:4px 8px;border-radius:6px;">REQ-${String(d.material_request_id).padStart(6, '0')}</div>
+                    ` : `<span style="font-size:11px;font-weight:600;color:#cbd5e1;font-style:italic;">N/A</span>`}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-bold text-gray-900">${date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                    <div class="text-[10px] font-medium text-gray-400">${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+                <td>
+                    <div style="font-weight:600; color:#334155; font-size:13px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.site_code}</div>
+                    ${d.vendor_company_name ? `<div style="font-size:10px; font-weight:700; color:#6366f1; text-transform:uppercase; margin-top:2px;">${d.vendor_company_name}</div>` : ''}
+                    <div style="font-size:11px; font-weight:600; color:#94a3b8; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">${d.delivery_address || ''}</div>
                 </td>
-                <td class="px-6 py-4 text-right whitespace-nowrap">
-                    <div class="text-sm font-bold text-gray-900">${d.total_items} Item(s)</div>
-                    <div class="text-[11px] font-bold text-emerald-600 mt-0.5">₹${parseFloat(d.total_value).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                <td>
+                    <div style="font-weight:600; color:#0f172a; font-size:13px;">${date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                    <div style="font-size:10px; font-weight:700; color:#64748b; margin-top:2px;">${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
                 </td>
-                <td class="px-6 py-4 text-right whitespace-nowrap">
-                    <span class="inline-flex items-center px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest bg-${st.color}-50 text-${st.color}-700 border border-${st.color}-100">
-                        ${st.label}
+                <td style="text-align: right;">
+                    <div style="font-weight:600; color:#334155; font-size:13px;">${d.total_items} Item(s)</div>
+                    <div style="font-size:11px; font-weight:700; color:#059669; margin-top:2px;">₹${parseFloat(d.total_value).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                </td>
+                <td style="text-align: right;">
+                    <span class="v-pill ${st.c}" style="${!st.c ? 'background:#f1f5f9;color:#64748b;' : ''}">
+                        ${st.l}
                     </span>
                 </td>
             </tr>
@@ -421,21 +426,27 @@ function renderTable(data, pagination) {
 function renderStats(stats) {
     const grid = document.getElementById('statsGrid');
     const items = [
-        { label: 'Total Manisfests', val: stats.total, color: 'blue', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
-        { label: 'In Transit', val: stats.in_transit, color: 'indigo', icon: 'M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0' },
-        { label: 'Delivered', val: stats.delivered, color: 'emerald', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-        { label: 'Awaiting Pickup', val: stats.pending, color: 'amber', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' }
+        { label: 'Total Manifests', val: stats.total, class: 'card-slate', ringColor: '#60a5fa', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
+        { label: 'In Transit', val: stats.in_transit, class: 'card-cyan', ringColor: '#22d3ee', icon: 'M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0' },
+        { label: 'Delivered', val: stats.delivered, class: 'card-green', ringColor: '#34d399', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+        { label: 'Awaiting Pickup', val: stats.pending, class: 'card-amber', ringColor: '#fbbf24', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' }
     ];
 
     grid.innerHTML = items.map(s => `
-        <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-lg group">
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-10 h-10 bg-${s.color}-50 rounded-xl flex items-center justify-center text-${s.color}-600 group-hover:scale-110 transition-transform">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${s.icon}"/></svg>
+        <div class="stat-card ${s.class}">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between;">
+                <div>
+                    <div class="stat-value">${new Intl.NumberFormat().format(s.val)}</div>
+                    <div class="stat-label">${s.label}</div>
                 </div>
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">${s.label}</span>
+                <div class="stat-icon-ring">
+                    <svg fill="none" stroke="${s.ringColor}" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="${s.icon}"/></svg>
+                </div>
             </div>
-            <div class="text-3xl font-bold text-gray-900 tracking-tight">${Number(s.val).toLocaleString()}</div>
+            <div style="margin-top:16px; display:flex; align-items:center; gap:6px;">
+                <div style="width:24px; height:3px; border-radius:2px; background:rgba(255,255,255,0.3);"></div>
+                <span style="font-size:10px; font-weight:600; color:rgba(255,255,255,0.4);">Milestones</span>
+            </div>
         </div>
     `).join('');
 }
@@ -443,20 +454,25 @@ function renderStats(stats) {
 function renderPagination(p) {
     const el = document.getElementById('pagination');
     if (p.pages <= 1) {
-        el.innerHTML = '';
+        el.classList.add('hidden');
         return;
     }
 
+    el.classList.remove('hidden');
     let buttons = '';
     for (let i = 1; i <= p.pages; i++) {
-        buttons += `
-            <button onclick="fetchDispatches(${i})" class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${i === p.page ? 'bg-gray-900 text-white shadow-lg' : 'bg-white border border-gray-200 text-gray-400 hover:border-gray-900 hover:text-gray-900'}">${i}</button>
-        `;
+        if (i === p.page) {
+            buttons += `<button class="v-pag-btn active">${i}</button>`;
+        } else {
+            buttons += `<button onclick="fetchDispatches(${i})" class="v-pag-btn">${i}</button>`;
+        }
     }
 
     el.innerHTML = `
-        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Page ${p.page} of ${p.pages}</div>
-        <div class="flex gap-1.5">${buttons}</div>
+        <div class="v-pag-info">
+            Showing Page <strong>${p.page}</strong> of <strong>${p.pages}</strong>
+        </div>
+        <div class="v-pag-nav">${buttons}</div>
     `;
 }
 
@@ -681,6 +697,125 @@ function debounce(fn, delay) {
 }
 </script>
 
+<style>
+/* ── Premium Settings CSS ── */
+.v-table-wrap{background:#fff;border:1px solid #f1f5f9;border-radius:16px;overflow:hidden;position:relative;min-height:300px}
+.v-table-loading{position:absolute;inset:0;background:rgba(255,255,255,.85);z-index:10;display:none;align-items:center;justify-content:center}
+.v-table-loading.show{display:flex}
+.v-table-loading .spinner{width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.v-table{width:100%;border-collapse:separate;border-spacing:0}
+.v-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9)}
+.v-table th{padding:12px 16px;text-align:left;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+.v-table td{padding:14px 16px;font-size:13px;color:#334155;border-bottom:1px solid #f8fafc;vertical-align:middle}
+.v-table tbody tr{transition:all .15s ease}
+.v-table tbody tr:hover{background:#fafbff}
+
+.v-row-num{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;background:#f1f5f9;border-radius:8px;font-size:11px;font-weight:700;color:#94a3b8}
+
+.v-avatar{width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;transition:transform .2s ease}
+.v-table tbody tr:hover .v-avatar{transform:scale(1.1)}
+.v-avatar-blue{background:#eff6ff;color:#3b82f6}
+
+.v-name{font-weight:600;color:#0f172a;cursor:pointer;transition:color .15s}
+.v-table tbody tr:hover .v-name{color:#4f46e5}
+.v-code{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.02em;margin-top:1px}
+
+.v-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.v-pill-active{background:#ecfdf5;color:#059669}
+.v-pill-warning{background:#fffbeb;color:#d97706}
+.v-pill-critical{background:#fef2f2;color:#dc2626}
+
+.v-act{display:flex;align-items:center;gap:5px;justify-content:flex-start}
+.v-act-btn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;border:1px solid transparent;cursor:pointer;transition:all .2s ease;position:relative;background:transparent;padding:0}
+.v-act-btn svg{width:14px;height:14px}
+.v-act-btn.v-view{color:#94a3b8}
+.v-act-btn.v-view:hover{background:#eff6ff;color:#3b82f6;border-color:#bfdbfe}
+.v-act-btn[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);padding:4px 8px;background:#0f172a;color:#fff;font-size:10px;font-weight:600;border-radius:6px;white-space:nowrap;z-index:10;pointer-events:none;animation:tipFade .15s ease}
+.v-act-btn[data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#0f172a;z-index:10}
+
+.v-pag{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-top:1px solid #f1f5f9;flex-wrap:wrap;gap:12px;background:#fff;}
+.v-pag-info{font-size:12px;font-weight:500;color:#64748b}
+.v-pag-info strong{font-weight:700;color:#0f172a}
+.v-pag-nav{display:flex;align-items:center;gap:4px}
+.v-pag-btn{min-width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#475569;cursor:pointer;transition:all .2s ease;text-decoration:none;padding:0 6px}
+.v-pag-btn:hover{background:#f8fafc;border-color:#c7d2fe;color:#4f46e5}
+.v-pag-btn.active{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border-color:transparent;box-shadow:0 2px 6px rgba(99,102,241,.3)}
+.v-pag-btn.disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+.stat-card {
+    position: relative;
+    border-radius: 20px;
+    padding: 24px 28px;
+    color: #ffffff;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 140px;
+}
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    opacity: 0.08;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.stat-card:hover { transform: translateY(-4px); }
+.stat-card:hover::before { opacity: 0.14; transform: scale(1.2); }
+
+.stat-card.card-slate { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); box-shadow: 0 8px 32px rgba(15, 23, 42, 0.25); }
+.stat-card.card-slate::before { background: #3b82f6; }
+.stat-card.card-cyan { background: linear-gradient(135deg, #164e63 0%, #0891b2 100%); box-shadow: 0 8px 32px rgba(8, 145, 178, 0.25); }
+.stat-card.card-cyan::before { background: #22d3ee; }
+.stat-card.card-amber { background: linear-gradient(135deg, #78350f 0%, #92400e 100%); box-shadow: 0 8px 32px rgba(146, 64, 14, 0.2); }
+.stat-card.card-amber::before { background: #fbbf24; }
+.stat-card.card-green { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); box-shadow: 0 8px 32px rgba(6, 95, 70, 0.2); }
+.stat-card.card-green::before { background: #34d399; }
+.stat-card.card-purple { background: linear-gradient(135deg, #2e1065 0%, #4c1d95 100%); box-shadow: 0 8px 32px rgba(76, 29, 149, 0.2); }
+.stat-card.card-purple::before { background: #a78bfa; }
+.stat-card.card-rose { background: linear-gradient(135deg, #881337 0%, #be123c 100%); box-shadow: 0 8px 32px rgba(190, 18, 60, 0.2); }
+.stat-card.card-rose::before { background: #fb7185; }
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 900;
+    line-height: 1;
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+}
+.stat-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 8px;
+}
+.stat-icon-ring {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+}
+.stat-card:hover .stat-icon-ring {
+    background: rgba(255, 255, 255, 0.14);
+    transform: scale(1.08);
+}
+.stat-icon-ring svg { width: 22px; height: 22px; }
+</style>
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../../../includes/admin_layout.php';

@@ -95,35 +95,36 @@ ob_start();
 </div>
 
 <!-- Material Requests Table -->
-<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden relative">
-    <div id="loadingOverlay" class="absolute inset-0 bg-white/60 z-10 flex items-center justify-center hidden">
-        <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+<div class="v-table-wrap mb-8 relative">
+    <div id="loadingOverlay" class="v-table-loading">
+        <div class="spinner"></div>
     </div>
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-100">
-            <thead class="bg-gray-50/50">
+    
+    <div style="overflow-x:auto;">
+        <table class="v-table">
+            <thead>
                 <tr>
-                    <th class="px-6 py-4 text-left w-10">
+                    <th style="width: 40px;">
                         <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this.checked)" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                     </th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left w-12">#</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Actions</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Requisition ID</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Site Reconcilation</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-left">Vendor Details</th>
-                    <th class="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-wider text-right">Status</th>
+                    <th style="width: 50px;">#</th>
+                    <th style="width: 150px;">Actions</th>
+                    <th>Requisition ID</th>
+                    <th>Site Reconciliation</th>
+                    <th>Vendor Details</th>
+                    <th style="text-align: right;">Status</th>
                 </tr>
             </thead>
-            <tbody id="requestsTableBody" class="divide-y divide-gray-50 italic text-gray-400">
+            <tbody id="requestsTableBody">
                 <tr>
-                    <td colspan="7" class="text-center py-20">Initializing requisitions...</td>
+                    <td colspan="7" style="padding: 40px; text-align: center; color: #94a3b8; font-weight: 500;">Initializing requisitions...</td>
                 </tr>
             </tbody>
         </table>
     </div>
     
     <!-- Pagination -->
-    <div id="paginationContainer" class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between hidden">
+    <div id="paginationContainer" class="v-pag hidden">
     </div>
 </div>
 
@@ -177,96 +178,95 @@ async function loadRequests() {
 function renderTable(requests) {
     const tbody = document.getElementById('requestsTableBody');
     if (!requests || requests.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-20 text-gray-400 font-bold italic">No requisitions match the current criteria</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="padding: 48px; text-align: center; color: #94a3b8; font-weight: 500;">No requisitions match the current criteria.</td></tr>`;
         return;
     }
     
     const statusMap = {
-        'draft': { color: 'gray', label: 'Draft Plan' },
-        'pending': { color: 'amber', label: 'Pending Review' },
-        'approved': { color: 'emerald', label: 'Ready for Dispatch' },
-        'dispatched': { color: 'indigo', label: 'In Transit' },
-        'completed': { color: 'purple', label: 'Delivery Finalized' },
-        'rejected': { color: 'rose', label: 'Denied' }
+        'draft': { c: '', l: 'Draft Plan' },
+        'pending': { c: 'v-pill-warning', l: 'Pending Review' },
+        'approved': { c: 'v-pill-active', l: 'Ready for Dispatch' },
+        'dispatched': { c: 'v-pill-active', l: 'In Transit' },
+        'completed': { c: 'v-pill-active', l: 'Delivery Finalized' },
+        'rejected': { c: 'v-pill-critical', l: 'Denied' }
     };
     
     const sNoStart = (currentPage - 1) * limit + 1;
     
     tbody.innerHTML = requests.map((req, index) => {
-        const st = statusMap[req.status] || { color: 'gray', label: req.status };
+        const st = statusMap[req.status] || { c: '', l: req.status };
         return `
-            <tr class="hover:bg-gray-50/50 transition-colors group italic-none">
-                <td class="px-6 py-4">
+            <tr>
+                <td>
                     <input type="checkbox" class="request-cb w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" value="${req.id}" onchange="updateBulkActionState()">
                 </td>
-                <td class="px-6 py-4 text-xs font-bold text-gray-400">${sNoStart + index}</td>
-                <td class="px-6 py-4">
-                    <div class="flex items-center gap-2">
-                        <button onclick="viewRequest(${req.id})" class="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm" title="View Details">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <td><span class="v-row-num">${sNoStart + index}</span></td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <button onclick="viewRequest(${req.id})" class="v-act-btn v-view" data-tip="View Details">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                         </button>
                         ${req.status === 'pending' ? `
-                            <button onclick="approveRequest(${req.id})" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shadow-sm" title="Approve">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <button onclick="approveRequest(${req.id})" style="color:#059669;background:#ecfdf5;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='#10b981';this.style.color='#fff';" onmouseout="this.style.background='#ecfdf5';this.style.color='#059669';" title="Approve">
+                                <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             </button>
-                            <button onclick="rejectRequest(${req.id})" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-600 hover:text-white transition-all shadow-sm" title="Reject">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            <button onclick="rejectRequest(${req.id})" style="color:#dc2626;background:#fef2f2;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='#ef4444';this.style.color='#fff';" onmouseout="this.style.background='#fef2f2';this.style.color='#dc2626';" title="Reject">
+                                <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         ` : ''}
                         ${req.status === 'approved' ? `
-                            <button onclick="createDispatch(${req.id})" class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all shadow-sm" title="Dispatch">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            <button onclick="createDispatch(${req.id})" style="color:#4f46e5;background:#e0e7ff;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;" onmouseover="this.style.background='#6366f1';this.style.color='#fff';" onmouseout="this.style.background='#e0e7ff';this.style.color='#4f46e5';" title="Dispatch">
+                                <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                             </button>
                         ` : ''}
                     </div>
                 </td>
-                <td class="px-6 py-4">
-                    <div>
-                        <div class="text-sm font-bold text-gray-900">REQ#${req.id}</div>
-                        <div class="text-[11px] font-medium text-gray-400 uppercase mt-0.5">REQ DT: ${formatDate(req.request_date)}</div>
-                    </div>
+                <td>
+                    <div class="v-name" style="font-size:14px;">REQ#${req.id}</div>
+                    <div class="v-code" style="margin-top:4px;">REQ DT: ${formatDate(req.request_date)}</div>
                 </td>
-                <td class="px-6 py-4">
-                    <div class="max-w-[180px]">
-                        <div class="text-sm font-bold text-gray-900 truncate">${req.site_code || 'N/A'}</div>
-                        <div class="text-[11px] font-medium text-gray-400 truncate mt-0.5">${req.location || 'N/A'}</div>
-                    </div>
+                <td>
+                    <div style="font-weight:600; color:#334155; font-size:13px; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${req.site_code || 'N/A'}</div>
+                    <div style="font-size:11px; font-weight:600; color:#94a3b8; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">${req.location || 'N/A'}</div>
                 </td>
-                <td class="px-6 py-4">
-                    <div class="text-sm font-bold text-gray-900">${req.vendor_company_name || req.vendor_name || 'In-house'}</div>
-                    <div class="text-[11px] font-medium text-gray-400 uppercase mt-0.5">Required: ${req.required_date ? formatDate(req.required_date) : 'ASAP'}</div>
+                <td>
+                    <div style="font-weight:600; color:#0f172a; font-size:13px;">${req.vendor_company_name || req.vendor_name || 'In-house'}</div>
+                    <div style="font-size:10px; font-weight:700; color:#64748b; text-transform:uppercase; margin-top:2px;">Req: ${req.required_date ? formatDate(req.required_date) : 'ASAP'}</div>
                 </td>
-                <td class="px-6 py-4 text-right">
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-${st.color}-50 text-${st.color}-700 border border-${st.color}-100">
-                        ${st.label}
+                <td style="text-align: right;">
+                    <span class="v-pill ${st.c}" style="${!st.c ? 'background:#f1f5f9;color:#64748b;' : ''}">
+                        ${st.l}
                     </span>
                 </td>
             </tr>
         `;
     }).join('');
-    
-    // Remove italic from table body when data is loaded
-    tbody.classList.remove('italic', 'text-gray-400');
 }
 
 function renderStats(stats) {
     const statsContainer = document.getElementById('statsContainer');
     const statItems = [
-        { label: 'Total Volume', value: stats.total, color: 'blue', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
-        { label: 'Awaiting Review', value: stats.pending, color: 'amber', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-        { label: 'Approved Requests', value: stats.approved, color: 'emerald', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
-        { label: 'Active Dispatches', value: stats.dispatched, color: 'indigo', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' }
+        { label: 'Total Volume', value: stats.total, class: 'card-slate', ringColor: '#60a5fa', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
+        { label: 'Awaiting Review', value: stats.pending, class: 'card-amber', ringColor: '#fbbf24', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+        { label: 'Approved Requests', value: stats.approved, class: 'card-green', ringColor: '#34d399', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+        { label: 'Active Dispatches', value: stats.dispatched, class: 'card-cyan', ringColor: '#22d3ee', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' }
     ];
     
     statsContainer.innerHTML = statItems.map(item => `
-        <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-10 h-10 bg-${item.color}-50 rounded-lg flex items-center justify-center text-${item.color}-600">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${item.icon}"/></svg>
+        <div class="stat-card ${item.class}">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between;">
+                <div>
+                    <div class="stat-value">${new Intl.NumberFormat().format(item.value)}</div>
+                    <div class="stat-label">${item.label}</div>
                 </div>
-                <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">${item.label}</span>
+                <div class="stat-icon-ring">
+                    <svg fill="none" stroke="${item.ringColor}" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="${item.icon}"/></svg>
+                </div>
             </div>
-            <div class="text-3xl font-bold text-gray-900">${new Intl.NumberFormat().format(item.value)}</div>
+            <div style="margin-top:16px; display:flex; align-items:center; gap:6px;">
+                <div style="width:24px; height:3px; border-radius:2px; background:rgba(255,255,255,0.3);"></div>
+                <span style="font-size:10px; font-weight:600; color:rgba(255,255,255,0.4);">Analysis</span>
+            </div>
         </div>
     `).join('');
 }
@@ -279,16 +279,19 @@ function renderPagination(pagination) {
     }
     
     container.classList.remove('hidden');
-    let html = `<div class="text-[11px] font-bold text-gray-400 uppercase">Page ${pagination.page} of ${pagination.pages}</div>`;
-    html += `<div class="flex gap-1">`;
+    let html = `
+        <div class="v-pag-info">
+            Showing Page <strong>${pagination.page}</strong> of <strong>${pagination.pages}</strong>
+        </div>
+        <div class="v-pag-nav">
+    `;
     
     for (let i = 1; i <= pagination.pages; i++) {
-        html += `
-            <button onclick="changePage(${i})" 
-               class="w-8 h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${i === pagination.page ? 'bg-gray-900 text-white shadow-lg' : 'bg-white border border-gray-200 text-gray-500 hover:border-gray-900 hover:text-gray-900'}">
-                ${i}
-            </button>
-        `;
+        if (i === pagination.page) {
+            html += `<button class="v-pag-btn active">${i}</button>`;
+        } else {
+            html += `<button onclick="changePage(${i})" class="v-pag-btn">${i}</button>`;
+        }
     }
     html += `</div>`;
     container.innerHTML = html;
@@ -407,7 +410,130 @@ function bulkUpdateStatus(status) {
 <style>
 @keyframes bounce-short { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -8px); } }
 .animate-bounce-short { animation: bounce-short 3s infinite ease-in-out; }
-.italic-none { font-style: normal !important; }
+
+/* ── Premium Request Styles ── */
+.stat-card {
+    position: relative;
+    border-radius: 20px;
+    padding: 24px 28px;
+    color: #ffffff;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 140px;
+}
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    opacity: 0.08;
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.stat-card:hover { transform: translateY(-4px); }
+.stat-card:hover::before { opacity: 0.14; transform: scale(1.2); }
+
+.stat-card.card-slate { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); box-shadow: 0 8px 32px rgba(15, 23, 42, 0.25); }
+.stat-card.card-slate::before { background: #3b82f6; }
+
+.stat-card.card-cyan { background: linear-gradient(135deg, #164e63 0%, #0891b2 100%); box-shadow: 0 8px 32px rgba(8, 145, 178, 0.25); }
+.stat-card.card-cyan::before { background: #22d3ee; }
+
+.stat-card.card-amber { background: linear-gradient(135deg, #78350f 0%, #92400e 100%); box-shadow: 0 8px 32px rgba(146, 64, 14, 0.2); }
+.stat-card.card-amber::before { background: #fbbf24; }
+
+.stat-card.card-green { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); box-shadow: 0 8px 32px rgba(6, 95, 70, 0.2); }
+.stat-card.card-green::before { background: #34d399; }
+
+.stat-card.card-purple { background: linear-gradient(135deg, #2e1065 0%, #4c1d95 100%); box-shadow: 0 8px 32px rgba(76, 29, 149, 0.2); }
+.stat-card.card-purple::before { background: #a78bfa; }
+
+.stat-card.card-rose { background: linear-gradient(135deg, #881337 0%, #be123c 100%); box-shadow: 0 8px 32px rgba(190, 18, 60, 0.2); }
+.stat-card.card-rose::before { background: #fb7185; }
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 900;
+    line-height: 1;
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+}
+.stat-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 8px;
+}
+.stat-icon-ring {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+}
+.stat-card:hover .stat-icon-ring {
+    background: rgba(255, 255, 255, 0.14);
+    transform: scale(1.08);
+}
+.stat-icon-ring svg { width: 22px; height: 22px; }
+
+/* Table settings */
+.v-table-wrap{background:#fff;border:1px solid #f1f5f9;border-radius:16px;overflow:hidden;position:relative;min-height:300px}
+.v-table-loading{position:absolute;inset:0;background:rgba(255,255,255,.85);z-index:10;display:none;align-items:center;justify-content:center}
+.v-table-loading.show{display:flex}
+.v-table-loading .spinner{width:32px;height:32px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.v-table{width:100%;border-collapse:separate;border-spacing:0}
+.v-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9)}
+.v-table th{padding:12px 16px;text-align:left;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+.v-table td{padding:14px 16px;font-size:13px;color:#334155;border-bottom:1px solid #f8fafc;vertical-align:middle}
+.v-table tbody tr{transition:all .15s ease}
+.v-table tbody tr:hover{background:#fafbff}
+
+.v-row-num{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;background:#f1f5f9;border-radius:8px;font-size:11px;font-weight:700;color:#94a3b8}
+
+.v-avatar{width:36px;height:36px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;transition:transform .2s ease}
+.v-table tbody tr:hover .v-avatar{transform:scale(1.1)}
+.v-avatar-blue{background:#eff6ff;color:#3b82f6}
+
+.v-name{font-weight:600;color:#0f172a;cursor:pointer;transition:color .15s}
+.v-table tbody tr:hover .v-name{color:#4f46e5}
+.v-code{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.02em;margin-top:1px}
+
+.v-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.v-pill-active{background:#ecfdf5;color:#059669}
+.v-pill-warning{background:#fffbeb;color:#d97706}
+.v-pill-critical{background:#fef2f2;color:#dc2626}
+
+.v-act{display:flex;align-items:center;gap:5px;justify-content:flex-end}
+.v-act-btn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;border:1px solid transparent;cursor:pointer;transition:all .2s ease;position:relative;background:transparent;padding:0}
+.v-act-btn svg{width:14px;height:14px}
+.v-act-btn.v-view{color:#94a3b8}
+.v-act-btn.v-view:hover{background:#eff6ff;color:#3b82f6;border-color:#bfdbfe}
+.v-act-btn[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);padding:4px 8px;background:#0f172a;color:#fff;font-size:10px;font-weight:600;border-radius:6px;white-space:nowrap;z-index:10;pointer-events:none;animation:tipFade .15s ease}
+.v-act-btn[data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#0f172a;z-index:10}
+
+.v-pag{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-top:1px solid #f1f5f9;flex-wrap:wrap;gap:12px;background:#fff;}
+.v-pag-info{font-size:12px;font-weight:500;color:#64748b}
+.v-pag-info strong{font-weight:700;color:#0f172a}
+.v-pag-nav{display:flex;align-items:center;gap:4px}
+.v-pag-btn{min-width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#475569;cursor:pointer;transition:all .2s ease;text-decoration:none;padding:0 6px}
+.v-pag-btn:hover{background:#f8fafc;border-color:#c7d2fe;color:#4f46e5}
+.v-pag-btn.active{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border-color:transparent;box-shadow:0 2px 6px rgba(99,102,241,.3)}
+.v-pag-btn.disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
 </style>
 
 <?php

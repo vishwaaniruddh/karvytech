@@ -65,6 +65,20 @@ try {
     $stmt->execute([$vendorId]);
     $instStats = $stmt->fetch(PDO::FETCH_ASSOC) ?: ['inst_total' => 0, 'inst_done' => 0, 'inst_pending' => 0];
 
+    // 3. Material Request Statistics
+    $stmt = $db->prepare("
+        SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+            SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved,
+            SUM(CASE WHEN status = 'dispatched' THEN 1 ELSE 0 END) as dispatched,
+            SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as delivered
+        FROM material_requests
+        WHERE vendor_id = ?
+    ");
+    $stmt->execute([$vendorId]);
+    $stats['materials'] = $stmt->fetch(PDO::FETCH_ASSOC) ?: $stats['materials'];
+
     // Combine for easy access
     $stats['sites'] = [
         'survey_total' => (int) $surveyStats['survey_total'],

@@ -90,309 +90,330 @@ $data = $controller->index();
 ob_start();
 ?>
 
-<div class="flex justify-between items-center mb-6">
-    <div>
-        <h1 class="text-2xl font-semibold text-gray-900"><?php echo $title; ?></h1>
-        <p class="mt-2 text-sm text-gray-700">Manage master data for <?php echo strtolower($singular); ?>s</p>
+<style>
+/* ── Masters Page Premium Styles ── */
+.m-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:16px}
+.m-title-area h1{font-size:1.5rem;font-weight:800;color:#0f172a;letter-spacing:-.02em}
+.m-title-area p{font-size:13px;font-weight:500;color:#64748b;margin-top:4px}
+.m-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+/* Type Chips */
+.m-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px}
+.m-chip{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:100px;font-size:11px;font-weight:700;letter-spacing:.02em;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer;transition:all .25s ease;text-decoration:none}
+.m-chip:hover{border-color:#c7d2fe;color:#4f46e5;background:#eef2ff}
+.m-chip.active{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border-color:transparent;box-shadow:0 2px 8px rgba(99,102,241,.3)}
+.m-chip svg{width:13px;height:13px}
+
+/* Search Bar */
+.m-search-wrap{background:#fff;border:1px solid #f1f5f9;border-radius:16px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.m-search{position:relative;flex:1;min-width:220px}
+.m-search input{width:100%;padding:10px 14px 10px 40px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:500;color:#1e293b;background:#f8fafc;transition:all .2s ease;outline:none}
+.m-search input:focus{border-color:#6366f1;background:#fff;box-shadow:0 0 0 3px rgba(99,102,241,.08)}
+.m-search .m-search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8}
+.m-filter select{padding:10px 32px 10px 14px;border:1px solid #e2e8f0;border-radius:10px;font-size:13px;font-weight:500;color:#1e293b;background:#f8fafc;cursor:pointer;outline:none;transition:all .2s ease;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 20 20'%3E%3Cpath d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.m-filter select:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.08)}
+.m-count{display:flex;align-items:center;gap:6px;padding:8px 14px;background:#f1f5f9;border-radius:10px;font-size:12px;font-weight:600;color:#475569}
+.m-count span{font-weight:800;color:#0f172a}
+
+/* Premium Table */
+.m-table-wrap{background:#fff;border:1px solid #f1f5f9;border-radius:16px;overflow:hidden}
+.m-table{width:100%;border-collapse:separate;border-spacing:0}
+.m-table thead{background:linear-gradient(135deg,#f8fafc,#f1f5f9)}
+.m-table th{padding:12px 16px;text-align:left;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+.m-table td{padding:14px 16px;font-size:13px;color:#334155;border-bottom:1px solid #f8fafc;vertical-align:middle}
+.m-table tbody tr{transition:all .15s ease}
+.m-table tbody tr:hover{background:#fafbff}
+.m-table tbody tr:last-child td{border-bottom:none}
+
+/* Row Number */
+.m-row-num{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;background:#f1f5f9;border-radius:8px;font-size:11px;font-weight:700;color:#94a3b8}
+
+/* Name Cell */
+.m-name{font-weight:600;color:#0f172a}
+.m-id{font-size:11px;font-weight:500;color:#94a3b8;margin-top:2px}
+
+/* Status Pill */
+.m-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.m-pill-active{background:#ecfdf5;color:#059669}
+.m-pill-active::before{content:'';width:5px;height:5px;border-radius:50%;background:#10b981}
+.m-pill-inactive{background:#fef2f2;color:#dc2626}
+.m-pill-inactive::before{content:'';width:5px;height:5px;border-radius:50%;background:#ef4444}
+.m-pill-info{background:#eff6ff;color:#2563eb}
+
+/* Action Buttons */
+.m-act{display:flex;align-items:center;gap:6px}
+.m-act-btn{width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;border:1px solid transparent;cursor:pointer;transition:all .2s ease;position:relative}
+.m-act-btn svg{width:15px;height:15px}
+.m-act-btn.m-view{background:#f8fafc;color:#64748b;border-color:#e2e8f0}
+.m-act-btn.m-view:hover{background:#f1f5f9;color:#334155;border-color:#cbd5e1}
+.m-act-btn.m-edit{background:#eff6ff;color:#3b82f6;border-color:#bfdbfe}
+.m-act-btn.m-edit:hover{background:#dbeafe;color:#2563eb}
+.m-act-btn.m-toggle-off{background:#fffbeb;color:#f59e0b;border-color:#fde68a}
+.m-act-btn.m-toggle-off:hover{background:#fef3c7;color:#d97706}
+.m-act-btn.m-toggle-on{background:#ecfdf5;color:#10b981;border-color:#a7f3d0}
+.m-act-btn.m-toggle-on:hover{background:#d1fae5;color:#059669}
+.m-act-btn.m-delete{background:#fef2f2;color:#ef4444;border-color:#fecaca}
+.m-act-btn.m-delete:hover{background:#fee2e2;color:#dc2626}
+/* Tooltip */
+.m-act-btn[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);padding:4px 8px;background:#0f172a;color:#fff;font-size:10px;font-weight:600;border-radius:6px;white-space:nowrap;z-index:10;pointer-events:none;animation:tipFade .15s ease}
+.m-act-btn[data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#0f172a;z-index:10}
+@keyframes tipFade{from{opacity:0;transform:translateX(-50%) translateY(4px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Date Cell */
+.m-date{font-size:12px;font-weight:500;color:#64748b}
+.m-date-by{font-size:10px;color:#94a3b8;margin-top:2px}
+
+/* Premium Pagination */
+.m-pag{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-top:1px solid #f1f5f9;flex-wrap:wrap;gap:12px}
+.m-pag-info{font-size:12px;font-weight:500;color:#64748b}
+.m-pag-info strong{font-weight:700;color:#0f172a}
+.m-pag-nav{display:flex;align-items:center;gap:4px}
+.m-pag-btn{min-width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;color:#475569;cursor:pointer;transition:all .2s ease;text-decoration:none;padding:0 6px}
+.m-pag-btn:hover{background:#f8fafc;border-color:#c7d2fe;color:#4f46e5}
+.m-pag-btn.active{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border-color:transparent;box-shadow:0 2px 6px rgba(99,102,241,.3)}
+.m-pag-btn.disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.m-pag-dots{font-size:12px;font-weight:600;color:#94a3b8;padding:0 4px}
+
+/* Buttons */
+.m-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .2s ease;text-decoration:none}
+.m-btn-primary{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;box-shadow:0 2px 8px rgba(99,102,241,.25)}
+.m-btn-primary:hover{box-shadow:0 4px 12px rgba(99,102,241,.35);transform:translateY(-1px)}
+.m-btn-secondary{background:#f8fafc;color:#475569;border:1px solid #e2e8f0}
+.m-btn-secondary:hover{background:#f1f5f9;border-color:#cbd5e1}
+.m-btn svg{width:14px;height:14px}
+
+/* Empty State */
+.m-empty{text-align:center;padding:48px 24px}
+.m-empty svg{width:48px;height:48px;color:#cbd5e1;margin:0 auto 12px}
+.m-empty p{font-size:13px;font-weight:500;color:#94a3b8}
+
+/* Responsive */
+@media(max-width:768px){
+    .m-header{flex-direction:column;align-items:flex-start}
+    .m-actions{width:100%}
+    .m-chips{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}
+    .m-search-wrap{flex-direction:column}
+}
+</style>
+
+<?php
+// Define chip icons for each master type
+$typeIcons = [
+    'banks' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>',
+    'customers' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
+    'zones' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>',
+    'countries' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+    'states' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
+    'cities' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>',
+    'boq' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>',
+    'couriers' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12l-4 7H8l-4-7h4zm0 0L6 3H3m5 4v10a2 2 0 104 0V7"/></svg>',
+    'survey' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
+    'installation' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>',
+];
+$typeLabels = [
+    'banks' => 'Banks', 'customers' => 'Customers', 'zones' => 'Zones',
+    'countries' => 'Countries', 'states' => 'States', 'cities' => 'Cities',
+    'boq' => 'BOQ', 'couriers' => 'Couriers', 'survey' => 'Survey Types',
+    'installation' => 'Install Types'
+];
+?>
+
+<!-- Header -->
+<div class="m-header">
+    <div class="m-title-area">
+        <h1><?php echo $title; ?></h1>
+        <p>Manage master data for <?php echo strtolower($singular); ?>s · <?php echo number_format($data['pagination']['total_records']); ?> records</p>
     </div>
-    <div class="flex space-x-3">
-        <!-- Master Type Selector -->
-        <select id="masterTypeSelector" class="form-select" onchange="changeMasterType(this.value)">
-            <option value="banks" <?php echo $masterType === 'banks' ? 'selected' : ''; ?>>Banks</option>
-            <option value="customers" <?php echo $masterType === 'customers' ? 'selected' : ''; ?>>Customers</option>
-            <option value="zones" <?php echo $masterType === 'zones' ? 'selected' : ''; ?>>Zones</option>
-            <option value="countries" <?php echo $masterType === 'countries' ? 'selected' : ''; ?>>Countries</option>
-            <option value="states" <?php echo $masterType === 'states' ? 'selected' : ''; ?>>States</option>
-            <option value="cities" <?php echo $masterType === 'cities' ? 'selected' : ''; ?>>Cities</option>
-            <option value="couriers" <?php echo $masterType === 'couriers' ? 'selected' : ''; ?>>Courier</option>
-            <option value="survey" <?php echo $masterType === 'survey' ? 'selected' : ''; ?>>Survey Types</option>
-            <option value="installation" <?php echo $masterType === 'installation' ? 'selected' : ''; ?>>Installation Types</option>
-        </select>
-        <button onclick="exportToCSV()" class="btn btn-secondary">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-            </svg>
-            Export CSV
+    <div class="m-actions">
+        <button onclick="exportToCSV()" class="m-btn m-btn-secondary">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Export
         </button>
         <?php if ($masterType === 'cities'): ?>
-        <a href="bulk_upload.php?type=cities" class="btn btn-secondary bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-            </svg>
+        <a href="bulk_upload.php?type=cities" class="m-btn m-btn-secondary">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
             Bulk Upload
         </a>
         <?php endif; ?>
-        <button onclick="openCreateModal()" class="btn btn-primary">
-            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-            </svg>
-            Add New <?php echo $singular; ?>
+        <button onclick="openCreateModal()" class="m-btn m-btn-primary">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            Add <?php echo $singular; ?>
         </button>
     </div>
 </div>
 
-<!-- Search and Filters -->
-<div class="card mb-6">
-    <div class="card-body">
-        <div class="flex flex-col sm:flex-row gap-4">
-            <div class="flex-1">
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
-                    <input type="text" id="searchInput" class="search-input" placeholder="Search <?php echo strtolower($singular); ?>s..." value="<?php echo htmlspecialchars($data['search']); ?>">
-                </div>
-            </div>
-            <div class="flex gap-2">
-                <select id="statusFilter" class="form-select">
-                    <option value="">All Status</option>
-                    <option value="active" <?php echo $data['status_filter'] === 'active' ? 'selected' : ''; ?>>Active</option>
-                    <option value="inactive" <?php echo $data['status_filter'] === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
-                </select>
-            </div>
-        </div>
+<!-- Type Chips -->
+<div class="m-chips">
+    <?php
+    // Survey & Installation use a different file
+    $typeUrls = [
+        'survey' => 'form-master.php?type=survey',
+        'installation' => 'form-master.php?type=installation',
+    ];
+    foreach ($typeLabels as $type => $label):
+        $chipUrl = $typeUrls[$type] ?? "?type={$type}";
+    ?>
+    <a href="<?php echo $chipUrl; ?>" class="m-chip <?php echo $masterType === $type ? 'active' : ''; ?>">
+        <?php echo $typeIcons[$type] ?? ''; ?>
+        <?php echo $label; ?>
+    </a>
+    <?php endforeach; ?>
+</div>
+
+<!-- Search Bar -->
+<div class="m-search-wrap">
+    <div class="m-search">
+        <svg class="m-search-icon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="text" id="searchInput" placeholder="Search <?php echo strtolower($singular); ?>s by name..." value="<?php echo htmlspecialchars($data['search']); ?>">
+    </div>
+    <div class="m-filter">
+        <select id="statusFilter">
+            <option value="">All Status</option>
+            <option value="active" <?php echo $data['status_filter'] === 'active' ? 'selected' : ''; ?>>Active</option>
+            <option value="inactive" <?php echo $data['status_filter'] === 'inactive' ? 'selected' : ''; ?>>Inactive</option>
+        </select>
+    </div>
+    <div class="m-count">
+        <svg width="14" height="14" fill="none" stroke="#64748b" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+        <span><?php echo number_format($data['pagination']['total_records']); ?></span> records
     </div>
 </div>
 
-<!-- Masters Table -->
-<div class="card">
-    <div class="card-body">
-        <div class="overflow-x-auto">
-            <table class="data-table" id="mastersTable">
-                <thead>
+<!-- Data Table -->
+<div class="m-table-wrap">
+    <?php if (empty($data['records'])): ?>
+    <div class="m-empty">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+        <p>No <?php echo strtolower($singular); ?>s found. Try adjusting your filters.</p>
+    </div>
+    <?php else: ?>
+    <div style="overflow-x:auto;">
+        <table class="m-table" id="mastersTable">
+            <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th><?php echo $masterType === 'boq' ? 'BOQ Name' : 'Name'; ?></th>
+                    <?php if ($masterType === 'boq'): ?>
+                        <th>Serial Req.</th>
+                    <?php endif; ?>
+                    <?php if ($masterType === 'states'): ?>
+                        <th>Country</th>
+                    <?php endif; ?>
+                    <?php if ($masterType === 'cities'): ?>
+                        <th>State</th>
+                        <th>Zone</th>
+                        <th>Country</th>
+                    <?php endif; ?>
+                    <th style="width:100px">Status</th>
+                    <th style="width:120px">Created</th>
+                    <th style="width:170px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $serial_number = (($data['pagination']['current_page'] - 1) * $data['pagination']['limit']) + 1;
+                foreach ($data['records'] as $record): ?>
                     <tr>
-                        <th>#</th>
-                        <th><?php echo $masterType === 'boq' ? 'BOQ Name' : 'Name'; ?></th>
+                        <td><span class="m-row-num"><?php echo $serial_number++; ?></span></td>
+                        <td>
+                            <div class="m-name"><?php echo htmlspecialchars($masterType === 'boq' ? $record['boq_name'] : $record['name']); ?></div>
+                            <div class="m-id">ID: <?php echo $masterType === 'boq' ? $record['boq_id'] : $record['id']; ?></div>
+                        </td>
                         <?php if ($masterType === 'boq'): ?>
-                            <th>Serial Required</th>
+                            <td><span class="m-pill <?php echo $record['is_serial_number_required'] ? 'm-pill-info' : ''; ?>" style="<?php echo !$record['is_serial_number_required'] ? 'background:#f1f5f9;color:#94a3b8;' : ''; ?>"><?php echo $record['is_serial_number_required'] ? 'Required' : 'No'; ?></span></td>
                         <?php endif; ?>
                         <?php if ($masterType === 'states'): ?>
-                            <th>Country</th>
+                            <td style="font-size:13px;color:#475569;"><?php echo htmlspecialchars($record['country_name'] ?? 'N/A'); ?></td>
                         <?php endif; ?>
                         <?php if ($masterType === 'cities'): ?>
-                            <th>State</th>
-                            <th>Zone</th>
-                            <th>Country</th>
+                            <td style="font-size:13px;color:#475569;"><?php echo htmlspecialchars($record['state_name'] ?? 'N/A'); ?></td>
+                            <td style="font-size:13px;color:#475569;"><?php echo htmlspecialchars($record['zone_name'] ?? 'N/A'); ?></td>
+                            <td style="font-size:13px;color:#475569;"><?php echo htmlspecialchars($record['country_name'] ?? 'N/A'); ?></td>
                         <?php endif; ?>
-                        <th>Status</th>
-                        <th>Created</th>
-                        <th>Actions</th>
+                        <td>
+                            <span class="m-pill <?php echo $record['status'] === 'active' ? 'm-pill-active' : 'm-pill-inactive'; ?>">
+                                <?php echo ucfirst($record['status']); ?>
+                            </span>
+                        </td>
+                        <td>
+                            <div class="m-date"><?php echo date('M j, Y', strtotime($record['created_at'])); ?></div>
+                            <?php if (!empty($record['created_by_name'])): ?>
+                                <div class="m-date-by">by <?php echo htmlspecialchars($record['created_by_name']); ?></div>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <div class="m-act">
+                                <button onclick="viewMaster(<?php echo $masterType === 'boq' ? $record['boq_id'] : $record['id']; ?>)" class="m-act-btn m-view" data-tip="View Details">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                </button>
+                                <button onclick="editMaster(<?php echo $masterType === 'boq' ? $record['boq_id'] : $record['id']; ?>)" class="m-act-btn m-edit" data-tip="Edit">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                </button>
+                                <button onclick="toggleMasterStatus(<?php echo $masterType === 'boq' ? $record['boq_id'] : $record['id']; ?>)" class="m-act-btn <?php echo $record['status'] === 'active' ? 'm-toggle-off' : 'm-toggle-on'; ?>" data-tip="<?php echo $record['status'] === 'active' ? 'Deactivate' : 'Activate'; ?>">
+                                    <?php if ($record['status'] === 'active'): ?>
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                    <?php else: ?>
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <?php endif; ?>
+                                </button>
+                                <button onclick="deleteMaster(<?php echo $masterType === 'boq' ? $record['boq_id'] : $record['id']; ?>)" class="m-act-btn m-delete" data-tip="Delete">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    <?php 
-                    $serial_number = (($data['pagination']['current_page'] - 1) * $data['pagination']['limit']) + 1;
-                    foreach ($data['records'] as $record): ?>
-                        <tr>
-                            <td class="text-sm font-medium text-gray-500">
-                                <?php echo $serial_number++; ?>
-                            </td>
-                            <td>
-                                <div class="text-sm font-medium text-gray-900">
-                                    <?php echo htmlspecialchars($masterType === 'boq' ? $record['boq_name'] : $record['name']); ?>
-                                </div>
-                                <div class="text-sm text-gray-500">
-                                    ID: <?php echo $masterType === 'boq' ? $record['boq_id'] : $record['id']; ?>
-                                </div>
-                            </td>
-                            <?php if ($masterType === 'boq'): ?>
-                                <td>
-                                    <span class="badge <?php echo $record['is_serial_number_required'] ? 'badge-info' : 'badge-secondary'; ?>">
-                                        <?php echo $record['is_serial_number_required'] ? 'Yes' : 'No'; ?>
-                                    </span>
-                                </td>
-                            <?php endif; ?>
-                            <?php if ($masterType === 'states'): ?>
-                                <td class="text-sm text-gray-500">
-                                    <?php echo htmlspecialchars($record['country_name'] ?? 'N/A'); ?>
-                                </td>
-                            <?php endif; ?>
-                            <?php if ($masterType === 'cities'): ?>
-                                <td class="text-sm text-gray-500">
-                                    <?php echo htmlspecialchars($record['state_name'] ?? 'N/A'); ?>
-                                </td>
-                                <td class="text-sm text-gray-500">
-                                    <?php echo htmlspecialchars($record['zone_name'] ?? 'N/A'); ?>
-                                </td>
-                                <td class="text-sm text-gray-500">
-                                    <?php echo htmlspecialchars($record['country_name'] ?? 'N/A'); ?>
-                                </td>
-                            <?php endif; ?>
-                            <td>
-                                <span class="badge <?php echo $record['status'] === 'active' ? 'badge-success' : 'badge-danger'; ?>">
-                                    <?php echo ucfirst($record['status']); ?>
-                                </span>
-                            </td>
-                            <td class="text-sm text-gray-500">
-                                <?php echo date('M j, Y', strtotime($record['created_at'])); ?>
-                                <?php if (!empty($record['created_by_name'])): ?>
-                                    <br><small>by <?php echo htmlspecialchars($record['created_by_name']); ?></small>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <div class="flex items-center space-x-2">
-                                    <button onclick="viewMaster(<?php echo $masterType === 'boq' ? $record['boq_id'] : $record['id']; ?>)" class="btn btn-sm btn-secondary" title="View">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
-                                        </svg>
-                                    </button>
-                                    <button onclick="editMaster(<?php echo $masterType === 'boq' ? $record['boq_id'] : $record['id']; ?>)" class="btn btn-sm btn-primary" title="Edit">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
-                                        </svg>
-                                    </button>
-                                    <button onclick="toggleMasterStatus(<?php echo $masterType === 'boq' ? $record['boq_id'] : $record['id']; ?>)" class="btn btn-sm <?php echo $record['status'] === 'active' ? 'btn-warning' : 'btn-success'; ?>" title="<?php echo $record['status'] === 'active' ? 'Deactivate' : 'Activate'; ?>">
-                                        <?php if ($record['status'] === 'active'): ?>
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        <?php else: ?>
-                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        <?php endif; ?>
-                                    </button>
-                                    <button onclick="deleteMaster(<?php echo $masterType === 'boq' ? $record['boq_id'] : $record['id']; ?>)" class="btn btn-sm btn-danger" title="Delete">
-                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd"></path>
-                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V7a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        <?php if ($data['pagination']['total_pages'] > 1): ?>
-            <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-b-lg">
-                <div class="flex-1 flex justify-between sm:hidden">
-                    <!-- Mobile Pagination -->
-                    <?php if ($data['pagination']['current_page'] > 1): ?>
-                        <a href="?type=<?php echo $masterType; ?>&page=<?php echo $data['pagination']['current_page'] - 1; ?><?php echo !empty($data['search']) ? '&search=' . urlencode($data['search']) : ''; ?><?php echo !empty($data['status_filter']) ? '&status=' . urlencode($data['status_filter']) : ''; ?>"
-                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                            Previous
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($data['pagination']['current_page'] < $data['pagination']['total_pages']): ?>
-                        <a href="?type=<?php echo $masterType; ?>&page=<?php echo $data['pagination']['current_page'] + 1; ?><?php echo !empty($data['search']) ? '&search=' . urlencode($data['search']) : ''; ?><?php echo !empty($data['status_filter']) ? '&status=' . urlencode($data['status_filter']) : ''; ?>"
-                            class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                            Next
-                        </a>
-                    <?php endif; ?>
-                </div>
-                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                        <p class="text-sm text-gray-700">
-                            Showing
-                            <span class="font-medium"><?php echo (($data['pagination']['current_page'] - 1) * $data['pagination']['limit']) + 1; ?></span>
-                            to
-                            <span class="font-medium"><?php echo min($data['pagination']['current_page'] * $data['pagination']['limit'], $data['pagination']['total_records']); ?></span>
-                            of
-                            <span class="font-medium"><?php echo $data['pagination']['total_records']; ?></span>
-                            results
-                        </p>
-                    </div>
-                    <div>
-                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                            <?php
-                            $current = $data['pagination']['current_page'];
-                            $total = $data['pagination']['total_pages'];
-                            $search_param = !empty($data['search']) ? '&search=' . urlencode($data['search']) : '';
-                            $status_param = !empty($data['status_filter']) ? '&status=' . urlencode($data['status_filter']) : '';
-                            $base_url = "?type={$masterType}";
-                            
-                            // Previous button
-                            if ($current > 1): ?>
-                                <a href="<?php echo $base_url; ?>&page=<?php echo $current - 1; ?><?php echo $search_param . $status_param; ?>"
-                                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                    <span class="sr-only">Previous</span>
-                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                    </svg>
-                                </a>
-                            <?php else: ?>
-                                <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
-                                    <span class="sr-only">Previous</span>
-                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                    </svg>
-                                </span>
-                            <?php endif;
-
-                            // Page numbers
-                            $start = max(1, $current - 2);
-                            $end = min($total, $current + 2);
-
-                            // Show first page if not in range
-                            if ($start > 1): ?>
-                                <a href="<?php echo $base_url; ?>&page=1<?php echo $search_param . $status_param; ?>"
-                                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                    1
-                                </a>
-                                <?php if ($start > 2): ?>
-                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                                        ...
-                                    </span>
-                                <?php endif;
-                            endif;
-
-                            // Show page numbers in range
-                            for ($i = $start; $i <= $end; $i++): ?>
-                                <?php if ($i == $current): ?>
-                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
-                                        <?php echo $i; ?>
-                                    </span>
-                                <?php else: ?>
-                                    <a href="<?php echo $base_url; ?>&page=<?php echo $i; ?><?php echo $search_param . $status_param; ?>"
-                                        class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                        <?php echo $i; ?>
-                                    </a>
-                                <?php endif; ?>
-                            <?php endfor;
-
-                            // Show last page if not in range
-                            if ($end < $total): ?>
-                                <?php if ($end < $total - 1): ?>
-                                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                                        ...
-                                    </span>
-                                <?php endif; ?>
-                                <a href="<?php echo $base_url; ?>&page=<?php echo $total; ?><?php echo $search_param . $status_param; ?>"
-                                    class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                    <?php echo $total; ?>
-                                </a>
-                            <?php endif;
-
-                            // Next button
-                            if ($current < $total): ?>
-                                <a href="<?php echo $base_url; ?>&page=<?php echo $current + 1; ?><?php echo $search_param . $status_param; ?>"
-                                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                    <span class="sr-only">Next</span>
-                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                    </svg>
-                                </a>
-                            <?php else: ?>
-                                <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-50 text-sm font-medium text-gray-300 cursor-not-allowed">
-                                    <span class="sr-only">Next</span>
-                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                    </svg>
-                                </span>
-                            <?php endif; ?>
-                        </nav>
-                    </div>
-                </div>
-            </div>
-        <?php endif; ?>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
     </div>
+    <?php endif; ?>
+
+    <!-- Pagination -->
+    <?php if ($data['pagination']['total_pages'] > 1): ?>
+    <div class="m-pag">
+        <div class="m-pag-info">
+            Showing <strong><?php echo (($data['pagination']['current_page'] - 1) * $data['pagination']['limit']) + 1; ?></strong>
+            to <strong><?php echo min($data['pagination']['current_page'] * $data['pagination']['limit'], $data['pagination']['total_records']); ?></strong>
+            of <strong><?php echo number_format($data['pagination']['total_records']); ?></strong> results
+        </div>
+        <div class="m-pag-nav">
+            <?php
+            $current = $data['pagination']['current_page'];
+            $total = $data['pagination']['total_pages'];
+            $search_param = !empty($data['search']) ? '&search=' . urlencode($data['search']) : '';
+            $status_param = !empty($data['status_filter']) ? '&status=' . urlencode($data['status_filter']) : '';
+            $base_url = "?type={$masterType}";
+            ?>
+            <!-- Previous -->
+            <a href="<?php echo $current > 1 ? $base_url . '&page=' . ($current - 1) . $search_param . $status_param : '#'; ?>" class="m-pag-btn <?php echo $current <= 1 ? 'disabled' : ''; ?>">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </a>
+
+            <?php
+            $start = max(1, $current - 2);
+            $end = min($total, $current + 2);
+
+            if ($start > 1): ?>
+                <a href="<?php echo $base_url; ?>&page=1<?php echo $search_param . $status_param; ?>" class="m-pag-btn">1</a>
+                <?php if ($start > 2): ?><span class="m-pag-dots">…</span><?php endif; ?>
+            <?php endif;
+
+            for ($i = $start; $i <= $end; $i++): ?>
+                <a href="<?php echo $base_url; ?>&page=<?php echo $i; ?><?php echo $search_param . $status_param; ?>" class="m-pag-btn <?php echo $i == $current ? 'active' : ''; ?>"><?php echo $i; ?></a>
+            <?php endfor;
+
+            if ($end < $total): ?>
+                <?php if ($end < $total - 1): ?><span class="m-pag-dots">…</span><?php endif; ?>
+                <a href="<?php echo $base_url; ?>&page=<?php echo $total; ?><?php echo $search_param . $status_param; ?>" class="m-pag-btn"><?php echo $total; ?></a>
+            <?php endif; ?>
+
+            <!-- Next -->
+            <a href="<?php echo $current < $total ? $base_url . '&page=' . ($current + 1) . $search_param . $status_param : '#'; ?>" class="m-pag-btn <?php echo $current >= $total ? 'disabled' : ''; ?>">
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
 </div>
 
 <!-- Create Master Modal -->

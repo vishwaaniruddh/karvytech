@@ -79,10 +79,93 @@ ob_start();
     .table-container::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
     }
+    
+    /* ── Stat Cards (Match Dashboard2) ── */
+    .stat-card {
+        position: relative;
+        border-radius: 20px;
+        padding: 24px 28px;
+        color: #ffffff;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 140px;
+    }
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        opacity: 0.08;
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .stat-card:hover {
+        transform: translateY(-4px);
+    }
+    .stat-card:hover::before {
+        opacity: 0.14;
+        transform: scale(1.2);
+    }
+    .stat-card.card-slate { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); box-shadow: 0 8px 32px rgba(15, 23, 42, 0.25); }
+    .stat-card.card-slate::before { background: #3b82f6; }
+    
+    .stat-card.card-cyan { background: linear-gradient(135deg, #164e63 0%, #0891b2 100%); box-shadow: 0 8px 32px rgba(8, 145, 178, 0.25); }
+    .stat-card.card-cyan::before { background: #22d3ee; }
+    
+    .stat-card.card-amber { background: linear-gradient(135deg, #78350f 0%, #92400e 100%); box-shadow: 0 8px 32px rgba(146, 64, 14, 0.2); }
+    .stat-card.card-amber::before { background: #fbbf24; }
+    
+    .stat-card.card-green { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); box-shadow: 0 8px 32px rgba(6, 95, 70, 0.2); }
+    .stat-card.card-green::before { background: #34d399; }
+    
+    .stat-card.card-purple { background: linear-gradient(135deg, #2e1065 0%, #4c1d95 100%); box-shadow: 0 8px 32px rgba(76, 29, 149, 0.2); }
+    .stat-card.card-purple::before { background: #a78bfa; }
+    
+    .stat-card.card-rose { background: linear-gradient(135deg, #881337 0%, #be123c 100%); box-shadow: 0 8px 32px rgba(190, 18, 60, 0.2); }
+    .stat-card.card-rose::before { background: #fb7185; }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 900;
+        line-height: 1;
+        color: #ffffff;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.03em;
+    }
+    .stat-label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 8px;
+    }
+    .stat-icon-ring {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(8px);
+        transition: all 0.3s ease;
+    }
+    .stat-card:hover .stat-icon-ring {
+        background: rgba(255, 255, 255, 0.14);
+        transform: scale(1.08);
+    }
+    .stat-icon-ring svg { width: 22px; height: 22px; }
 </style>
 
 <!-- Stats Overview -->
-<div id="statsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-6">
+<div id="statsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
     <div class="col-span-full py-8 text-center bg-white rounded-lg border border-dashed border-gray-300">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
         <p class="mt-2 text-sm text-gray-500">Initializing dashboard...</p>
@@ -836,24 +919,30 @@ ob_start();
             if (!container) return;
 
             const sections = [
-                { label: 'Total Sites', count: stats.total_sites || 0, color: 'indigo', icon: 'M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z' },
-                { label: 'Delegated', count: stats.delegation_active || 0, color: 'blue', icon: 'M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z' },
-                { label: 'Pending Del.', count: stats.delegation_pending || 0, color: 'orange', icon: 'M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z' },
-                { label: 'Approved', count: stats.survey_approved || 0, color: 'green', icon: 'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' },
-                { label: 'Pending Surv.', count: stats.survey_pending || 0, color: 'yellow', icon: 'M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' },
-                { label: 'Rejected', count: stats.survey_rejected || 0, color: 'red', icon: 'M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' },
-                { label: 'Inst. Done', count: stats.installation_done || 0, color: 'purple', icon: 'M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z' }
+                { label: 'Total Sites', count: stats.total_sites || 0, colorClass: 'card-slate', ringColor: '#60a5fa', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+                { label: 'Delegated', count: stats.delegation_active || 0, colorClass: 'card-cyan', ringColor: '#22d3ee', icon: 'M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z' },
+                { label: 'Pending Del.', count: stats.delegation_pending || 0, colorClass: 'card-amber', ringColor: '#fbbf24', icon: 'M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z' },
+                { label: 'Approved', count: stats.survey_approved || 0, colorClass: 'card-green', ringColor: '#34d399', icon: 'M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z' },
+                { label: 'Pending Surv.', count: stats.survey_pending || 0, colorClass: 'card-amber', ringColor: '#fbbf24', icon: 'M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' },
+                { label: 'Rejected', count: stats.survey_rejected || 0, colorClass: 'card-rose', ringColor: '#fb7185', icon: 'M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' },
+                { label: 'Inst. Done', count: stats.installation_done || 0, colorClass: 'card-purple', ringColor: '#a78bfa', icon: 'M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z' }
             ];
 
-            container.innerHTML = sections.map(s => `
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow group">
-                <div class="flex items-center gap-2 mb-2">
-                    <div class="w-10 h-10 rounded-lg bg-${s.color}-100 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <svg class="w-5 h-5 text-${s.color}-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="${s.icon}" clip-rule="evenodd"></path></svg>
+            container.innerHTML = sections.map((s, i) => `
+            <div class="stat-card ${s.colorClass}">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between;">
+                    <div>
+                        <div class="stat-value">${parseInt(s.count || 0).toLocaleString()}</div>
+                        <div class="stat-label">${s.label}</div>
                     </div>
-                    <div class="text-2xl font-bold text-gray-900">${parseInt(s.count || 0).toLocaleString()}</div>
+                    <div class="stat-icon-ring">
+                        <svg fill="none" stroke="${s.ringColor}" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="${s.icon}"/></svg>
+                    </div>
                 </div>
-                <div class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">${s.label}</div>
+                <div style="margin-top:16px; display:flex; align-items:center; gap:6px;">
+                    <div style="width:24px; height:3px; border-radius:2px; background:rgba(255,255,255,0.3);"></div>
+                    <span style="font-size:10px; font-weight:600; color:rgba(255,255,255,0.4);">Details</span>
+                </div>
             </div>
         `).join('');
         } catch (e) { console.error('Error in renderStats:', e); }
