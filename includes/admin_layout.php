@@ -296,22 +296,31 @@ $currentUser = Auth::getCurrentUser();
             z-index: 1;
         }
         
-        /* Clean Modern Sidebar Styling - Upgraded Variant */
+        /* ── Premium Command Center Sidebar ── */
         .admin-sidebar {
-            background: #0f172a; /* Deeper midnight blue */
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(165deg, #1e1b4b 0%, #0f172a 45%, #020617 100%);
+            border-right: 1px solid rgba(99, 102, 241, 0.1);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4), inset -1px 0 0 rgba(255, 255, 255, 0.02);
             position: fixed;
             top: 0;
             left: 0;
             z-index: 50;
             height: 100vh;
-            width: 270px; /* Slightly wider for better breathing room */
+            width: 270px;
             transform: translateX(-100%);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
         }
+        .admin-sidebar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M0 0h1v1H0z'/%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+        .admin-sidebar > * { position: relative; z-index: 1; }
         
         .admin-sidebar.show {
             transform: translateX(0);
@@ -488,49 +497,50 @@ $currentUser = Auth::getCurrentUser();
         
         .admin-badge {
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
         }
         
         .sidebar-item {
             display: flex;
             align-items: center;
-            padding: 12px 18px;
-            margin: 4px 12px;
-            border-radius: 12px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 10px 16px;
+            margin: 2px 10px;
+            border-radius: 10px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
-            min-height: 48px;
-            color: #94a3b8 !important; /* Muted slate */
+            min-height: 42px;
+            color: #7c8db5 !important;
             font-weight: 500;
-            font-size: 0.925rem;
+            font-size: 0.875rem;
+            letter-spacing: 0.01em;
             position: relative;
             border: 1px solid transparent;
         }
         
         .sidebar-item:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-            color: #ffffff !important;
-            transform: translateX(5px);
-            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(99, 102, 241, 0.08);
+            color: #e2e8f0 !important;
+            border-color: rgba(99, 102, 241, 0.12);
         }
         
         .sidebar-item.active {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.05) 100%);
-            color: #3b82f6 !important;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.14) 0%, rgba(59, 130, 246, 0.08) 100%);
+            color: #818cf8 !important;
             font-weight: 600;
-            border-color: rgba(59, 130, 246, 0.2);
+            border-color: rgba(99, 102, 241, 0.18);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.06);
         }
 
         .sidebar-item.active::before {
             content: '';
             position: absolute;
-            left: -12px;
-            top: 25%;
-            height: 50%;
-            width: 4px;
-            background: #3b82f6;
-            border-radius: 0 4px 4px 0;
-            box-shadow: 0 0 15px #3b82f6;
+            left: -10px;
+            top: 20%;
+            height: 60%;
+            width: 3px;
+            background: linear-gradient(180deg, #818cf8, #6366f1);
+            border-radius: 0 3px 3px 0;
+            box-shadow: 0 0 12px rgba(129, 140, 248, 0.5), 0 0 4px rgba(129, 140, 248, 0.3);
         }
         
         .sidebar-item svg {
@@ -545,39 +555,40 @@ $currentUser = Auth::getCurrentUser();
         .sidebar-subitem {
             display: flex;
             align-items: center;
-            padding: 10px 15px;
-            margin: 2px 12px;
+            padding: 8px 14px;
+            margin: 1px 12px;
             text-decoration: none;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            transition: all 0.25s ease;
-            min-height: 40px;
-            color: #64748b !important; /* Slate 400 */
+            border-radius: 8px;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            min-height: 36px;
+            color: #5a6a8a !important;
             font-weight: 500;
             position: relative;
+            letter-spacing: 0.01em;
         }
         
         .sidebar-subitem:hover {
-            color: #cbd5e1 !important;
-            transform: translateX(6px);
+            color: #c7d2fe !important;
+            background: rgba(99, 102, 241, 0.05);
         }
         
         .sidebar-subitem.active {
-            color: #3b82f6 !important;
+            color: #a5b4fc !important;
             font-weight: 600;
         }
 
         .sidebar-subitem.active::after {
             content: '';
             position: absolute;
-            left: -16px;
+            left: -14px;
             top: 50%;
-            width: 6px;
-            height: 6px;
-            background: #3b82f6;
+            width: 5px;
+            height: 5px;
+            background: #818cf8;
             border-radius: 50%;
             transform: translateY(-50%);
-            box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+            box-shadow: 0 0 8px rgba(129, 140, 248, 0.5);
         }
         
         .sidebar-subitem svg {
@@ -589,12 +600,12 @@ $currentUser = Auth::getCurrentUser();
             opacity: 0.7;
         }
 
-        /* Hierarchy Indentation & Lines - Fixed Gap Issue */
+        /* Hierarchy Indentation & Lines */
         .submenu-wrapper {
             position: relative;
             margin-left: 28px !important;
             padding-left: 0;
-            border-left: 1px solid rgba(71, 85, 105, 0.3);
+            border-left: 1px solid rgba(99, 102, 241, 0.1);
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -607,12 +618,12 @@ $currentUser = Auth::getCurrentUser();
         .sidebar-subitem[data-level="3"] { padding-left: 24px; }
 
         .submenu-arrow {
-            color: #6b7280;
+            color: #4a5578;
             transition: transform 0.3s ease;
         }
 
         .sidebar-item:hover .submenu-arrow {
-            color: #9ca3af;
+            color: #818cf8;
         }
         
         /* Override any conflicting text colors */
@@ -943,11 +954,11 @@ $currentUser = Auth::getCurrentUser();
         }
         
         .menu-group-title {
-            color: #9ca3af;
-            font-size: 0.75rem;
-            font-weight: 600;
+            color: #475569;
+            font-size: 0.65rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.12em;
             padding: 0.5rem 1rem;
             margin-top: 1rem;
         }
@@ -1058,13 +1069,23 @@ $currentUser = Auth::getCurrentUser();
         
         /* Menu section headers */
         .menu-section-header {
-            color: #9ca3af !important;
-            font-size: 0.75rem;
-            font-weight: 600;
+            color: #475569 !important;
+            font-size: 0.6rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 12px 16px 6px 16px;
-            margin-top: 16px;
+            letter-spacing: 0.14em;
+            padding: 16px 18px 8px 18px;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .menu-section-header::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(99,102,241,0.12), transparent);
         }
         
         .menu-section-header:first-child {
@@ -1111,9 +1132,22 @@ $currentUser = Auth::getCurrentUser();
         }
         
         .admin-header {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(248,250,252,0.95) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(226,232,240,0.6);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.02);
+            position: relative;
+        }
+        .admin-header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #06b6d4, transparent 80%);
+            opacity: 0.4;
         }
         
         /* User dropdown styles */
@@ -1132,11 +1166,11 @@ $currentUser = Auth::getCurrentUser();
         /* Smooth scrolling for sidebar */
         .admin-sidebar nav {
             scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+            scrollbar-color: rgba(99, 102, 241, 0.15) transparent;
         }
         
         .admin-sidebar nav::-webkit-scrollbar {
-            width: 5px;
+            width: 4px;
         }
         
         .admin-sidebar nav::-webkit-scrollbar-track {
@@ -1144,30 +1178,29 @@ $currentUser = Auth::getCurrentUser();
         }
         
         .admin-sidebar nav::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(99, 102, 241, 0.18);
             border-radius: 20px;
         }
         
         .admin-sidebar nav::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(99, 102, 241, 0.35);
         }
         
         /* Karvy Brand Styling */
         .karvy-brand {
             font-family: 'Playfair Display', serif;
             font-weight: 700;
-            font-size: 1.2rem;
-            color: #ffffff; /* Fallback color */
-            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            font-size: 1.15rem;
+            color: #ffffff;
+            background: linear-gradient(135deg, #ffffff 0%, #c7d2fe 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
             line-height: 1.2;
             margin-bottom: 2px;
         }
         
-        /* Fallback for browsers that don't support background-clip */
         @supports not (-webkit-background-clip: text) {
             .karvy-brand {
                 color: #ffffff;
@@ -1177,11 +1210,11 @@ $currentUser = Auth::getCurrentUser();
         
         .karvy-subtitle {
             font-family: 'Inter', sans-serif;
-            font-weight: 400;
-            letter-spacing: 1.5px;
+            font-weight: 600;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            font-size: 0.65rem;
-            color: #9ca3af;
+            font-size: 0.55rem;
+            color: #6366f1;
         }
         
         .admin-sidebar.collapsed .karvy-brand,
@@ -1191,26 +1224,26 @@ $currentUser = Auth::getCurrentUser();
 
         /* Real-time datetime display */
         .datetime-display {
-            background: #374151;
-            border: 1px solid #4b5563;
-            border-radius: 8px;
+            background: rgba(99, 102, 241, 0.06);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            border-radius: 10px;
             padding: 8px;
-            margin: 8px 6px;
+            margin: 8px 10px;
             text-align: center;
         }
         
         .datetime-display .date {
             font-size: 0.7rem;
             font-weight: 600;
-            color: #f9fafb;
+            color: #e2e8f0;
             margin-bottom: 2px;
         }
         
         .datetime-display .time {
             font-size: 0.65rem;
-            color: #d1d5db;
+            color: #818cf8;
             font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-            font-weight: 500;
+            font-weight: 600;
         }
         
         /* Responsive datetime display */
@@ -1228,33 +1261,50 @@ $currentUser = Auth::getCurrentUser();
                 font-size: 0.6rem;
             }
         }
+
+        /* ── Premium Layout Background ── */
+        body {
+            background-color: #f1f5f9 !important;
+            background-image:
+                radial-gradient(ellipse at 0% 0%, rgba(99,102,241,0.07) 0%, transparent 50%),
+                radial-gradient(ellipse at 100% 0%, rgba(139,92,246,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 60% 100%, rgba(6,182,212,0.06) 0%, transparent 50%) !important;
+            background-attachment: fixed !important;
+        }
+        .main-content-area {
+            background-image:
+                radial-gradient(at 20% 10%, rgba(99,102,241,0.04) 0%, transparent 40%),
+                radial-gradient(at 80% 90%, rgba(6,182,212,0.04) 0%, transparent 40%);
+            min-height: 100%;
+        }
     </style>
 </head>
-<body class="bg-gray-50">
-    <div class="flex h-screen bg-gray-50">
+<body>
+    <div class="flex h-screen">
 
     <!-- Sidebar -->
     <div class="admin-sidebar w-64 shadow-lg">
         <div class="flex flex-col h-full">
             <!-- Logo -->
-            <div class="flex items-center justify-between px-6 py-6 border-b border-white/5">
-                <a href="<?php echo url('/admin/dashboard.php'); ?>" class="flex items-center gap-3 hover:opacity-90 transition-all active:scale-95">
-                    <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            <div style="padding: 20px 20px 16px; border-bottom: 1px solid rgba(99,102,241,0.08); background: linear-gradient(180deg, rgba(99,102,241,0.04) 0%, transparent 100%);">
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <a href="<?php echo url('/admin/dashboard.php'); ?>" class="flex items-center gap-3 hover:opacity-90 transition-all active:scale-95" style="text-decoration:none;">
+                        <div style="width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#6366f1,#4f46e5); display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 15px rgba(99,102,241,0.35);">
+                            <svg style="width:22px; height:22px; color:#fff;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <div class="karvy-brand-container">
+                            <h1 class="karvy-brand" style="margin:0;">Karvy</h1>
+                            <p class="karvy-subtitle" style="margin:0;">Technologies</p>
+                        </div>
+                    </a>
+                    <button id="sidebarToggle" class="hidden lg:flex" style="padding:8px; border-radius:10px; color:#475569; background:transparent; border:1px solid transparent; transition:all 0.2s; cursor:pointer;" onmouseover="this.style.background='rgba(99,102,241,0.08)';this.style.borderColor='rgba(99,102,241,0.12)';this.style.color='#818cf8';" onmouseout="this.style.background='transparent';this.style.borderColor='transparent';this.style.color='#475569';">
+                        <svg style="width:18px; height:18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
-                    </div>
-                    <div class="karvy-brand-container">
-                        <h1 class="text-lg font-bold text-white karvy-brand tracking-tight">Karvy</h1>
-                        <p class="text-[10px] font-bold text-blue-500 uppercase tracking-[0.2em] leading-none">Technologies</p>
-                    </div>
-                </a>
-                <!-- Hamburger menu for large devices -->
-                <button id="sidebarToggle" class="hidden lg:flex p-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/5 transition-all">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
+                    </button>
+                </div>
             </div>
             
             <!-- Real-time Date/Time Display -->
@@ -1287,7 +1337,7 @@ $currentUser = Auth::getCurrentUser();
     </div>
 
         <!-- Main Content -->
-        <div class="main-content flex-1 flex flex-col overflow-hidden bg-gray-50">
+        <div class="main-content flex-1 flex flex-col overflow-hidden">
             <!-- Top Header -->
             <header class="admin-header">
                 <div class="flex items-center justify-between px-6 py-4">
@@ -1379,8 +1429,8 @@ $currentUser = Auth::getCurrentUser();
             </header>
 
             <!-- Page Content -->
-            <main class="flex-1 overflow-y-auto p-6 bg-gray-50">
-                <div class="w-full">
+            <main class="flex-1 overflow-y-auto p-6">
+                <div class="w-full main-content-area">
                     <?php if (isset($content)) echo $content; ?>
                 </div>
             </main>
